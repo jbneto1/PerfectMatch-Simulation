@@ -1,5 +1,75 @@
-//
-// Created by jabra on 5/31/2023.
-//
+// Logger.cpp
+#include "Logger.h"
+#include <iostream>
 
-#include "logger.h"
+Logger::Logger(spdlog::level::level_enum level) {
+    std::vector<spdlog::sink_ptr> sinks;
+    try {
+        sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+        sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("log.txt", true));
+        logger = std::make_shared<spdlog::logger>("logger", begin(sinks), end(sinks));
+        spdlog::register_logger(logger);
+        this->set_level(level);
+    } catch (const spdlog::spdlog_ex& ex) {
+        std::cout << "Log initialization failed: " << ex.what() << std::endl;
+    } catch (const std::exception& ex) {
+        std::cout << "General exception: " << ex.what() << std::endl;
+    }
+
+}
+
+Logger& Logger::getInstance(spdlog::level::level_enum level) {
+    static Logger instance = Logger(level);
+    return instance;
+}
+
+void Logger::trace(const std::string &message) {
+    try {
+        logger->trace(message);
+    } catch (const spdlog::spdlog_ex& ex) {
+        std::cout << "Log failed: " << ex.what() << std::endl;
+    }
+}
+
+void Logger::debug(const std::string& message) {
+    try {
+        logger->debug(message);
+    } catch (const spdlog::spdlog_ex& ex) {
+        std::cout << "Log failed: " << ex.what() << std::endl;
+    }
+}
+
+void Logger::info(const std::string& message) {
+    try {
+        logger->info(message);
+    } catch (const spdlog::spdlog_ex& ex) {
+        std::cout << "Log failed: " << ex.what() << std::endl;
+    }
+}
+
+void Logger::warn(const std::string& message) {
+    try {
+        logger->warn(message);
+    } catch (const spdlog::spdlog_ex& ex) {
+        std::cout << "Log failed: " << ex.what() << std::endl;
+    }
+}
+
+void Logger::error(const std::string& message) {
+    try {
+        logger->error(message);
+    } catch (const spdlog::spdlog_ex& ex) {
+        std::cout << "Log failed: " << ex.what() << std::endl;
+    }
+}
+
+void Logger::set_level(const spdlog::level::level_enum log_level) {
+    logger->set_level(log_level);
+}
+
+void Logger::setPattern(const std::string &format) {
+    logger->set_pattern(format);
+}
+
+
+

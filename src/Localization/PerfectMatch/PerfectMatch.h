@@ -5,14 +5,12 @@
 #ifndef PERFECTMATCH_SIMULATION_PERFECTMATCH_H
 #define PERFECTMATCH_SIMULATION_PERFECTMATCH_H
 
-#include <vector>
+#include <config.h>
 
 class PerfectMatch {
 public:
     PerfectMatch();
-
-    // An example method. You can replace this with the actual methods you need
-    std::vector<double> match(const std::vector<double>& data);
+    Pose match(const std::array<double, 720> &data);
 };
 
 #endif //PERFECTMATCH_SIMULATION_PERFECTMATCH_H

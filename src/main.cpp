@@ -1,21 +1,18 @@
-//
-// Created by jabra on 5/16/2023.
-//
-#include "SimTwoInterface/SimTwoInterface.h"
-#include "Localization/Localization.h"
-#include "AMRController/AMRController.h"
+// main.cpp
+
+#include <iostream>
+#include "Manager/Manager.h"
+#include "config.h"
 
 int main() {
-    SimTwoInterface simulator;
-    Localization localization;
-    AMRController controller;
-
-    while (true) {
-        auto [lidarData, encoderData] = simulator.getSensorData();
-        auto [x, y, theta] = localization.processData(lidarData, encoderData);
-        auto [frontLeftSpeed, frontRightSpeed, backLeftSpeed, backRightSpeed] = controller.computeWheelSpeeds(x, y, theta);
-        simulator.setWheelSpeeds(frontLeftSpeed, frontRightSpeed, backLeftSpeed, backRightSpeed);
+    try {
+        Logger &logger = Logger::getInstance(spdlog::level::info);
+        logger.setPattern(std::string("[%^%l%$] %v"));  // Set logging pattern
+        Manager manager = Manager(logger, CONTROL_CYCLE); // Create manager with specified control cycle and logger
+        manager.run(); // Start the manager
+    } catch (const std::exception &e) { // Catch any thrown exceptions
+        std::cerr << "An error occurred: " << e.what() << '\n';
+        return 1;
     }
-
     return 0;
 }

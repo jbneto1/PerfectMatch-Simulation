@@ -8,7 +8,10 @@ PerfectMatch::PerfectMatch() {
     // Initialize the matching
 }
 
-std::vector<double> PerfectMatch::match(const std::vector<double>& data) {
+Pose PerfectMatch::match(const std::array<double, 720> &data) {
     // Implement the matching algorithm and return the results
+    Pose tmp;
+
+    return tmp;
 }
 

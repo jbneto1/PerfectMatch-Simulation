@@ -6,12 +6,20 @@
 #define PERFECTMATCH_SIMULATION_AMRCONTROLLER_H
 
 #include <tuple>
+#include "Logger/logger.h"
+#include "config.h"
+#include "MecanumKinematics/MecanumKinematics.h"
 
 class AMRController {
 public:
-    AMRController();
+    AMRController(Logger &logger);
+//    MecanumKinematics mecanum = MecanumKinematics();
 
-    std::tuple<double, double, double, double> computeWheelSpeeds(double x, double y, double theta);
+    std::tuple<double, double, double, double> computeWheelSpeeds(Pose estimatedPose);
+
+private:
+    Logger &logger;
+
 };
 
 

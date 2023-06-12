@@ -2,4 +2,4 @@ set(LOGGER_SRC
         logger.cpp
         )
 
-add_library(logger ${LOGGER_SRC})
+add_library(Logger ${LOGGER_SRC})
