@@ -2,26 +2,29 @@
 
 #include "Localization.h"
 
-Localization::Localization(Logger &logger, AMRController &controller, const double control_cycle) : logger(logger),
-                                                                                                    controller(
-                                                                                                            controller),
-                                                                                                    dt(control_cycle) {
+Localization::Localization(Logger &logger, AMRController &controller, const double control_cycle, const int maxIters)
+        : logger(logger),
+          controller(
+                  controller),
+          dt(control_cycle), PM("C:\\Users\\jabra\\Documents\\GitHub\\PerfectMatch-Simulation\\src\\Localization\\PerfectMatch\\Map\\RAFmap.png") {
     // Initialize the localization system
 }
 
 void Localization::processData(const std::array<int, 4> &encoders, const Pose &GT,
-                               const std::array<double, 720> &lidarData) {
+                               std::array<LaserPoint, 720> &lidarData) {
     static double runtime = 0;
     runtime += dt;
     groundTruth = GT;
-    // odometry(encoders);
-    // EKF.predict();
+
+    if (firstIter = true) {
+        PM.setPose(GT);
+        firstIter = false;
+    }
     Pose matchedPose = PM.match(lidarData); // Note the match result
-    // EKF.update();
 
     // Log ground truth and matched pose data in csv format
     logger.info(fmt::format("{},{},{},{},{},{},{}", groundTruth.getX(), groundTruth.getY(), groundTruth.getTheta(),
-                             matchedPose.getX(), matchedPose.getY(), matchedPose.getTheta(), runtime));
+                            matchedPose.getX(), matchedPose.getY(), matchedPose.getTheta(), runtime));
 }
 
 Pose Localization::getPose() {

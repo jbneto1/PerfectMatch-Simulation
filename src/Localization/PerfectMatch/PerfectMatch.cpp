@@ -1,33 +1,54 @@
 #include "PerfectMatch.h"
 
-PerfectMatch::PerfectMatch() : ImgWidth(640), ImgHeight(480), PixelSize(0.0075), PixelScale(1 / PixelSize) {
-    // Initialize the matching
+PerfectMatch::PerfectMatch(const std::string &mapFilename, const Pose startPose, const int maxIters,
+                           const int cErr,
+                           const double stepScale) : map(mapFilename),
+                                                     RobotPose(
+                                                             startPose),
+                                                     maxIters(
+                                                             maxIters), c_err(cErr), stepScale(stepScale) {
+    PixelSize = std::max(1.7 / map.getWidth(), 1.2 / map.getHeight());
+    PixelScale = 1 / PixelSize;
+
+    // Calculate the distance and gradient maps
+    CalcDistMap();
+    CalcGradMap();
+
+    // Save the calculated maps
+    map.saveAsImage("DistMap.png");
+    map.saveAsImageGradX("GradXMap.png");
+    map.saveAsImageGradY("GradYMap.png");
 }
 
-Pose PerfectMatch::match(const std::array<double, 720>& data) {
+Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
     // Implement the matching algorithm and return the results
-    Pose tmp;
 
-    return tmp;
+    ProcessLaserPoints(data);
+
+    for (int i = 0; i <= maxIters; i++) {
+        IterLaser(data);
+    }
+    return RobotPose;
 }
 
-void PerfectMatch::RotateAndTranslate(double& rx, double& ry, double px, double py, double tx, double ty, double st, double ct) {
+void PerfectMatch::RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st,
+                                      double ct) {
     rx = px * ct - py * st + tx;
     ry = px * st + py * ct + ty;
 }
 
 int PerfectMatch::XTopixel(double x) {
-    return static_cast<int>(std::round(x * PixelScale) + ImgWidth / 2);
+    return static_cast<int>(std::round(x * PixelScale) + map.getWidth() / 2);
 }
 
 int PerfectMatch::YTopixel(double y) {
-    return static_cast<int>(std::round(-y * PixelScale) + ImgHeight / 2);
+    return static_cast<int>(std::round(-y * PixelScale) + map.getHeight() / 2);
 }
 
-void PerfectMatch::CalcDistMap(std::array<std::array<int, 640>, 480>& Map) {
+void PerfectMatch::CalcDistMap() {
     int misses = 0;
     for (int i = 0; i < 1000; ++i) {
-        if (ScanDistMap(Map, i) == 0) {
+        if (ScanDistMap(i) == 0) {
             ++misses;
             if (misses > 2) break;
         } else {
@@ -36,22 +57,22 @@ void PerfectMatch::CalcDistMap(std::array<std::array<int, 640>, 480>& Map) {
     }
 }
 
-int PerfectMatch::ScanDistMap(std::array<std::array<int, 640>, 480>& Map, int v) {
+int PerfectMatch::ScanDistMap(int v) {
     int result = 0;
-    for (int y = 1; y < ImgHeight - 1; ++y) {
-        for (int x = 1; x < ImgWidth - 1; ++x) {
-            if (Map[y][x] != v) continue;
+    for (int y = 1; y < map.getHeight() - 1; ++y) {
+        for (int x = 1; x < map.getWidth() - 1; ++x) {
+            if (map.getDistance(x, y) != v) continue;
             ++result;
 
-            Map[y][x + 1] = std::min(Map[y][x + 1], 2 + v);
-            Map[y][x - 1] = std::min(Map[y][x - 1], 2 + v);
-            Map[y + 1][x] = std::min(Map[y + 1][x], 2 + v);
-            Map[y - 1][x] = std::min(Map[y - 1][x], 2 + v);
+            map.setDistance(x + 1, y, std::min(map.getDistance(x + 1, y), 2 + v));
+            map.setDistance(x - 1, y, std::min(map.getDistance(x - 1, y), 2 + v));
+            map.setDistance(x, y + 1, std::min(map.getDistance(x, y + 1), 2 + v));
+            map.setDistance(x, y - 1, std::min(map.getDistance(x, y - 1), 2 + v));
 
-            Map[y + 1][x + 1] = std::min(Map[y + 1][x + 1], 3 + v);
-            Map[y + 1][x - 1] = std::min(Map[y + 1][x - 1], 3 + v);
-            Map[y - 1][x + 1] = std::min(Map[y - 1][x + 1], 3 + v);
-            Map[y - 1][x - 1] = std::min(Map[y - 1][x - 1], 3 + v);
+            map.setDistance(x + 1, y + 1, std::min(map.getDistance(x + 1, y + 1), 3 + v));
+            map.setDistance(x + 1, y - 1, std::min(map.getDistance(x + 1, y - 1), 3 + v));
+            map.setDistance(x - 1, y + 1, std::min(map.getDistance(x - 1, y + 1), 3 + v));
+            map.setDistance(x - 1, y - 1, std::min(map.getDistance(x - 1, y - 1), 3 + v));
         }
     }
     return result;
@@ -62,44 +83,79 @@ double PerfectMatch::d_err(double d) {
     return 1 - c2 / (c2 + d * d);
 }
 
-void PerfectMatch::IterLaser(Pose& R, const std::array<LaserPoint, 720>& LaserPoints, int FirstIdx, int LastIdx, double scale) {
+void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
     double dx = 0;
     double dy = 0;
     double dtheta = 0;
-    double st = std::sin(R.getTheta());
-    double ct = std::cos(R.getTheta());
-    R.setErr(0);
+    double st = std::sin(RobotPose.getTheta());
+    double ct = std::cos(RobotPose.getTheta());
+    RobotPose.setErr(0);
     int n = 0;
 
-    for (int i = FirstIdx; i <= LastIdx; ++i) {
-        if (LaserPoints[i].d < 0.1) continue;
+    for (const auto &laserPoint: LaserPoints) {
+        if (laserPoint.getD() < 0.1)
+            continue;
+
         double rx, ry;
-        RotateAndTranslate(rx, ry, LaserPoints[i].x, LaserPoints[i].y, R.getX(), R.getY(), st, ct);
+        RotateAndTranslate(rx, ry, laserPoint.getX(), laserPoint.getY(), RobotPose.getX(), RobotPose.getY(), st, ct);
         int u = XTopixel(rx);
         int v = YTopixel(ry);
-        if (u > 0 && u < ImgWidth - 1 && v > 0 && v < ImgHeight - 1) {
-            double gradX = GradXMap[v][u];
-            double gradY = GradYMap[v][u];
 
-            dx -= gradX / LaserPoints[i].std;
-            dy += gradY / LaserPoints[i].std;
-            dtheta -= gradX / LaserPoints[i].std * (-LaserPoints[i].x * st - LaserPoints[i].y * ct)
-                      + gradY / LaserPoints[i].std * (LaserPoints[i].x * ct - LaserPoints[i].y * st);
-            R.setErr(R.getErr() + DistMap[v][u]);
+        if (u > 0 && u < map.getWidth() - 1 && v > 0 && v < map.getHeight() - 1) {
+            double gradX = map.getGradientX(u, v);
+            double gradY = map.getGradientY(u, v);
+
+            dx -= gradX / laserPoint.getStdDev();
+            dy += gradY / laserPoint.getStdDev();
+            dtheta -= gradX / laserPoint.getStdDev() * (-laserPoint.getX() * st - laserPoint.getY() * ct)
+                      + gradY / laserPoint.getStdDev() * (laserPoint.getX() * ct - laserPoint.getY() * st);
+            RobotPose.setErr(RobotPose.getErr() + map.getDistance(u, v));
             ++n;
         }
     }
-    R.setX(R.getX() + scale * dx);
-    R.setY(R.getY() + scale * dy);
-    R.setTheta(R.getTheta() + M_PI * scale * dtheta);
-    if (n > 0) R.setErr(R.getErr() / n);
+
+    RobotPose.setX(RobotPose.getX() + stepScale * dx);
+    RobotPose.setY(RobotPose.getY() + stepScale * dy);
+    RobotPose.setTheta(RobotPose.getTheta() + M_PI * stepScale * dtheta);
+    if (n > 0) RobotPose.setErr(RobotPose.getErr() / n);
 }
 
-void PerfectMatch::CalcGradMap(std::array<std::array<float, 640>, 480>& GradXMap, std::array<std::array<float, 640>, 480>& GradYMap, const std::array<std::array<int, 640>, 480>& Map) {
-    for (int y = 1; y < ImgHeight - 1; ++y) {
-        for (int x = 1; x < ImgWidth - 1; ++x) {
-            GradXMap[y][x] = (d_err(Map[y][x + 1]) - d_err(Map[y][x - 1])) / 2;
-            GradYMap[y][x] = (d_err(Map[y + 1][x]) - d_err(Map[y - 1][x])) / 2;
+
+void PerfectMatch::CalcGradMap() {
+    int width = map.getWidth();
+    int height = map.getHeight();
+
+    std::vector<std::vector<float>> GradXMap(height, std::vector<float>(width, 0));
+    std::vector<std::vector<float>> GradYMap(height, std::vector<float>(width, 0));
+
+    for (int y = 1; y < height - 1; ++y) {
+        for (int x = 1; x < width - 1; ++x) {
+            GradXMap[y][x] = (d_err(map.getDistance(x + 1, y)) - d_err(map.getDistance(x - 1, y))) / 2;
+            GradYMap[y][x] = (d_err(map.getDistance(x, y + 1)) - d_err(map.getDistance(x, y - 1))) / 2;
         }
+    }
+
+    map.setGradXMap(GradXMap);
+    map.setGradYMap(GradYMap);
+}
+
+void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) {
+    for (auto& point : LaserPoints) {
+        double currentAngleDegrees = degreeStep * (&point - &LaserPoints[0]);
+        // convert the angle to radians
+        double angleRadians = currentAngleDegrees * M_PI / 180.0;
+
+        // set the angle for each LaserPoint
+        point.setAngle(angleRadians);
+
+        // calculate the x and y positions
+        double d = point.getD();
+        double x = d * cos(angleRadians);
+        double y = d * sin(angleRadians);
+
+        // set the x, y positions and std_dev for each LaserPoint
+        point.setX(x);
+        point.setY(y);
+        point.setStdDev(1.0); // set the std_dev to 1 for now
     }
 }

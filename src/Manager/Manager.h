@@ -23,7 +23,7 @@ private:
     const double dt;
     Logger &logger;
     AMRController controller = AMRController(logger);
-    Localization localization = Localization(logger, controller, dt);
+    Localization localization = Localization(logger, controller, dt, MAX_ITERS);
     SimTwoInterface interface = SimTwoInterface(logger, localization, controller);
 
 

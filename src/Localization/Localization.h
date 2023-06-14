@@ -16,13 +16,15 @@
 
 class Localization {
 public:
-    Localization(Logger &logger, AMRController &controller, const double control_cycle);
+    Localization(Logger &logger, AMRController &controller, const double control_cycle, const int maxIters);
 
-    void processData(const std::array<int, 4> &encoders, const Pose &GT, const std::array<double, 720> &lidarData);
+    void processData(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData);
     Pose getPose();
     void setPose(Pose &startPose);
 
     void setEncoders(const std::array<int, 4> &encoders);
+
+    bool firstIter = true;
 
 private:
     Logger &logger;
@@ -32,6 +34,7 @@ private:
     Pose groundTruth;
     Pose estimatedPose;
     const double dt;
+
 
     void updatePose(const std::array<int, 4> &encoders);
     void odometry(const std::array<int, 4> &encoders);

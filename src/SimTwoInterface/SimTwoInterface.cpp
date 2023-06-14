@@ -63,12 +63,12 @@ void SimTwoInterface::sendWheelSpeeds(double frontLeftSpeed, double frontRightSp
 }
 
 // Parse received data
-std::tuple<std::array<int, 4>, Pose, std::array<double, 720>> SimTwoInterface::getSensorData(const std::string &data) {
+std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>> SimTwoInterface::getSensorData(const std::string &data) {
     std::istringstream iss(data);
     std::string line;
     std::array<int, 4> encoders{}; // encs (1..4) (FL, FR, BL, BR)
     std::array<double, 3> pose{};  // Pose (X, Y, Theta)
-    std::array<double, 720> lidar{};
+    std::array<LaserPoint, 720> lidar{};
 
     int encoder_index = 0;
     int pose_index = 0;
@@ -87,7 +87,7 @@ std::tuple<std::array<int, 4>, Pose, std::array<double, 720>> SimTwoInterface::g
             std::istringstream iss_lidar(line);
             std::string val;
             while (std::getline(iss_lidar, val, ',')) {
-                lidar[lidar_index++] = std::stod(val);
+                lidar[lidar_index++].setD(std::stod(val));
             }
         }
     }

@@ -1,31 +1,49 @@
-#include <array>
+#ifndef PERFECTMATCH_H
+#define PERFECTMATCH_H
+
+#include <vector>
 #include <cmath>
 #include <stdexcept>
+#include "Map/Map.h"
 #include "config.h"
 
 class PerfectMatch {
 public:
-    PerfectMatch();
-    Pose match(const std::array<double, 720>& data);
+    PerfectMatch(const std::string &mapFilename, const Pose startPose = Pose(), const int maxIters = 10,
+                 const int cErr = 100, const double stepScale = 0.01);
+
+
+    Pose match(std::array<LaserPoint, 720> &data);
+
+    void setPose(const Pose pose) { this->RobotPose = pose; }
 
 private:
-    void RotateAndTranslate(double& rx, double& ry, double px, double py, double tx, double ty, double st, double ct);
-    int XTopixel(double x);
-    int YTopixel(double y);
-    void CalcDistMap(std::array<std::array<int, 640>, 480>& Map);
-    int ScanDistMap(std::array<std::array<int, 640>, 480>& Map, int v);
-    double d_err(double d);
-    void IterLaser(Pose& R, const std::array<LaserPoint, 720>& LaserPoints, int FirstIdx, int LastIdx, double scale);
-    void CalcGradMap(std::array<std::array<float, 640>, 480>& GradXMap, std::array<std::array<float, 640>, 480>& GradYMap, const std::array<std::array<int, 640>, 480>& Map);
+    void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
 
-    int ImgWidth;
-    int ImgHeight;
+    void ProcessLaserPoints(std::array<LaserPoint, 720>& LaserPoints);
+
+    int XTopixel(double x);
+
+    int YTopixel(double y);
+
+    void CalcDistMap();
+
+    int ScanDistMap(int v);
+
+    double d_err(double d);
+
+    void IterLaser(const std::array<LaserPoint, 720> &LaserPoints);
+
+    void CalcGradMap();
+
+    Map map;
     double PixelSize;
     double PixelScale;
-    std::array<std::array<int, 640>, 480> DistMap;
-    std::array<std::array<float, 640>, 480> GradXMap;
-    std::array<std::array<float, 640>, 480> GradYMap;
-    std::array<std::array<float, 640>, 480> GradThetaMap;
     Pose RobotPose;
-    double c_err;
+    const int c_err; // Need to know what is this about
+    const double stepScale;
+    const int maxIters;
+    static constexpr double degreeStep = LASER_RANGE / LASER_RAYS;
 };
+
+#endif // PERFECTMATCH_H
