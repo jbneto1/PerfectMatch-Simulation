@@ -6,10 +6,11 @@
 #include <stdexcept>
 #include "Map/Map.h"
 #include "config.h"
+#include "Logger/logger.h"
 
 class PerfectMatch {
 public:
-    PerfectMatch(const std::string &mapFilename, const Pose startPose = Pose(), const int maxIters = 10,
+    PerfectMatch(Logger &logger, const std::string &mapFilename, const Pose startPose = Pose(), const int maxIters = 10,
                  const int cErr = 100, const double stepScale = 0.01);
 
 
@@ -44,6 +45,7 @@ private:
     const double stepScale;
     const int maxIters;
     static constexpr double degreeStep = LASER_RANGE / LASER_RAYS;
+    Logger &logger;
 };
 
 #endif // PERFECTMATCH_H

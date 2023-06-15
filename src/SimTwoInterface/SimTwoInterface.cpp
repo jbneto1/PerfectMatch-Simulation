@@ -8,8 +8,8 @@ SimTwoInterface::SimTwoInterface(Logger &logger, Localization &localization, AMR
           logger(logger), localization(localization), controller(controller) {
     startReceive();
     thread = std::thread([this]() { io_context.run(); });
-    logger.trace("Simulator Interface created and listening for data.");
-    logger.trace("Listening for UDP datagrams on port: " + std::to_string(SIMTWO_RECEIVE_PORT));
+    logger.info("Simulator Interface created and listening for data.");
+    logger.info("Listening for UDP datagrams on port: " + std::to_string(SIMTWO_RECEIVE_PORT));
 }
 
 // Destructor
@@ -18,12 +18,13 @@ SimTwoInterface::~SimTwoInterface() {
     if (thread.joinable()) {
         thread.join();
     }
-    logger.info("Simulator Interface destroyed.");
+    logger.trace("Simulator Interface destroyed.");
 }
 
 // Register a callback function for when data is received
 void SimTwoInterface::registerCallback(DataCallback callback) {
     dataCallback = std::move(callback);
+    logger.debug("Data callback registered.");
 }
 
 // Start receiving data
@@ -34,6 +35,7 @@ void SimTwoInterface::startReceive() {
             [this](std::error_code ec, std::size_t bytes_received) {
                 handleReceive(ec, bytes_received);
             });
+    logger.trace("Receiving started.");
 }
 
 // Handle data received from the socket
@@ -74,6 +76,8 @@ std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>> SimTwoInterfac
     int pose_index = 0;
     int lidar_index = 0;
 
+    logger.trace("Starting to parse sensor data...");
+
     while (std::getline(iss, line)) {
         if (line.find("Enc") != std::string::npos) {
             std::getline(iss, line);
@@ -91,6 +95,11 @@ std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>> SimTwoInterfac
             }
         }
     }
+
+    logger.info("Finished parsing sensor data. Encoders: (" +
+                 std::to_string(encoders[0]) + ", " + std::to_string(encoders[1]) + ", " + std::to_string(encoders[2]) + ", " + std::to_string(encoders[3]) +
+                 "), Pose: (" + std::to_string(pose[0]) + ", " + std::to_string(pose[1]) + ", " + std::to_string(pose[2]) +
+                 "), Lidar points: " + std::to_string(lidar.size()));
 
     Pose tmp = Pose();
     tmp = pose;

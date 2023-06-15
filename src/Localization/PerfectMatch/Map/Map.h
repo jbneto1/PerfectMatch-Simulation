@@ -7,11 +7,13 @@
 #include "config.h"
 #include "stb/stb_image.h"
 #include "stb/stb_image_write.h"
+#include "Logger/logger.h"
+#include <sstream>
 
 class Map {
 public:
-    Map(const std::string& filename);
-    void saveAsImage(const std::string& filename) const;
+    Map(Logger &logger, const std::string& filename);
+
     int getWidth() const { return ImgWidth; }
     int getHeight() const { return ImgHeight; }
     int getDistance(int x, int y) const { return DistMap[y][x]; }
@@ -20,8 +22,9 @@ public:
     void setDistance(int x, int y, int value) { DistMap[y][x] = value; }
     void setGradXMap(const std::vector<std::vector<float>>& gradXMap) { GradXMap = gradXMap; }
     void setGradYMap(const std::vector<std::vector<float>>& gradYMap) { GradYMap = gradYMap; }
-    void saveAsImageGradY(const std::string& filename) const;
-    void saveAsImageGradX(const std::string& filename) const;
+    void saveDistMap(const std::string& filename) const;
+    void saveGradMap(const std::string& filename, const double factor) const;
+    void logDistMap() const;
 
 private:
     int ImgWidth;
@@ -29,6 +32,7 @@ private:
     std::vector<std::vector<int>> DistMap;
     std::vector<std::vector<float>> GradXMap;
     std::vector<std::vector<float>> GradYMap;
+    Logger &logger;
 };
 
 #endif // MAP_H

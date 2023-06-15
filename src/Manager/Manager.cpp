@@ -25,7 +25,7 @@ void Manager::run() {
     logger.trace("Callback registered.");
     logger.trace("Program executing...");
 
-    logger.info("[GT.x],[GT.y],[GT.theta],[Match.x],[Match.y],[Match.theta],[runtime]");
+    logger.fileLog("[GT.x],[GT.y],[GT.theta],[Match.x],[Match.y],[Match.theta],[runtime]");
     while (run_loop);  // Main run loop
 
     logger.trace("Terminating program...");
@@ -40,7 +40,6 @@ void Manager::signalHandler(int sig) {
 void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface, Localization &localization,
                              AMRController &controller, Logger &logger) {
     logger.trace("Data received. Handler callback called.");
-    logger.debug(data);
     auto [encoders, groundTruth, lidarData] =  interface.getSensorData(data);
     logger.trace("Processing Perfect Match.");
     localization.processData(encoders, groundTruth, lidarData);

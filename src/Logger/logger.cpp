@@ -8,15 +8,23 @@ Logger::Logger(spdlog::level::level_enum level) {
         sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
         sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("log.txt", true));
         logger = std::make_shared<spdlog::logger>("logger", begin(sinks), end(sinks));
+
+        // Initialize file-only logger
+        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logfile.txt", true);
+        fileLogger = std::make_shared<spdlog::logger>("FileLogger", file_sink);
+
         spdlog::register_logger(logger);
+        spdlog::register_logger(fileLogger);  // Register file-only logger
         this->set_level(level);
+        fileLogger->set_level(spdlog::level::info);
+        fileLogger->set_pattern(std::string("%v"));
     } catch (const spdlog::spdlog_ex& ex) {
         std::cout << "Log initialization failed: " << ex.what() << std::endl;
     } catch (const std::exception& ex) {
         std::cout << "General exception: " << ex.what() << std::endl;
     }
-
 }
+
 
 Logger& Logger::getInstance(spdlog::level::level_enum level) {
     static Logger instance = Logger(level);
@@ -71,5 +79,12 @@ void Logger::setPattern(const std::string &format) {
     logger->set_pattern(format);
 }
 
+void Logger::fileLog(const std::string& message) {
+    try {
+        fileLogger->info(message);
+    } catch (const spdlog::spdlog_ex& ex) {
+        std::cout << "Log failed: " << ex.what() << std::endl;
+    }
+}
 
 

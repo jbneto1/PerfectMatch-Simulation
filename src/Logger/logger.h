@@ -19,6 +19,7 @@ public:
     void info(const std::string& message);
     void warn(const std::string& message);
     void error(const std::string& message);
+    void fileLog(const std::string& message);  // Added method for file-only logging
 
     void set_level(const spdlog::level::level_enum log_level);
     void setPattern(const std::string &format);
@@ -26,6 +27,7 @@ public:
 private:
     explicit Logger(spdlog::level::level_enum level);
     std::shared_ptr<spdlog::logger> logger;
+    std::shared_ptr<spdlog::logger> fileLogger;  // Added file-only logger
 };
 
 #endif //PERFECTMATCH_SIMULATION_LOGGER_H
