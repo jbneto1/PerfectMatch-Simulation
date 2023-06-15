@@ -24,7 +24,7 @@ public:
 
     void setEncoders(const std::array<int, 4> &encoders);
 
-    bool firstIter = true;
+    bool firstIter;
 
 private:
     Logger &logger;

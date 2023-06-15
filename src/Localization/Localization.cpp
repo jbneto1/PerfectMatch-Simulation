@@ -8,6 +8,7 @@ Localization::Localization(Logger &logger, AMRController &controller, const doub
                   controller),
           dt(control_cycle), PM(logger, "C:\\Users\\jabra\\Documents\\GitHub\\PerfectMatch-Simulation\\src\\Localization\\PerfectMatch\\Map\\RAFmap.png") {
     // Initialize the localization system
+    firstIter = true;
     logger.debug("Localization system initialized");
 }
 
@@ -21,9 +22,10 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     runtime += dt;
     groundTruth = GT;
 
-    if (firstIter = true) {
+    if (firstIter) {
         PM.setPose(GT);
         firstIter = false;
+        logger.fileLog("first iter");
     }
     Pose matchedPose = PM.match(lidarData); // Note the match result
 

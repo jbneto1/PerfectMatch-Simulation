@@ -22,8 +22,7 @@ void Manager::run() {
         onDataReceived(data, interface, localization, controller, logger);
     });
 
-    logger.trace("Callback registered.");
-    logger.trace("Program executing...");
+    logger.debug("Waiting for simulator.");
 
     logger.fileLog("[GT.x],[GT.y],[GT.theta],[Match.x],[Match.y],[Match.theta],[runtime]");
     while (run_loop);  // Main run loop

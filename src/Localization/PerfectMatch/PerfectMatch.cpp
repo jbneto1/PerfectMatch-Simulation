@@ -39,8 +39,7 @@ Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
     for (int i = 0; i <= maxIters; i++) {
         IterLaser(data);
     }
-    logger.debug("Finished match function. New pose: (" + std::to_string(RobotPose.getX()) + ", " +
-                 std::to_string(RobotPose.getY()) + ")");
+
     return RobotPose;
 }
 
@@ -66,10 +65,14 @@ void PerfectMatch::CalcDistMap() {
     for (int i = 0; i < 1000; ++i) {
         if (ScanDistMap(i) == 0) {
             ++misses;
-            if (misses > 2) break;
+            if (misses > 2) {
+                logger.debug("misses: " + std::to_string(misses));
+                break;
+            }
         } else {
             misses = 0;
         }
+        logger.debug("iterations: " + std::to_string(i));
     }
     logger.debug("Distance Map calculated.");
 }
@@ -145,8 +148,8 @@ void PerfectMatch::CalcGradMap() {
     int height = map.getHeight();
 
     logger.trace("Calculating Gradient Map...");
-    std::vector<std::vector<float>> GradXMap(height, std::vector<float>(width, 0));
-    std::vector<std::vector<float>> GradYMap(height, std::vector<float>(width, 0));
+    std::vector<std::vector<double>> GradXMap(height, std::vector<double>(width, 0));
+    std::vector<std::vector<double>> GradYMap(height, std::vector<double>(width, 0));
 
     for (int y = 1; y < height - 1; ++y) {
         for (int x = 1; x < width - 1; ++x) {

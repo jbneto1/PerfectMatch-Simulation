@@ -9,6 +9,7 @@
 #include "stb/stb_image_write.h"
 #include "Logger/logger.h"
 #include <sstream>
+#include <algorithm>
 
 class Map {
 public:
@@ -20,8 +21,8 @@ public:
     float getGradientX(int x, int y) const { return GradXMap[y][x]; }
     float getGradientY(int x, int y) const { return GradYMap[y][x]; }
     void setDistance(int x, int y, int value) { DistMap[y][x] = value; }
-    void setGradXMap(const std::vector<std::vector<float>>& gradXMap) { GradXMap = gradXMap; }
-    void setGradYMap(const std::vector<std::vector<float>>& gradYMap) { GradYMap = gradYMap; }
+    void setGradXMap(const std::vector<std::vector<double>>& gradXMap) { GradXMap = gradXMap; }
+    void setGradYMap(const std::vector<std::vector<double>>& gradYMap) { GradYMap = gradYMap; }
     void saveDistMap(const std::string& filename) const;
     void saveGradMap(const std::string& filename, const double factor) const;
     void logDistMap() const;
@@ -30,8 +31,8 @@ private:
     int ImgWidth;
     int ImgHeight;
     std::vector<std::vector<int>> DistMap;
-    std::vector<std::vector<float>> GradXMap;
-    std::vector<std::vector<float>> GradYMap;
+    std::vector<std::vector<double>> GradXMap;
+    std::vector<std::vector<double>> GradYMap;
     Logger &logger;
 };
 

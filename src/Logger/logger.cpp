@@ -10,13 +10,14 @@ Logger::Logger(spdlog::level::level_enum level) {
         logger = std::make_shared<spdlog::logger>("logger", begin(sinks), end(sinks));
 
         // Initialize file-only logger
-        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logfile.txt", true);
+        //auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logfile.txt", true);
+        auto file_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
         fileLogger = std::make_shared<spdlog::logger>("FileLogger", file_sink);
 
         spdlog::register_logger(logger);
         spdlog::register_logger(fileLogger);  // Register file-only logger
         this->set_level(level);
-        fileLogger->set_level(spdlog::level::info);
+        fileLogger->set_level(spdlog::level::debug);
         fileLogger->set_pattern(std::string("%v"));
     } catch (const spdlog::spdlog_ex& ex) {
         std::cout << "Log initialization failed: " << ex.what() << std::endl;
