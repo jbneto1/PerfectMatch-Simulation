@@ -1,13 +1,12 @@
 #include "PerfectMatch.h"
 
-PerfectMatch::PerfectMatch(Logger &logger, const std::string &mapFilename, const Pose startPose, const int maxIters,
+PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIters,
                            const int cErr,
-                           const double stepScale) : logger(logger), map(logger, mapFilename),
+                           const double stepScale) : logger(logger), map(logger),
                                                      RobotPose(
                                                              startPose),
                                                      maxIters(
                                                              maxIters), c_err(cErr), stepScale(stepScale) {
-    logger.info("Creating PerfectMatch with mapFilename: " + mapFilename);
     logger.debug(
             "Parameters: startPose (" + std::to_string(startPose.getX()) + ", " + std::to_string(startPose.getY()) +
             ", " + std::to_string(startPose.getTheta()) +
@@ -18,15 +17,9 @@ PerfectMatch::PerfectMatch(Logger &logger, const std::string &mapFilename, const
 
     // Calculate the distance and gradient maps
     logger.trace("Calculating the distance and gradient maps...");
-    CalcDistMap();
-    CalcGradMap();
-
-    // Save the calculated maps
-    logger.trace("Saving the calculated maps...");
-    map.saveDistMap("DistMap.png");
-    map.saveGradMap("GradXMap.png", 2000);
+    //CalcDistMap();
+    //CalcGradMap();
     //map.logDistMap();
-    logger.debug("Successfully initialized PerfectMatch with mapFilename: " + mapFilename);
 }
 
 Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {

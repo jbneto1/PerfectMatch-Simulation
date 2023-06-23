@@ -10,7 +10,7 @@
 
 class PerfectMatch {
 public:
-    PerfectMatch(Logger &logger, const std::string &mapFilename, const Pose startPose = Pose(), const int maxIters = 10,
+    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10,
                  const int cErr = 100, const double stepScale = 0.01);
 
 

@@ -10,8 +10,8 @@
    inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
    sodipodi:docname="RAFmap.svg"
    inkscape:export-filename="RAFmap.png"
-   inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96"
+   inkscape:export-xdpi="9.6646843"
+   inkscape:export-ydpi="9.6646843"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -855,9 +855,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.21986995"
-     inkscape:cx="3495.248"
-     inkscape:cy="2319.553"
+     inkscape:zoom="0.15547153"
+     inkscape:cx="6203.7081"
+     inkscape:cy="1463.2904"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -897,13 +897,6 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(0,892)">
-    <rect
-       style="opacity:1;fill:none;fill-opacity:1;stroke:#000000;stroke-width:4.96112;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       id="rect4572"
-       width="1675.0388"
-       height="1175.0389"
-       x="2.4805641"
-       y="-889.51947" />
     <rect
        style="fill:none;stroke:#000000;stroke-width:0.603672;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="rect1676-3"

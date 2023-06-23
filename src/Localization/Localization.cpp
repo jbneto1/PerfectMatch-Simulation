@@ -1,12 +1,10 @@
-// Localization.cpp
-
 #include "Localization.h"
 
 Localization::Localization(Logger &logger, AMRController &controller, const double control_cycle, const int maxIters)
         : logger(logger),
           controller(
                   controller),
-          dt(control_cycle), PM(logger, "C:\\Users\\jabra\\Documents\\GitHub\\PerfectMatch-Simulation\\src\\Localization\\PerfectMatch\\Map\\RAFmap.png") {
+          dt(control_cycle), PM(logger) {
     // Initialize the localization system
     firstIter = true;
     logger.debug("Localization system initialized");
@@ -25,13 +23,16 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     if (firstIter) {
         PM.setPose(GT);
         firstIter = false;
-        logger.fileLog("first iter");
     }
     Pose matchedPose = PM.match(lidarData); // Note the match result
 
     // Log ground truth and matched pose data in csv format
-    logger.fileLog(fmt::format("{},{},{},{},{},{},{}", groundTruth.getX(), groundTruth.getY(), groundTruth.getTheta(),
-                            matchedPose.getX(), matchedPose.getY(), matchedPose.getTheta(), runtime));
+    logger.fileLog(fmt::format("{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}",
+                               groundTruth.getX(), matchedPose.getX(),
+                               groundTruth.getY(), matchedPose.getY(),
+                               groundTruth.getTheta(), matchedPose.getTheta(),
+                               runtime));
+
     logger.trace("Data processed for Localization");
 }
 

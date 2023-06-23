@@ -5,8 +5,8 @@
 Logger::Logger(spdlog::level::level_enum level) {
     std::vector<spdlog::sink_ptr> sinks;
     try {
-        sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-        sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("log.txt", true));
+        //sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+        //sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("log.txt", true));
         logger = std::make_shared<spdlog::logger>("logger", begin(sinks), end(sinks));
 
         // Initialize file-only logger
@@ -15,7 +15,7 @@ Logger::Logger(spdlog::level::level_enum level) {
         fileLogger = std::make_shared<spdlog::logger>("FileLogger", file_sink);
 
         spdlog::register_logger(logger);
-        spdlog::register_logger(fileLogger);  // Register file-only logger
+        spdlog::register_logger(fileLogger);  // Register file-only lpogger
         this->set_level(level);
         fileLogger->set_level(spdlog::level::debug);
         fileLogger->set_pattern(std::string("%v"));
