@@ -13,7 +13,7 @@
 
 class Map {
 public:
-    Map(Logger &logger, const std::string& filename);
+    Map(Logger &logger);
 
     int getWidth() const { return ImgWidth; }
     int getHeight() const { return ImgHeight; }
@@ -24,8 +24,14 @@ public:
     void setGradXMap(const std::vector<std::vector<double>>& gradXMap) { GradXMap = gradXMap; }
     void setGradYMap(const std::vector<std::vector<double>>& gradYMap) { GradYMap = gradYMap; }
     void saveDistMap(const std::string& filename) const;
-    void saveGradMap(const std::string& filename, const double factor) const;
+    void saveGradXMap(const std::string& filename, const double factor) const;
+    void saveGradYMap(const std::string& filename, const double factor) const;
+    void checkMaps();
     void logDistMap() const;
+    void loadMaps() const;
+    void loadDistMap(const std::string &filename) const;
+    void loadGradXMap(const std::string &filename) const;
+    void loadGradYMap(const std::string &filename) const;
 
 private:
     int ImgWidth;

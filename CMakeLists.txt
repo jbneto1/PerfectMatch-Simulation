@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
-project(AMR_Project)
+project(PM_project)
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(
-        ${PROJECT_SOURCE_DIR}/include/config
+        include/config
         ${PROJECT_SOURCE_DIR}/include/third_party
         ${PROJECT_SOURCE_DIR}/include/third_party/standalone_asio
         ${PROJECT_SOURCE_DIR}/include/third_party/eigen-3.4.0

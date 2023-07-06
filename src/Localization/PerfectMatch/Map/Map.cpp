@@ -1,31 +1,64 @@
 #include "Map.h"
 
-Map::Map(Logger &logger, const std::string &filename) : logger(logger) {
-    logger.info("Loading image: " + filename);
+Map::Map(Logger &logger) : logger(logger) {
     int channels;
-    unsigned char *img = stbi_load(filename.c_str(), &ImgWidth, &ImgHeight, &channels, 0);
-    if (!img) {
-        logger.error("Failed to load image: " + filename); // Add log
-        throw std::runtime_error("Map - Failed to load image: " + filename);
+    int gradXWidth, gradXHeight, gradYWidth, gradYHeight;
+
+    auto path_distMap = std::string(
+            R"(..\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\dist_map_euclidean_640x480.png)");
+    auto path_gradX = std::string(
+            R"(..\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\grad_x_M_map_euclidean_640_480.png)");
+    auto path_gradY = std::string(
+            R"(..\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\grad_y_M_map_euclidean_640_480.png)");
+
+    unsigned char *img = stbi_load(path_distMap.c_str(), &ImgWidth, &ImgHeight, &channels, 0);
+    if (!img || channels != 1) {
+        logger.error("Failed to load dist grayscale image.");
+        throw std::runtime_error("Map - Failed to load dist grayscale image.\nLine: " + std::to_string(__LINE__) + "\nFile: " + __FILE__);
     }
-    logger.trace("Image loaded successfully."); // Add log
+
+    unsigned char *imgGradX = stbi_load(path_gradX.c_str(), &gradXWidth, &gradXHeight, &channels, 0);
+    if (!imgGradX || channels != 1 || gradXWidth != ImgWidth || gradXHeight != ImgHeight) {
+        logger.error("Failed to load grayscale GradX image with matching dimensions.");
+        throw std::runtime_error("Map - Failed to load grayscale GradX image with matching dimensions.\nLine: " + std::to_string(__LINE__) + "\nFile: " + __FILE__);
+    }
+
+    unsigned char *imgGradY = stbi_load(path_gradY.c_str(), &gradYWidth, &gradYHeight, &channels, 0);
+    if (!imgGradY || channels != 1 || gradYWidth != ImgWidth || gradYHeight != ImgHeight) {
+        logger.error("Failed to load grayscale GradY image with matching dimensions.");
+        throw std::runtime_error("Map - Failed to load grayscale GradY image with matching dimensions.\nLine: " + std::to_string(__LINE__) + "\nFile: " + __FILE__);
+    }
+
+    logger.trace("All images loaded successfully.");
 
     // Initialize the distance map and gradient maps
     DistMap = std::vector<std::vector<int>>(ImgHeight, std::vector<int>(ImgWidth, 0));
-    GradXMap = std::vector<std::vector<double>>(ImgHeight, std::vector<double>(ImgWidth, 0));
-    GradYMap = std::vector<std::vector<double>>(ImgHeight, std::vector<double>(ImgWidth, 0));
+    GradXMap = std::vector<std::vector<double>>(ImgHeight, std::vector<double>(ImgWidth, 0.0));
+    GradYMap = std::vector<std::vector<double>>(ImgHeight, std::vector<double>(ImgWidth, 0.0));
 
-    // Process the image data and populate the distance map
-    logger.trace("Processing image data."); // Add log
+    // populate the matrices from the image data
     for (int y = 0; y < ImgHeight; ++y) {
         for (int x = 0; x < ImgWidth; ++x) {
-            int pixelValue = img[y * ImgWidth + x];
-            DistMap[y][x] = pixelValue;
+            int idx = y * ImgWidth + x;
+
+            // populate the DistMap from the main image
+            DistMap[y][x] = img[idx];
+
+            // populate the GradXMap from the gradient X image
+            GradXMap[y][x] = imgGradX[idx] / 255.0;
+
+            // populate the GradYMap from the gradient Y image
+            GradYMap[y][x] = imgGradY[idx] / 255.0;
         }
     }
-    logger.debug("Image data processed with file: " + filename); // Add log
+    //Check if the maps were loaded correctly
+    //checkMaps();
+
     stbi_image_free(img);
+    stbi_image_free(imgGradX);
+    stbi_image_free(imgGradY);
 }
+
 
 void Map::saveDistMap(const std::string &filename) const {
     logger.info("Saving distance map to: " + filename);
@@ -33,7 +66,7 @@ void Map::saveDistMap(const std::string &filename) const {
 
     // find max value in DistMap for normalization
     int maxDist = 0;
-    for (const auto& row : DistMap)
+    for (const auto &row: DistMap)
         maxDist = std::max(maxDist, *std::max_element(row.begin(), row.end()));
 
     for (int y = 0; y < ImgHeight; ++y) {
@@ -51,19 +84,43 @@ void Map::saveDistMap(const std::string &filename) const {
 }
 
 
-void Map::saveGradMap(const std::string &filename, const double factor) const {
+void Map::saveGradXMap(const std::string &filename, const double factor) const {
     logger.info("Saving gradient map to: " + filename);
     std::vector<unsigned char> imgData(ImgWidth * ImgHeight * 3, 0); // 3 for RGB channels
 
     // find max absolute value in GradXMap for normalization
     double maxGrad = 0;
-    for (const auto &row : GradXMap)
+    for (const auto &row: GradXMap)
         maxGrad = std::max(maxGrad, *std::max_element(row.begin(), row.end()));
 
 
     for (int y = 0; y < ImgHeight; ++y) {
         for (int x = 0; x < ImgWidth; ++x) {
             int pixelValue = std::round((GradXMap[y][x] / maxGrad) * 128 + 128); // Scale to range from 0 to 255
+            // Assign to red, green, and blue channels
+            imgData[(y * ImgWidth + x) * 3 + 0] = static_cast<unsigned char>(pixelValue); // Red
+            imgData[(y * ImgWidth + x) * 3 + 1] = static_cast<unsigned char>(pixelValue); // Green
+            imgData[(y * ImgWidth + x) * 3 + 2] = static_cast<unsigned char>(pixelValue); // Blue
+        }
+    }
+
+    stbi_write_png(filename.c_str(), ImgWidth, ImgHeight, 3, imgData.data(), ImgWidth * 3);
+    logger.debug("Successfully saved gradient map to: " + filename);
+}
+
+void Map::saveGradYMap(const std::string &filename, const double factor) const {
+    logger.info("Saving gradient map to: " + filename);
+    std::vector<unsigned char> imgData(ImgWidth * ImgHeight * 3, 0); // 3 for RGB channels
+
+    // find max absolute value in GradXMap for normalization
+    double maxGrad = 0;
+    for (const auto &row: GradYMap)
+        maxGrad = std::max(maxGrad, *std::max_element(row.begin(), row.end()));
+
+
+    for (int y = 0; y < ImgHeight; ++y) {
+        for (int x = 0; x < ImgWidth; ++x) {
+            int pixelValue = std::round((GradYMap[y][x] / maxGrad) * 128 + 128); // Scale to range from 0 to 255
             // Assign to red, green, and blue channels
             imgData[(y * ImgWidth + x) * 3 + 0] = static_cast<unsigned char>(pixelValue); // Red
             imgData[(y * ImgWidth + x) * 3 + 1] = static_cast<unsigned char>(pixelValue); // Green
@@ -85,4 +142,46 @@ void Map::logDistMap() const {
         ss << "\n";
     }
     logger.debug(ss.str());
+}
+
+void Map::loadMaps() const {
+
+}
+
+void Map::loadDistMap(const std::string &filename) const {
+
+}
+
+void Map::loadGradXMap(const std::string &filename) const {
+
+}
+
+void Map::loadGradYMap(const std::string &filename) const {
+
+}
+
+void Map::checkMaps() {
+    // After populating the matrices...
+
+// Convert the matrices back to unsigned char arrays and save them as images
+    unsigned char *outputImg = new unsigned char[ImgWidth * ImgHeight];
+    unsigned char *outputGradX = new unsigned char[ImgWidth * ImgHeight];
+    unsigned char *outputGradY = new unsigned char[ImgWidth * ImgHeight];
+
+    for (int y = 0; y < ImgHeight; ++y) {
+        for (int x = 0; x < ImgWidth; ++x) {
+            int idx = y * ImgWidth + x;
+            outputImg[idx] = DistMap[y][x];
+            outputGradX[idx] = static_cast<unsigned char>(GradXMap[y][x] * 255);
+            outputGradY[idx] = static_cast<unsigned char>(GradYMap[y][x] * 255);
+        }
+    }
+
+    stbi_write_png("outputDistMap.png", ImgWidth, ImgHeight, 1, outputImg, ImgWidth * sizeof(unsigned char));
+    stbi_write_png("outputGradX.png", ImgWidth, ImgHeight, 1, outputGradX, ImgWidth * sizeof(unsigned char));
+    stbi_write_png("outputGradY.png", ImgWidth, ImgHeight, 1, outputGradY, ImgWidth * sizeof(unsigned char));
+
+    delete[] outputImg;
+    delete[] outputGradX;
+    delete[] outputGradY;
 }

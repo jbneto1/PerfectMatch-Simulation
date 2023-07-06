@@ -96,7 +96,7 @@ std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>> SimTwoInterfac
         }
     }
 
-    logger.info("Finished parsing sensor data. Encoders: (" +
+    logger.debug("Finished parsing sensor data. Encoders: (" +
                  std::to_string(encoders[0]) + ", " + std::to_string(encoders[1]) + ", " + std::to_string(encoders[2]) + ", " + std::to_string(encoders[3]) +
                  "), Pose: (" + std::to_string(pose[0]) + ", " + std::to_string(pose[1]) + ", " + std::to_string(pose[2]) +
                  "), Lidar points: " + std::to_string(lidar.size()));

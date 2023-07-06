@@ -1,0 +1,701 @@
+object FLaserLoc: TFLaserLoc
+  Left = -1105
+  Height = 620
+  Top = 200
+  Width = 778
+  Caption = 'LaserLoc'
+  ClientHeight = 620
+  ClientWidth = 778
+  DesignTimePPI = 120
+  OnClose = FormClose
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  SessionProperties = 'CBAccumulation.Checked;CBInvertedLaser.Checked;CBLaserCalibration.Checked;CBSendLock.Checked;CBShowLoc.Checked;EditCerr.Text;EditLaserAngleOffset.Text;EditLaserC1.Text;EditLaserC2.Text;EditLaserC3.Text;EditLaserXOffset.Text;EditLogFile.Text;EditNumAccPoints.Text;EditRobotThetaSet.Text;EditRobotXSet.Text;EditRobotYSet.Text;EditSendLockIP.Text;EditStepScale.Text;EditVLogFileName.Text;Height;Left;PageControl.ActivePage;RGLasers.ItemIndex;Top;Width;CBStdevComp.Checked'
+  LCLVersion = '2.2.6.0'
+  object PageControl: TPageControl
+    Left = 0
+    Height = 479
+    Top = 141
+    Width = 778
+    ActivePage = TabLog
+    Align = alBottom
+    TabIndex = 4
+    TabOrder = 0
+    object TabLaser: TTabSheet
+      Caption = 'Laser'
+      ClientHeight = 446
+      ClientWidth = 770
+      object Chart: TChart
+        Left = 5
+        Height = 432
+        Top = 12
+        Width = 747
+        AxisList = <        
+          item
+            Marks.LabelBrush.Style = bsClear
+            Minors = <>
+            Title.LabelFont.Orientation = 900
+            Title.LabelBrush.Style = bsClear
+          end        
+          item
+            Alignment = calBottom
+            Marks.LabelBrush.Style = bsClear
+            Minors = <>
+            Title.LabelBrush.Style = bsClear
+          end>
+        Foot.Brush.Color = clBtnFace
+        Foot.Font.Color = clBlue
+        Title.Brush.Color = clBtnFace
+        Title.Font.Color = clBlue
+        Title.Text.Strings = (
+          'TAChart'
+        )
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        object CSLaser: TLineSeries
+        end
+      end
+    end
+    object TabLaserXY: TTabSheet
+      Caption = 'LaserXY'
+      ClientHeight = 446
+      ClientWidth = 770
+      object ChartXY: TChart
+        Left = 5
+        Height = 422
+        Top = 12
+        Width = 619
+        AxisList = <        
+          item
+            Marks.LabelBrush.Style = bsClear
+            Minors = <>
+            Title.LabelFont.Orientation = 900
+            Title.LabelBrush.Style = bsClear
+          end        
+          item
+            Alignment = calBottom
+            Marks.LabelBrush.Style = bsClear
+            Minors = <>
+            Title.LabelBrush.Style = bsClear
+          end>
+        Foot.Brush.Color = clBtnFace
+        Foot.Font.Color = clBlue
+        Title.Brush.Color = clBtnFace
+        Title.Font.Color = clBlue
+        Title.Text.Strings = (
+          'TAChart'
+        )
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        object CSLaserXY: TLineSeries
+          Pointer.Style = psCircle
+          Pointer.Visible = True
+          ShowPoints = True
+        end
+      end
+    end
+    object TabDebug: TTabSheet
+      Caption = 'Debug'
+      ClientHeight = 446
+      ClientWidth = 770
+      object Memo: TMemo
+        Left = 5
+        Height = 406
+        Top = 32
+        Width = 301
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        Lines.Strings = (
+          'Memo'
+        )
+        TabOrder = 0
+      end
+    end
+    object TabSettings: TTabSheet
+      Caption = 'Settings'
+      ClientHeight = 446
+      ClientWidth = 770
+      object CBInvertedLaser: TCheckBox
+        Left = 10
+        Height = 24
+        Top = 12
+        Width = 116
+        Caption = 'Inverted Laser'
+        TabOrder = 0
+      end
+      object Label4: TLabel
+        Left = 10
+        Height = 20
+        Top = 42
+        Width = 124
+        Caption = 'Laser Angle Offset:'
+        ParentColor = False
+      end
+      object EditLaserAngleOffset: TEdit
+        Left = 150
+        Height = 29
+        Top = 36
+        Width = 100
+        AutoSize = False
+        AutoSelect = False
+        TabOrder = 1
+        Text = '0'
+      end
+      object BSettingsSet: TButton
+        Left = 671
+        Height = 31
+        Top = 12
+        Width = 94
+        Anchors = [akTop, akRight]
+        Caption = 'Set'
+        OnClick = BSettingsSetClick
+        TabOrder = 2
+      end
+      object Label6: TLabel
+        Left = 10
+        Height = 20
+        Top = 225
+        Width = 63
+        Caption = 'Max Iters:'
+        ParentColor = False
+      end
+      object EditMaxIters: TEdit
+        Left = 150
+        Height = 29
+        Top = 220
+        Width = 100
+        AutoSize = False
+        AutoSelect = False
+        TabOrder = 3
+        Text = '10'
+      end
+      object Label7: TLabel
+        Left = 10
+        Height = 20
+        Top = 260
+        Width = 72
+        Caption = 'Step Scale:'
+        ParentColor = False
+      end
+      object EditStepScale: TEdit
+        Left = 150
+        Height = 29
+        Top = 255
+        Width = 100
+        AutoSize = False
+        AutoSelect = False
+        TabOrder = 4
+        Text = '1e-3'
+      end
+      object CBShowLoc: TCheckBox
+        Left = 279
+        Height = 24
+        Top = 76
+        Width = 87
+        Caption = 'Show Loc'
+        TabOrder = 5
+      end
+      object Label8: TLabel
+        Left = 10
+        Height = 20
+        Top = 295
+        Width = 36
+        Caption = 'C_err:'
+        ParentColor = False
+      end
+      object EditCerr: TEdit
+        Left = 150
+        Height = 29
+        Top = 290
+        Width = 100
+        AutoSize = False
+        AutoSelect = False
+        TabOrder = 6
+        Text = '100'
+      end
+      object CBSendLock: TCheckBox
+        Left = 279
+        Height = 24
+        Top = 39
+        Width = 94
+        Caption = 'Send Lock:'
+        TabOrder = 7
+      end
+      object EditSendLockIP: TEdit
+        Left = 394
+        Height = 29
+        Top = 36
+        Width = 155
+        AutoSize = False
+        AutoSelect = False
+        TabOrder = 8
+        Text = '127.0.0.1'
+      end
+      object Label10: TLabel
+        Left = 10
+        Height = 20
+        Top = 71
+        Width = 94
+        Caption = 'Laser X Offset:'
+        ParentColor = False
+      end
+      object EditLaserXOffset: TEdit
+        Left = 150
+        Height = 29
+        Top = 66
+        Width = 100
+        AutoSize = False
+        AutoSelect = False
+        TabOrder = 9
+        Text = '0'
+      end
+      object CBAccumulation: TCheckBox
+        Left = 10
+        Height = 24
+        Top = 330
+        Width = 115
+        Caption = 'Accumulation'
+        TabOrder = 10
+      end
+      object Label11: TLabel
+        Left = 10
+        Height = 20
+        Top = 395
+        Width = 53
+        Caption = 'Log file:'
+        ParentColor = False
+      end
+      object EditLogFile: TEdit
+        Left = 150
+        Height = 29
+        Top = 390
+        Width = 100
+        AutoSize = False
+        AutoSelect = False
+        TabOrder = 11
+        Text = 'Log1.txt'
+      end
+      object BLogSave: TButton
+        Left = 275
+        Height = 31
+        Top = 390
+        Width = 64
+        Caption = 'Save'
+        OnClick = BLogSaveClick
+        TabOrder = 12
+      end
+      object BLogClear: TButton
+        Left = 350
+        Height = 31
+        Top = 390
+        Width = 64
+        Caption = 'Clear'
+        OnClick = BLogClearClick
+        TabOrder = 13
+      end
+      object Label12: TLabel
+        Left = 10
+        Height = 20
+        Top = 360
+        Width = 80
+        Caption = 'Num points:'
+        ParentColor = False
+      end
+      object EditNumAccPoints: TEdit
+        Left = 150
+        Height = 29
+        Top = 355
+        Width = 100
+        AutoSize = False
+        AutoSelect = False
+        TabOrder = 14
+        Text = '100'
+      end
+      object CBLaserCalibration: TCheckBox
+        Left = 10
+        Height = 24
+        Top = 100
+        Width = 135
+        Caption = 'Laser Calibration'
+        TabOrder = 15
+      end
+      object EditLaserC1: TEdit
+        Left = 150
+        Height = 28
+        Top = 120
+        Width = 100
+        TabOrder = 16
+        Text = '0'
+      end
+      object EditLaserC2: TEdit
+        Left = 150
+        Height = 28
+        Top = 150
+        Width = 100
+        TabOrder = 17
+        Text = '1'
+      end
+      object Label13: TLabel
+        Left = 10
+        Height = 20
+        Top = 125
+        Width = 59
+        Caption = 'c1 (d^2):'
+        ParentColor = False
+      end
+      object EditLaserC3: TEdit
+        Left = 150
+        Height = 28
+        Top = 180
+        Width = 100
+        TabOrder = 18
+        Text = '0'
+      end
+      object Label14: TLabel
+        Left = 10
+        Height = 20
+        Top = 155
+        Width = 41
+        Caption = 'c2 (d):'
+        ParentColor = False
+      end
+      object Label15: TLabel
+        Left = 10
+        Height = 20
+        Top = 185
+        Width = 39
+        Caption = 'c3 (k):'
+        ParentColor = False
+      end
+      object CBStdevComp: TCheckBox
+        Left = 280
+        Height = 24
+        Top = 225
+        Width = 161
+        Caption = 'Stdev Compensation'
+        TabOrder = 19
+      end
+    end
+    object TabLog: TTabSheet
+      Caption = 'Log'
+      ClientHeight = 446
+      ClientWidth = 770
+      object BVLogClear: TButton
+        Left = 115
+        Height = 31
+        Top = 407
+        Width = 60
+        Anchors = [akLeft, akBottom]
+        Caption = 'Clear'
+        OnClick = BVLogClearClick
+        TabOrder = 0
+      end
+      object EditVLogFileName: TEdit
+        Left = 320
+        Height = 28
+        Top = 408
+        Width = 160
+        Anchors = [akLeft, akBottom]
+        TabOrder = 1
+        Text = 'VLog_1.txt'
+      end
+      object BVLogSave: TButton
+        Left = 250
+        Height = 31
+        Top = 407
+        Width = 60
+        Anchors = [akLeft, akBottom]
+        Caption = 'Save'
+        OnClick = BVLogSaveClick
+        TabOrder = 2
+      end
+      object CBVlogActive: TCheckBox
+        Left = 5
+        Height = 24
+        Top = 410
+        Width = 94
+        Anchors = [akLeft, akBottom]
+        Caption = 'Log Active'
+        TabOrder = 3
+      end
+      object BVLogLoad: TButton
+        Left = 185
+        Height = 31
+        Top = 407
+        Width = 60
+        Anchors = [akLeft, akBottom]
+        Caption = 'Load'
+        OnClick = BVLogLoadClick
+        TabOrder = 4
+      end
+      object Label16: TLabel
+        Left = 500
+        Height = 20
+        Top = 410
+        Width = 72
+        Caption = 'Num Lines:'
+        ParentColor = False
+      end
+      object EditVLogNumLines: TEdit
+        Left = 579
+        Height = 28
+        Top = 405
+        Width = 81
+        TabOrder = 5
+      end
+      object PaintBoxVLog: TPaintBox
+        Left = 5
+        Height = 393
+        Top = 5
+        Width = 759
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        OnPaint = PaintBoxVLogPaint
+      end
+      object BVLogProcStart: TButton
+        Left = 670
+        Height = 31
+        Top = 407
+        Width = 60
+        Anchors = [akLeft, akBottom]
+        Caption = 'Start'
+        OnClick = BVLogProcStartClick
+        TabOrder = 6
+      end
+    end
+  end
+  object Label1: TLabel
+    Left = 10
+    Height = 20
+    Top = 10
+    Width = 55
+    Caption = 'Robot x:'
+    ParentColor = False
+  end
+  object EditRobotX: TEdit
+    Left = 95
+    Height = 29
+    Top = 5
+    Width = 70
+    AutoSize = False
+    AutoSelect = False
+    TabOrder = 1
+    Text = '0'
+  end
+  object Label2: TLabel
+    Left = 10
+    Height = 20
+    Top = 40
+    Width = 55
+    Caption = 'Robot y:'
+    ParentColor = False
+  end
+  object EditRobotY: TEdit
+    Left = 95
+    Height = 29
+    Top = 35
+    Width = 70
+    AutoSize = False
+    AutoSelect = False
+    TabOrder = 2
+    Text = '0'
+  end
+  object Label3: TLabel
+    Left = 10
+    Height = 20
+    Top = 70
+    Width = 82
+    Caption = 'Robot theta:'
+    ParentColor = False
+  end
+  object EditRobotTheta: TEdit
+    Left = 95
+    Height = 29
+    Top = 65
+    Width = 70
+    AutoSize = False
+    AutoSelect = False
+    TabOrder = 3
+    Text = '0'
+  end
+  object EditRobotXSet: TEdit
+    Left = 320
+    Height = 29
+    Top = 5
+    Width = 70
+    AutoSize = False
+    TabOrder = 4
+    Text = '0'
+  end
+  object EditRobotYSet: TEdit
+    Left = 320
+    Height = 29
+    Top = 35
+    Width = 70
+    AutoSize = False
+    TabOrder = 5
+    Text = '0'
+  end
+  object EditRobotThetaSet: TEdit
+    Left = 320
+    Height = 29
+    Top = 65
+    Width = 70
+    AutoSize = False
+    TabOrder = 6
+    Text = '0'
+  end
+  object BRobotPosSet: TButton
+    Left = 400
+    Height = 31
+    Top = 5
+    Width = 59
+    Caption = 'Set'
+    OnClick = BRobotPosSetClick
+    TabOrder = 7
+  end
+  object Label5: TLabel
+    Left = 265
+    Height = 20
+    Top = 105
+    Width = 36
+    Caption = 'Time:'
+    ParentColor = False
+  end
+  object EditTime: TEdit
+    Left = 320
+    Height = 29
+    Top = 100
+    Width = 190
+    AutoSize = False
+    TabOrder = 8
+  end
+  object RGLasers: TRadioGroup
+    Left = 520
+    Height = 130
+    Top = 0
+    Width = 151
+    AutoFill = True
+    Caption = 'Laser Source'
+    ChildSizing.LeftRightSpacing = 6
+    ChildSizing.TopBottomSpacing = 6
+    ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+    ChildSizing.EnlargeVertical = crsHomogenousChildResize
+    ChildSizing.ShrinkHorizontal = crsScaleChilds
+    ChildSizing.ShrinkVertical = crsScaleChilds
+    ChildSizing.Layout = cclLeftToRightThenTopToBottom
+    ChildSizing.ControlsPerLine = 1
+    ClientHeight = 105
+    ClientWidth = 147
+    ItemIndex = 1
+    Items.Strings = (
+      'Hokuyo'
+      'Neato'
+      '(x, y) (ds, dtheta)'
+      'Log'
+    )
+    TabOrder = 9
+  end
+  object Label9: TLabel
+    Left = 10
+    Height = 20
+    Top = 105
+    Width = 55
+    Caption = 'Fit Error:'
+    ParentColor = False
+  end
+  object EditFitError: TEdit
+    Left = 95
+    Height = 29
+    Top = 100
+    Width = 70
+    AutoSize = False
+    AutoSelect = False
+    TabOrder = 10
+    Text = '0'
+  end
+  object EditRobotXVloc: TEdit
+    Left = 170
+    Height = 29
+    Top = 5
+    Width = 70
+    AutoSize = False
+    AutoSelect = False
+    TabOrder = 11
+    Text = '0'
+  end
+  object EditRobotYVLoc: TEdit
+    Left = 170
+    Height = 29
+    Top = 35
+    Width = 70
+    AutoSize = False
+    AutoSelect = False
+    TabOrder = 12
+    Text = '0'
+  end
+  object EditRobotThetaVloc: TEdit
+    Left = 170
+    Height = 29
+    Top = 65
+    Width = 70
+    AutoSize = False
+    AutoSelect = False
+    TabOrder = 13
+    Text = '0'
+  end
+  object EditRobotXErr: TEdit
+    Left = 245
+    Height = 29
+    Top = 5
+    Width = 70
+    AutoSize = False
+    AutoSelect = False
+    TabOrder = 14
+    Text = '0'
+  end
+  object EditRobotYErr: TEdit
+    Left = 245
+    Height = 29
+    Top = 35
+    Width = 70
+    AutoSize = False
+    AutoSelect = False
+    TabOrder = 16
+    Text = '0'
+  end
+  object EditRobotThetaErr: TEdit
+    Left = 245
+    Height = 29
+    Top = 65
+    Width = 70
+    AutoSize = False
+    AutoSelect = False
+    TabOrder = 15
+    Text = '0'
+  end
+  object UDP: TLUDPComponent
+    Port = 9876
+    OnReceive = UDPReceive
+    Timeout = 0
+    Left = 630
+    Top = 20
+  end
+  object IniPropStorage: TIniPropStorage
+    StoredValues = <>
+    IniFileName = 'config.ini'
+    IniSection = 'LaserLoc'
+    Left = 599
+    Top = 230
+  end
+  object UDPSend: TLUDPComponent
+    Port = 0
+    Timeout = 0
+    Left = 630
+    Top = 95
+  end
+  object TimerVLog: TTimer
+    Enabled = False
+    Interval = 50
+    OnTimer = TimerVLogTimer
+    Left = 326
+    Top = 216
+  end
+end
