@@ -1,5 +1,3 @@
-// main.cpp
-
 #include <iostream>
 #include "Manager/Manager.h"
 #include "config.h"

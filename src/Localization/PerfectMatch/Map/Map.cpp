@@ -5,28 +5,28 @@ Map::Map(Logger &logger) : logger(logger) {
     int gradXWidth, gradXHeight, gradYWidth, gradYHeight;
 
     auto path_distMap = std::string(
-            R"(C:\Users\jabra\Documents\GitHub\PerfectMatch-Simulation\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\dist_map_euclidean_640x480.png)");
+            R"(..\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\dist_map_euclidean_640x480.png)");
     auto path_gradX = std::string(
-            R"(C:\Users\jabra\Documents\GitHub\PerfectMatch-Simulation\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\grad_x_M_map_euclidean_640_480.png)");
+            R"(..\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\grad_x_M_map_euclidean_640_480.png)");
     auto path_gradY = std::string(
-            R"(C:\Users\jabra\Documents\GitHub\PerfectMatch-Simulation\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\grad_y_M_map_euclidean_640_480.png)");
+            R"(..\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\grad_y_M_map_euclidean_640_480.png)");
 
     unsigned char *img = stbi_load(path_distMap.c_str(), &ImgWidth, &ImgHeight, &channels, 0);
     if (!img || channels != 1) {
         logger.error("Failed to load dist grayscale image.");
-        throw std::runtime_error("Map - Failed to load dist grayscale image.");
+        throw std::runtime_error("Map - Failed to load dist grayscale image.\nLine: " + std::to_string(__LINE__) + "\nFile: " + __FILE__);
     }
 
     unsigned char *imgGradX = stbi_load(path_gradX.c_str(), &gradXWidth, &gradXHeight, &channels, 0);
     if (!imgGradX || channels != 1 || gradXWidth != ImgWidth || gradXHeight != ImgHeight) {
         logger.error("Failed to load grayscale GradX image with matching dimensions.");
-        throw std::runtime_error("Map - Failed to load grayscale GradX image with matching dimensions.");
+        throw std::runtime_error("Map - Failed to load grayscale GradX image with matching dimensions.\nLine: " + std::to_string(__LINE__) + "\nFile: " + __FILE__);
     }
 
     unsigned char *imgGradY = stbi_load(path_gradY.c_str(), &gradYWidth, &gradYHeight, &channels, 0);
     if (!imgGradY || channels != 1 || gradYWidth != ImgWidth || gradYHeight != ImgHeight) {
         logger.error("Failed to load grayscale GradY image with matching dimensions.");
-        throw std::runtime_error("Map - Failed to load grayscale GradY image with matching dimensions.");
+        throw std::runtime_error("Map - Failed to load grayscale GradY image with matching dimensions.\nLine: " + std::to_string(__LINE__) + "\nFile: " + __FILE__);
     }
 
     logger.trace("All images loaded successfully.");

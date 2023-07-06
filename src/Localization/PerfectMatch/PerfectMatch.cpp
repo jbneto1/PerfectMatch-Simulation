@@ -29,7 +29,7 @@ Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
     ProcessLaserPoints(data);
 
     logger.trace("Running IterLaser for max iterations...");
-    for (int i = 0; i <= maxIters; i++) {
+    for (int i = 0; i < maxIters; i++) {
         IterLaser(data);
     }
 
@@ -41,7 +41,7 @@ void PerfectMatch::RotateAndTranslate(double &rx, double &ry, double px, double 
     logger.trace("Rotating and translating coordinates...");
     rx = px * ct - py * st + tx;
     ry = px * st + py * ct + ty;
-    logger.info("Coordinates rotated and translated.");
+    logger.trace("Coordinates rotated and translated.");
 }
 
 int PerfectMatch::XTopixel(double x) {
@@ -132,7 +132,7 @@ void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
     RobotPose.setY(RobotPose.getY() + stepScale * dy);
     RobotPose.setTheta(RobotPose.getTheta() + M_PI * stepScale * dtheta);
     if (n > 0) RobotPose.setErr(RobotPose.getErr() / n);
-    logger.info("Iteration over Laser Points complete.");
+    logger.debug("Match complete.");
 }
 
 
@@ -153,7 +153,7 @@ void PerfectMatch::CalcGradMap() {
 
     map.setGradXMap(GradXMap);
     map.setGradYMap(GradYMap);
-    logger.info("Gradient Map calculated.");
+    logger.debug("Gradient Map calculated.");
 }
 
 void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) {
@@ -176,5 +176,5 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
         point.setY(y);
         point.setStdDev(1.0); // set the std_dev to 1 for now
     }
-    logger.info("Laser Points processed.");
+    logger.debug("Laser Points processed.");
 }

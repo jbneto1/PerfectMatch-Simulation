@@ -12,10 +12,6 @@ Localization::Localization(Logger &logger, AMRController &controller, const doub
 
 void Localization::processData(const std::array<int, 4> &encoders, const Pose &GT,
                                std::array<LaserPoint, 720> &lidarData) {
-    logger.debug("Processing data for Localization. Encoders: (" + std::to_string(encoders[0]) + ", " +
-                 std::to_string(encoders[1]) + ", " + std::to_string(encoders[2]) + ", " + std::to_string(encoders[3]) +
-                 "), GT: (" + std::to_string(GT.getX()) + ", " + std::to_string(GT.getY()) + "), LidarData size: " +
-                 std::to_string(lidarData.size()));
     static double runtime = 0;
     runtime += dt;
     groundTruth = GT;
@@ -27,11 +23,18 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     Pose matchedPose = PM.match(lidarData); // Note the match result
 
     // Log ground truth and matched pose data in csv format
-    logger.fileLog(fmt::format("{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}",
+//    logger.fileLog(fmt::format("{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}",
+//                               groundTruth.getX(), matchedPose.getX(),
+//                               groundTruth.getY(), matchedPose.getY(),
+//                               groundTruth.getTheta(), matchedPose.getTheta(),
+//                               runtime));
+
+    logger.info(fmt::format("{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}",
                                groundTruth.getX(), matchedPose.getX(),
                                groundTruth.getY(), matchedPose.getY(),
                                groundTruth.getTheta(), matchedPose.getTheta(),
                                runtime));
+
 
     logger.trace("Data processed for Localization");
 }

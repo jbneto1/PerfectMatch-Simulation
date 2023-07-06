@@ -23,6 +23,7 @@ public:
 
     void set_level(const spdlog::level::level_enum log_level);
     void setPattern(const std::string &format);
+    void deactivate_Loggers();
 
 private:
     explicit Logger(spdlog::level::level_enum level);
