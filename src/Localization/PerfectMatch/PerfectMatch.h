@@ -1,18 +1,51 @@
-//
-// Created by jabra on 5/16/2023.
-//
-
-#ifndef PERFECTMATCH_SIMULATION_PERFECTMATCH_H
-#define PERFECTMATCH_SIMULATION_PERFECTMATCH_H
+#ifndef PERFECTMATCH_H
+#define PERFECTMATCH_H
 
 #include <vector>
+#include <cmath>
+#include <stdexcept>
+#include "Map/Map.h"
+#include "config.h"
+#include "Logger/logger.h"
 
 class PerfectMatch {
 public:
-    PerfectMatch();
+    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10,
+                 const int cErr = 100, const double stepScale = 0.01);
 
-    // An example method. You can replace this with the actual methods you need
-    std::vector<double> match(const std::vector<double>& data);
+
+    Pose match(std::array<LaserPoint, 720> &data);
+
+    void setPose(const Pose pose) { this->RobotPose = pose; }
+
+private:
+    void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
+
+    void ProcessLaserPoints(std::array<LaserPoint, 720>& LaserPoints);
+
+    int XTopixel(double x);
+
+    int YTopixel(double y);
+
+    void CalcDistMap();
+
+    int ScanDistMap(int v);
+
+    double d_err(double d);
+
+    void IterLaser(const std::array<LaserPoint, 720> &LaserPoints);
+
+    void CalcGradMap();
+
+    Map map;
+    double PixelSize;
+    double PixelScale;
+    Pose RobotPose;
+    const int c_err; // Need to know what is this about
+    const double stepScale;
+    const int maxIters;
+    static constexpr double degreeStep = LASER_RANGE / LASER_RAYS;
+    Logger &logger;
 };
 
-#endif //PERFECTMATCH_SIMULATION_PERFECTMATCH_H
+#endif // PERFECTMATCH_H

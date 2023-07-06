@@ -1,0 +1,23 @@
+program NetLaserLoc;
+
+{$mode objfpc}{$H+}
+
+uses
+  {$IFDEF UNIX}{$IFDEF UseCThreads}
+  cthreads,
+  {$ENDIF}{$ENDIF}
+  Interfaces, // this includes the LCL widgetset
+  Forms, laserloc, LResources, lnetvisual, TAChartLazarusPkg, bgrabitmappack,
+  etpackage, paint
+  { you can add units after this };
+
+//{$IFDEF WINDOWS}{$R NetLaserLoc.rc}{$ENDIF}
+
+begin
+  //{$I NetLaserLoc.lrs}
+  Application.Initialize;
+  Application.CreateForm(TFLaserLoc, FLaserLoc);
+  Application.CreateForm(TFPaint, FPaint);
+  Application.Run;
+end.
+

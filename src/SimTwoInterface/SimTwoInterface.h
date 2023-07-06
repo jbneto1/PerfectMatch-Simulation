@@ -1,21 +1,49 @@
-//
-// Created by jabra on 5/16/2023.
-//
+// SimTwoInterface.h
 
 #ifndef PERFECTMATCH_SIMULATION_SIMTWOINTERFACE_H
 #define PERFECTMATCH_SIMULATION_SIMTWOINTERFACE_H
 
 #include <tuple>
-#include <vector>
+#include <array>
+#include "standalone_asio/asio.hpp"
+#include <thread>
+#include "Logger/logger.h"
+#include "config.h"
+#include <iostream>
+#include <iterator>
+#include <algorithm>
+#include <sstream>
+#include "Localization/Localization.h"
 
 class SimTwoInterface {
 public:
-    SimTwoInterface();
+    using DataCallback = std::function<void(const std::string &)>;
 
-    std::tuple<std::vector<double>, std::vector<double>> getSensorData();
-    void setWheelSpeeds(double frontLeftSpeed, double frontRightSpeed, double backLeftSpeed, double backRightSpeed);
+    SimTwoInterface(Logger &logger, Localization &localization, AMRController &controller);
+
+    ~SimTwoInterface();
+
+    void registerCallback(DataCallback callback);
+
+    std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>>
+    getSensorData(const std::string &data);
+
+    void sendWheelSpeeds(double frontLeftSpeed, double frontRightSpeed, double backLeftSpeed, double backRightSpeed);
+
+    void startReceive();
+
+private:
+    void handleReceive(const asio::error_code &error, std::size_t /*bytes_transferred*/);
+
+    asio::io_context io_context;
+    asio::ip::udp::socket socket;
+    asio::ip::udp::endpoint sender_endpoint;
+    std::array<char, MAX_BUFFER_SIZE> recv_buffer;
+    std::thread thread;
+    DataCallback dataCallback;
+    Logger &logger;
+    Localization &localization;
+    AMRController &controller;
 };
-
-
 
 #endif //PERFECTMATCH_SIMULATION_SIMTWOINTERFACE_H

@@ -6,13 +6,24 @@
 #define PERFECTMATCH_SIMULATION_EXTENDEDKALMANFILTER_H
 
 #include <vector>
+#include "config.h"
 
 class ExtendedKalmanFilter {
 public:
     ExtendedKalmanFilter();
 
-    // An example method. You can replace this with the actual methods you need
-    std::vector<double> filter(const std::vector<double>& data);
+
+
+    void predict();
+    void update();
+
+
+
+    Pose getPose();
+    void setPose(const Pose startPose);
+
+private:
+    Pose pose;
 };
 
 #endif //PERFECTMATCH_SIMULATION_EXTENDEDKALMANFILTER_H
