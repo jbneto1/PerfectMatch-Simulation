@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="12"/>
+    <PathDelim Value="\"/>
+    <General>
+      <Flags>
+        <CompatibilityMode Value="True"/>
+      </Flags>
+      <Title Value="NetLaserLoc"/>
+      <UseXPManifest Value="True"/>
+      <Icon Value="0"/>
+    </General>
+    <VersionInfo>
+      <Language Value=""/>
+      <CharSet Value=""/>
+    </VersionInfo>
+    <BuildModes Count="1">
+      <Item1 Name="default" Default="True"/>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T &apos;Lazarus Run Output&apos; -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
+      </local>
+      <FormatVersion Value="2"/>
+      <Modes Count="1">
+        <Mode0 Name="default">
+          <local>
+            <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T &apos;Lazarus Run Output&apos; -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
+          </local>
+        </Mode0>
+      </Modes>
+    </RunParams>
+    <RequiredPackages Count="6">
+      <Item1>
+        <PackageName Value="SynEdit"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="etpackage"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="BGRABitmapPack"/>
+      </Item3>
+      <Item4>
+        <PackageName Value="TAChartLazarusPkg"/>
+        <MinVersion Major="1" Valid="True"/>
+      </Item4>
+      <Item5>
+        <PackageName Value="lnetvisual"/>
+        <MinVersion Minor="6" Release="2" Valid="True"/>
+      </Item5>
+      <Item6>
+        <PackageName Value="LCL"/>
+      </Item6>
+    </RequiredPackages>
+    <Units Count="12">
+      <Unit0>
+        <Filename Value="NetLaserLoc.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="5"/>
+        <CursorPos X="81" Y="25"/>
+        <UsageCount Value="210"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="laserloc.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FLaserLoc"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="441"/>
+        <CursorPos X="20" Y="448"/>
+        <UsageCount Value="210"/>
+        <Bookmarks Count="4">
+          <Item0 Y="730" ID="1"/>
+          <Item1 X="13" Y="377" ID="2"/>
+          <Item2 X="3" Y="242" ID="3"/>
+          <Item3 X="3" Y="408" ID="5"/>
+        </Bookmarks>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="rlan.pas"/>
+        <UnitName Value="RLan"/>
+        <EditorIndex Value="4"/>
+        <CursorPos X="5" Y="17"/>
+        <UsageCount Value="105"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="paint.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FPaint"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="388"/>
+        <CursorPos X="3" Y="396"/>
+        <UsageCount Value="210"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="utils.pas"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="136"/>
+        <CursorPos X="3" Y="139"/>
+        <UsageCount Value="105"/>
+        <Loaded Value="True"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="C:\lazarus\lcl\lclproc.pas"/>
+        <UnitName Value="LCLProc"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="882"/>
+        <CursorPos Y="902"/>
+        <UsageCount Value="225"/>
+        <Loaded Value="True"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="C:\lazarus\lcl\include\application.inc"/>
+        <EditorIndex Value="6"/>
+        <TopLine Value="2151"/>
+        <CursorPos Y="2168"/>
+        <UsageCount Value="225"/>
+        <Loaded Value="True"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="C:\lazarus\components\bgrabitmap\bgrapixel.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="55"/>
+        <CursorPos X="16" Y="61"/>
+        <UsageCount Value="23"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="C:\lazarus\lcl\include\graphiccontrol.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="70"/>
+        <CursorPos Y="90"/>
+        <UsageCount Value="7"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="C:\lazarus\lcl\lclintf.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="51"/>
+        <CursorPos X="29" Y="71"/>
+        <UsageCount Value="12"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="C:\lazarus\components\lnet\trunk\lazaruspackage\lnetbase.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="3" Y="11"/>
+        <UsageCount Value="10"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="laserloc.lfm"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="69"/>
+        <UsageCount Value="10"/>
+        <DefaultSyntaxHighlighter Value="LFM"/>
+      </Unit11>
+    </Units>
+    <JumpHistory Count="29" HistoryIndex="28">
+      <Position1>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="94" Column="14" TopLine="62"/>
+      </Position1>
+      <Position2>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="120" Column="24" TopLine="88"/>
+      </Position2>
+      <Position3>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="240" Column="31" TopLine="207"/>
+      </Position3>
+      <Position4>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="249" Column="12" TopLine="216"/>
+      </Position4>
+      <Position5>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="321" Column="39" TopLine="288"/>
+      </Position5>
+      <Position6>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="322" Column="12" TopLine="289"/>
+      </Position6>
+      <Position7>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="94" Column="14" TopLine="75"/>
+      </Position7>
+      <Position8>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="120" Column="24" TopLine="88"/>
+      </Position8>
+      <Position9>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="240" Column="31" TopLine="207"/>
+      </Position9>
+      <Position10>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="249" Column="12" TopLine="216"/>
+      </Position10>
+      <Position11>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="321" Column="39" TopLine="288"/>
+      </Position11>
+      <Position12>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="328" Column="35" TopLine="310"/>
+      </Position12>
+      <Position13>
+        <Filename Value="laserloc.pas"/>
+      </Position13>
+      <Position14>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="36" Column="14" TopLine="3"/>
+      </Position14>
+      <Position15>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="112" Column="24" TopLine="80"/>
+      </Position15>
+      <Position16>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="310" Column="31" TopLine="277"/>
+      </Position16>
+      <Position17>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="36" Column="14" TopLine="16"/>
+      </Position17>
+      <Position18>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="112" Column="24" TopLine="80"/>
+      </Position18>
+      <Position19>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="319" Column="33" TopLine="285"/>
+      </Position19>
+      <Position20>
+        <Filename Value="paint.pas"/>
+        <Caret Line="388" Column="28" TopLine="384"/>
+      </Position20>
+      <Position21>
+        <Filename Value="paint.pas"/>
+      </Position21>
+      <Position22>
+        <Filename Value="paint.pas"/>
+        <Caret Line="69" Column="24" TopLine="37"/>
+      </Position22>
+      <Position23>
+        <Filename Value="paint.pas"/>
+        <Caret Line="183" Column="18" TopLine="150"/>
+      </Position23>
+      <Position24>
+        <Filename Value="paint.pas"/>
+        <Caret Line="388" Column="28" TopLine="355"/>
+      </Position24>
+      <Position25>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="305" Column="52" TopLine="285"/>
+      </Position25>
+      <Position26>
+        <Filename Value="laserloc.pas"/>
+      </Position26>
+      <Position27>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="479" TopLine="449"/>
+      </Position27>
+      <Position28>
+        <Filename Value="paint.pas"/>
+        <Caret Line="420" TopLine="400"/>
+      </Position28>
+      <Position29>
+        <Filename Value="laserloc.pas"/>
+        <Caret Line="479" TopLine="456"/>
+      </Position29>
+    </JumpHistory>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+    </SearchPaths>
+    <CodeGeneration>
+      <Checks>
+        <RangeChecks Value="True"/>
+      </Checks>
+      <Optimizations>
+        <OptimizationLevel Value="2"/>
+      </Optimizations>
+    </CodeGeneration>
+    <Linking>
+      <Debugging>
+        <UseExternalDbgSyms Value="True"/>
+      </Debugging>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
+    </Linking>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="3">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+      </Item3>
+    </Exceptions>
+  </Debugging>
+</CONFIG>
