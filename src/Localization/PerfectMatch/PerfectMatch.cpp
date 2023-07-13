@@ -16,10 +16,8 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIt
     PixelScale = 1 / PixelSize;
 
     // Calculate the distance and gradient maps
-    logger.trace("Calculating the distance and gradient maps...");
-    //CalcDistMap();
-    //CalcGradMap();
-    //map.logDistMap();
+    logger.trace("Transforming Gradient maps by applying a M-estimator.");
+    MEstGradMap();
 }
 
 Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
@@ -50,45 +48,6 @@ int PerfectMatch::XTopixel(double x) {
 
 int PerfectMatch::YTopixel(double y) {
     return static_cast<int>(std::round(-y * PixelScale) + map.getHeight() / 2);
-}
-
-void PerfectMatch::CalcDistMap() {
-    int misses = 0;
-    logger.trace("Calculating Distance Map...");
-    for (int i = 0; i < 1000; ++i) {
-        if (ScanDistMap(i) == 0) {
-            ++misses;
-            if (misses > 2) {
-                logger.debug("misses: " + std::to_string(misses));
-                break;
-            }
-        } else {
-            misses = 0;
-        }
-        logger.debug("iterations: " + std::to_string(i));
-    }
-    logger.debug("Distance Map calculated.");
-}
-
-int PerfectMatch::ScanDistMap(int v) {
-    int result = 0;
-    for (int y = 1; y < map.getHeight() - 1; ++y) {
-        for (int x = 1; x < map.getWidth() - 1; ++x) {
-            if (map.getDistance(x, y) != v) continue;
-            ++result;
-
-            map.setDistance(x + 1, y, std::min(map.getDistance(x + 1, y), 2 + v));
-            map.setDistance(x - 1, y, std::min(map.getDistance(x - 1, y), 2 + v));
-            map.setDistance(x, y + 1, std::min(map.getDistance(x, y + 1), 2 + v));
-            map.setDistance(x, y - 1, std::min(map.getDistance(x, y - 1), 2 + v));
-
-            map.setDistance(x + 1, y + 1, std::min(map.getDistance(x + 1, y + 1), 3 + v));
-            map.setDistance(x + 1, y - 1, std::min(map.getDistance(x + 1, y - 1), 3 + v));
-            map.setDistance(x - 1, y + 1, std::min(map.getDistance(x - 1, y + 1), 3 + v));
-            map.setDistance(x - 1, y - 1, std::min(map.getDistance(x - 1, y - 1), 3 + v));
-        }
-    }
-    return result;
 }
 
 double PerfectMatch::d_err(double d) {
@@ -132,15 +91,14 @@ void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
     RobotPose.setY(RobotPose.getY() + stepScale * dy);
     RobotPose.setTheta(RobotPose.getTheta() + M_PI * stepScale * dtheta);
     if (n > 0) RobotPose.setErr(RobotPose.getErr() / n);
-    logger.debug("Match complete.");
+    logger.trace("Match complete.");
 }
 
 
-void PerfectMatch::CalcGradMap() {
+void PerfectMatch::MEstGradMap() {
     int width = map.getWidth();
     int height = map.getHeight();
 
-    logger.trace("Calculating Gradient Map...");
     std::vector<std::vector<double>> GradXMap(height, std::vector<double>(width, 0));
     std::vector<std::vector<double>> GradYMap(height, std::vector<double>(width, 0));
 
@@ -153,7 +111,7 @@ void PerfectMatch::CalcGradMap() {
 
     map.setGradXMap(GradXMap);
     map.setGradYMap(GradYMap);
-    logger.debug("Gradient Map calculated.");
+    logger.debug("Transformation complete.");
 }
 
 void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) {
@@ -176,5 +134,5 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
         point.setY(y);
         point.setStdDev(1.0); // set the std_dev to 1 for now
     }
-    logger.debug("Laser Points processed.");
+    logger.trace("Laser Points processed.");
 }

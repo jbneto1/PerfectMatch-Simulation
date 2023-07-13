@@ -407,13 +407,15 @@ begin
     RotateAndTranslate(rx, ry, LaserPoints[i].x, LaserPoints[i].y, R.x, R.y, st, ct);
     u := XTopixel(rx);
     v := YTopixel(ry);
-    if (u > 0) and (u < ImgWidth -1) and
+
+    if (u > 0) and (u < ImgWidth -1) and                                            
        (v > 0) and (v < ImgHeight -1) then begin
 
       //dx := dx - GradXMap[v, u];
       //dy := dy + GradYMap[v, u];
       //dtheta := dtheta - GradXMap[v, u] * ( - LaserPoints[i].x * st - LaserPoints[i].y * ct)
       //                 + GradYMap[v, u] * (   LaserPoints[i].x * ct - LaserPoints[i].y * st);
+
       gradX := GradXMap[v, u];
       gradY := GradYMap[v, u];
 

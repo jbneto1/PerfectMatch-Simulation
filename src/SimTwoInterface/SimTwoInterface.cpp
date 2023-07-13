@@ -29,14 +29,48 @@ void SimTwoInterface::registerCallback(DataCallback callback) {
 
 // Start receiving data
 void SimTwoInterface::startReceive() {
+    // Fill the receive buffer with zeros.
     std::fill(recv_buffer.begin(), recv_buffer.end(), 0);
+
+    // Initiate an asynchronous receive operation. The data will be placed in recv_buffer.
+    // The sender's endpoint (address and port) will be stored in sender_endpoint.
+    // When the receive operation completes (whether successful or not),
+    // the lambda function will be called with the results.
     socket.async_receive_from(
-            asio::buffer(recv_buffer), sender_endpoint,
+            // Buffer to store the received data.
+            asio::buffer(recv_buffer),
+
+            // This will hold the sender's endpoint after the receive operation.
+            sender_endpoint,
+
+            // Lambda function to be called when the receive operation completes.
+            // The function is capturing 'this' so it can access member functions and data.
+            // The parameters are an error code (indicating success or the type of failure)
+            // and the number of bytes received.
             [this](std::error_code ec, std::size_t bytes_received) {
                 handleReceive(ec, bytes_received);
-            });
-    logger.trace("Receiving started.");
+            }
+    );
 }
+
+//// Alternative using std::bind instead of a lambda function:
+//void SimTwoInterface::startReceive() {
+//    std::fill(recv_buffer.begin(), recv_buffer.end(), 0);
+//    socket.async_receive_from(
+//            asio::buffer(recv_buffer),
+//            sender_endpoint,
+//
+//            // std::bind creates a new function object that, when called, will call handleReceive
+//            // on the correct object with the correct arguments.
+//            // &SimTwoInterface::handleReceive is a pointer to the member function.
+//            // 'this' is a pointer to the object to invoke the function on.
+//            // std::placeholders::_1 and std::placeholders::_2 are placeholders for the arguments
+//            // that will be provided by async_receive_from.
+//            std::bind(&SimTwoInterface::handleReceive, this, std::placeholders::_1, std::placeholders::_2)
+//    );
+//    logger.trace("Receiving started.");
+//}
+
 
 // Handle data received from the socket
 void SimTwoInterface::handleReceive(const asio::error_code &error, std::size_t /*bytes_transferred*/) {
@@ -65,7 +99,8 @@ void SimTwoInterface::sendWheelSpeeds(double frontLeftSpeed, double frontRightSp
 }
 
 // Parse received data
-std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>> SimTwoInterface::getSensorData(const std::string &data) {
+std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>>
+SimTwoInterface::getSensorData(const std::string &data) {
     std::istringstream iss(data);
     std::string line;
     std::array<int, 4> encoders{}; // encs (1..4) (FL, FR, BL, BR)
@@ -96,9 +131,11 @@ std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>> SimTwoInterfac
         }
     }
 
-    logger.debug("Finished parsing sensor data. Encoders: (" +
-                 std::to_string(encoders[0]) + ", " + std::to_string(encoders[1]) + ", " + std::to_string(encoders[2]) + ", " + std::to_string(encoders[3]) +
-                 "), Pose: (" + std::to_string(pose[0]) + ", " + std::to_string(pose[1]) + ", " + std::to_string(pose[2]) +
+    logger.trace("Finished parsing sensor data. Encoders: (" +
+                 std::to_string(encoders[0]) + ", " + std::to_string(encoders[1]) + ", " + std::to_string(encoders[2]) +
+                 ", " + std::to_string(encoders[3]) +
+                 "), Pose: (" + std::to_string(pose[0]) + ", " + std::to_string(pose[1]) + ", " +
+                 std::to_string(pose[2]) +
                  "), Lidar points: " + std::to_string(lidar.size()));
 
     Pose tmp = Pose();

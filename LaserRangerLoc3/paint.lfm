@@ -1,9 +1,10 @@
 object FPaint: TFPaint
   Left = 847
-  Height = 402
+  Height = 603
   Top = 126
-  Width = 541
+  Width = 812
   Caption = 'Position'
+  DesignTimePPI = 144
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnMouseDown = FormMouseDown
@@ -11,12 +12,12 @@ object FPaint: TFPaint
   OnMouseUp = FormMouseUp
   OnPaint = FormPaint
   SessionProperties = 'Left;Top;Width;Height'
-  LCLVersion = '1.4.0.4'
+  LCLVersion = '2.2.6.0'
   object IniPropStorage: TIniPropStorage
     StoredValues = <>
     IniFileName = 'config.ini'
     IniSection = 'Paint'
-    left = 60
-    top = 80
+    Left = 90
+    Top = 120
   end
 end

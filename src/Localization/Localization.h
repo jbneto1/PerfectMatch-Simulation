@@ -35,7 +35,6 @@ private:
     Pose estimatedPose;
     const double dt;
 
-
     void updatePose(const std::array<int, 4> &encoders);
     void odometry(const std::array<int, 4> &encoders);
 };

@@ -5,11 +5,11 @@ Map::Map(Logger &logger) : logger(logger) {
     int gradXWidth, gradXHeight, gradYWidth, gradYHeight;
 
     auto path_distMap = std::string(
-            R"(..\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\dist_map_euclidean_640x480.png)");
+            R"(../src/Localization/PerfectMatch/Map/Maps_euclidean_scipy/dist_map_euclidean_640x480.png)");
     auto path_gradX = std::string(
-            R"(..\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\grad_x_M_map_euclidean_640_480.png)");
+            R"(../src/Localization/PerfectMatch/Map/Maps_euclidean_scipy/grad_x_M_map_euclidean_640_480.png)");
     auto path_gradY = std::string(
-            R"(..\src\Localization\PerfectMatch\Map\Maps_euclidean_scipy\grad_y_M_map_euclidean_640_480.png)");
+            R"(../src/Localization/PerfectMatch/Map/Maps_euclidean_scipy/grad_y_M_map_euclidean_640_480.png)");
 
     unsigned char *img = stbi_load(path_distMap.c_str(), &ImgWidth, &ImgHeight, &channels, 0);
     if (!img || channels != 1) {
@@ -52,86 +52,12 @@ Map::Map(Logger &logger) : logger(logger) {
         }
     }
     //Check if the maps were loaded correctly
-    //checkMaps();
+    checkMaps();
 
     stbi_image_free(img);
     stbi_image_free(imgGradX);
     stbi_image_free(imgGradY);
 }
-
-
-void Map::saveDistMap(const std::string &filename) const {
-    logger.info("Saving distance map to: " + filename);
-    std::vector<unsigned char> imgData(ImgWidth * ImgHeight * 3, 0); // 3 for RGB channels
-
-    // find max value in DistMap for normalization
-    int maxDist = 0;
-    for (const auto &row: DistMap)
-        maxDist = std::max(maxDist, *std::max_element(row.begin(), row.end()));
-
-    for (int y = 0; y < ImgHeight; ++y) {
-        for (int x = 0; x < ImgWidth; ++x) {
-            int pixelValue = std::round((static_cast<double>(DistMap[y][x]) / maxDist) * 255);
-            // Assign to red, green, and blue channels
-            imgData[(y * ImgWidth + x) * 3 + 0] = static_cast<unsigned char>(pixelValue); // Red
-            imgData[(y * ImgWidth + x) * 3 + 1] = static_cast<unsigned char>(pixelValue); // Green
-            imgData[(y * ImgWidth + x) * 3 + 2] = static_cast<unsigned char>(pixelValue); // Blue
-        }
-    }
-
-    stbi_write_png(filename.c_str(), ImgWidth, ImgHeight, 3, imgData.data(), ImgWidth * 3);
-    logger.debug("Successfully saved distance map to: " + filename);
-}
-
-
-void Map::saveGradXMap(const std::string &filename, const double factor) const {
-    logger.info("Saving gradient map to: " + filename);
-    std::vector<unsigned char> imgData(ImgWidth * ImgHeight * 3, 0); // 3 for RGB channels
-
-    // find max absolute value in GradXMap for normalization
-    double maxGrad = 0;
-    for (const auto &row: GradXMap)
-        maxGrad = std::max(maxGrad, *std::max_element(row.begin(), row.end()));
-
-
-    for (int y = 0; y < ImgHeight; ++y) {
-        for (int x = 0; x < ImgWidth; ++x) {
-            int pixelValue = std::round((GradXMap[y][x] / maxGrad) * 128 + 128); // Scale to range from 0 to 255
-            // Assign to red, green, and blue channels
-            imgData[(y * ImgWidth + x) * 3 + 0] = static_cast<unsigned char>(pixelValue); // Red
-            imgData[(y * ImgWidth + x) * 3 + 1] = static_cast<unsigned char>(pixelValue); // Green
-            imgData[(y * ImgWidth + x) * 3 + 2] = static_cast<unsigned char>(pixelValue); // Blue
-        }
-    }
-
-    stbi_write_png(filename.c_str(), ImgWidth, ImgHeight, 3, imgData.data(), ImgWidth * 3);
-    logger.debug("Successfully saved gradient map to: " + filename);
-}
-
-void Map::saveGradYMap(const std::string &filename, const double factor) const {
-    logger.info("Saving gradient map to: " + filename);
-    std::vector<unsigned char> imgData(ImgWidth * ImgHeight * 3, 0); // 3 for RGB channels
-
-    // find max absolute value in GradXMap for normalization
-    double maxGrad = 0;
-    for (const auto &row: GradYMap)
-        maxGrad = std::max(maxGrad, *std::max_element(row.begin(), row.end()));
-
-
-    for (int y = 0; y < ImgHeight; ++y) {
-        for (int x = 0; x < ImgWidth; ++x) {
-            int pixelValue = std::round((GradYMap[y][x] / maxGrad) * 128 + 128); // Scale to range from 0 to 255
-            // Assign to red, green, and blue channels
-            imgData[(y * ImgWidth + x) * 3 + 0] = static_cast<unsigned char>(pixelValue); // Red
-            imgData[(y * ImgWidth + x) * 3 + 1] = static_cast<unsigned char>(pixelValue); // Green
-            imgData[(y * ImgWidth + x) * 3 + 2] = static_cast<unsigned char>(pixelValue); // Blue
-        }
-    }
-
-    stbi_write_png(filename.c_str(), ImgWidth, ImgHeight, 3, imgData.data(), ImgWidth * 3);
-    logger.debug("Successfully saved gradient map to: " + filename);
-}
-
 
 void Map::logDistMap() const {
     std::stringstream ss;
@@ -142,22 +68,6 @@ void Map::logDistMap() const {
         ss << "\n";
     }
     logger.debug(ss.str());
-}
-
-void Map::loadMaps() const {
-
-}
-
-void Map::loadDistMap(const std::string &filename) const {
-
-}
-
-void Map::loadGradXMap(const std::string &filename) const {
-
-}
-
-void Map::loadGradYMap(const std::string &filename) const {
-
 }
 
 void Map::checkMaps() {
