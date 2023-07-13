@@ -8,7 +8,6 @@ Manager::Manager(Logger &logger, const double control_cycle) : logger(logger), d
     run_loop = true;  // Initialize loop control variable
     std::signal(SIGINT, Manager::signalHandler);  // Register SIGINT handler
     logger.trace("SIGINT signal handler registered.");
-    logger.trace("Manager instantiated.");
 }
 
 Manager::~Manager() {
