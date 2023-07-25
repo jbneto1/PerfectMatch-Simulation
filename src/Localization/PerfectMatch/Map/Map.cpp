@@ -5,11 +5,11 @@ Map::Map(Logger &logger) : logger(logger) {
     int gradXWidth, gradXHeight, gradYWidth, gradYHeight;
 
     auto path_distMap = std::string(
-            R"(../src/Localization/PerfectMatch/Map/Maps_euclidean_scipy/dist_map_euclidean_640x480.png)");
+            R"(../src/Localization/PerfectMatch/Map/EDTransform/dist_map_euclidean_640x480.png)");
     auto path_gradX = std::string(
-            R"(../src/Localization/PerfectMatch/Map/Maps_euclidean_scipy/grad_x_M_map_euclidean_640_480.png)");
+            R"(../src/Localization/PerfectMatch/Map/EDTransform/grad_x_M_map_euclidean_640_480.png)");
     auto path_gradY = std::string(
-            R"(../src/Localization/PerfectMatch/Map/Maps_euclidean_scipy/grad_y_M_map_euclidean_640_480.png)");
+            R"(../src/Localization/PerfectMatch/Map/EDTransform/grad_y_M_map_euclidean_640_480.png)");
 
     unsigned char *img = stbi_load(path_distMap.c_str(), &ImgWidth, &ImgHeight, &channels, 0);
     if (!img || channels != 1) {

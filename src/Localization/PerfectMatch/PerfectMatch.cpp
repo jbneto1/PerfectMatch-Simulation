@@ -14,10 +14,6 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIt
             std::to_string(stepScale));
     PixelSize = std::max(1.7 / map.getWidth(), 1.2 / map.getHeight());
     PixelScale = 1 / PixelSize;
-
-    // Calculate the distance and gradient maps
-    logger.trace("Transforming Gradient maps by applying a M-estimator.");
-    MEstGradMap();
 }
 
 Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {

@@ -26,10 +26,10 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     Pose matchedPose = PM.match(lidarData); // Note the match result
     runtimePrevious = runtime;
 
-    logger.debug(fmt::format("GTx: {:.2f}, x: {:.2f}, GTy: {:.2f}, y: {:.2f}, GTtheta: {:.2f}, theta: {:.2f}, PM-Hz: {:.2f}",
-                               groundTruth.getX(), matchedPose.getX(),
-                               groundTruth.getY(), matchedPose.getY(),
-                               groundTruth.getTheta(), matchedPose.getTheta(),
+    logger.debug(fmt::format("ex [cm]: {:.2f}, ey [cm]: {:.2f}, etheta [deg]: {:.2f}, PM-Hz: {:.2f}",
+                               (groundTruth.getX() - matchedPose.getX()) * 100,
+                               (groundTruth.getY() - matchedPose.getY()) * 100,
+                               radToDeg(groundTruth.getTheta() - matchedPose.getTheta()),
                                freq));
 
 
@@ -68,4 +68,8 @@ void Localization::odometry(const std::array<int, 4> &encoders) {
                         (sinTheta * estSpeedStates[0] + cosTheta * estSpeedStates[1]) * dt;
 
     estimatedPose = propagatedPose;
+}
+
+double Localization::radToDeg(const double angle) {
+    return (angle * 180 / M_PI);
 }
