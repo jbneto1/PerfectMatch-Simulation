@@ -48,11 +48,6 @@ int PerfectMatch::YTopixel(double y) {
     return static_cast<int>(std::round(-y * PixelScaleHeight) + map.getHeight() / 2);
 }
 
-double PerfectMatch::d_err(double d) {
-    double c2 = c_err * c_err;
-    return 1 - c2 / (c2 + d * d);
-}
-
 void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
     logger.trace("Iterating over Laser Points...");
     double dx = 0;
@@ -90,26 +85,6 @@ void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
     RobotPose.setTheta(RobotPose.getTheta() + M_PI * stepScale * dtheta);
     if (n > 0) RobotPose.setErr(RobotPose.getErr() / n);
     logger.trace("Match complete.");
-}
-
-
-void PerfectMatch::MEstGradMap() {
-    int width = map.getWidth();
-    int height = map.getHeight();
-
-    std::vector<std::vector<double>> GradXMap(height, std::vector<double>(width, 0));
-    std::vector<std::vector<double>> GradYMap(height, std::vector<double>(width, 0));
-
-    for (int y = 1; y < height - 1; ++y) {
-        for (int x = 1; x < width - 1; ++x) {
-            GradXMap[y][x] = (d_err(map.getDistance(x + 1, y)) - d_err(map.getDistance(x - 1, y))) / 2;
-            GradYMap[y][x] = (d_err(map.getDistance(x, y + 1)) - d_err(map.getDistance(x, y - 1))) / 2;
-        }
-    }
-
-    map.setGradXMap(GradXMap);
-    map.setGradYMap(GradYMap);
-    logger.debug("Transformation complete.");
 }
 
 void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) {

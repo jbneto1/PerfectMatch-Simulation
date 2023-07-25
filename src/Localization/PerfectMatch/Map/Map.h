@@ -21,10 +21,7 @@ public:
     int getDistance(int x, int y) const { return DistMap[y][x]; }
     float getGradientX(int x, int y) const { return GradXMap[y][x]; }
     float getGradientY(int x, int y) const { return GradYMap[y][x]; }
-    void setGradXMap(const std::vector<std::vector<double>>& gradXMap) { GradXMap = gradXMap; }
-    void setGradYMap(const std::vector<std::vector<double>>& gradYMap) { GradYMap = gradYMap; }
     void checkMaps();
-    void logDistMap() const;
 
 private:
     int ImgWidth;

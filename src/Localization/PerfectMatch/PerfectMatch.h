@@ -21,15 +21,11 @@ public:
 private:
     void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
 
-    void MEstGradMap();
-
     void ProcessLaserPoints(std::array<LaserPoint, 720>& LaserPoints);
 
     int XTopixel(double x);
 
     int YTopixel(double y);
-
-    double d_err(double d);
 
     void IterLaser(const std::array<LaserPoint, 720> &LaserPoints);
 

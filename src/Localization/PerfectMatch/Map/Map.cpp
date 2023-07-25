@@ -59,17 +59,6 @@ Map::Map(Logger &logger) : logger(logger) {
     stbi_image_free(imgGradY);
 }
 
-void Map::logDistMap() const {
-    std::stringstream ss;
-    for (int y = 0; y < ImgHeight; ++y) {
-        for (int x = 0; x < ImgWidth; ++x) {
-            ss << DistMap[y][x] << " ";
-        }
-        ss << "\n";
-    }
-    logger.debug(ss.str());
-}
-
 void Map::checkMaps() {
     // After populating the matrices...
 
