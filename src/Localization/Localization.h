@@ -22,6 +22,8 @@ public:
     Pose getPose();
     void setPose(Pose &startPose);
 
+    double radToDeg(const double angle);
+
     void setEncoders(const std::array<int, 4> &encoders);
 
     bool firstIter;
