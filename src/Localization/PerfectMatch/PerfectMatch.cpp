@@ -108,4 +108,7 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
         point.setStdDev(1.0); // set the std_dev to 1 for now
     }
     logger.trace("Laser Points processed.");
+
+    //TODO fix the logger msgs and check datagrams in real time to remove this hypothesis of error from the PM algorithm
+    //TODO after that, check what could be causing the 90 degree offset in theta
 }
