@@ -12,8 +12,10 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIt
             ", " + std::to_string(startPose.getTheta()) +
             "), maxIters: " + std::to_string(maxIters) + ", cErr: " + std::to_string(cErr) + ", stepScale: " +
             std::to_string(stepScale));
-    PixelSize = std::max(1.7 / map.getWidth(), 1.2 / map.getHeight());
-    PixelScale = 1 / PixelSize;
+    PixelSizeWidth = 1.7 / map.getWidth();
+    PixelScaleWidth = 1 / PixelSizeWidth;
+    PixelSizeHeight = 1.2 / map.getHeight();
+    PixelScaleHeight = 1 / PixelSizeHeight;
 }
 
 Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
@@ -39,11 +41,11 @@ void PerfectMatch::RotateAndTranslate(double &rx, double &ry, double px, double 
 }
 
 int PerfectMatch::XTopixel(double x) {
-    return static_cast<int>(std::round(x * PixelScale) + map.getWidth() / 2);
+    return static_cast<int>(std::round(x * PixelScaleWidth) + map.getWidth() / 2);
 }
 
 int PerfectMatch::YTopixel(double y) {
-    return static_cast<int>(std::round(-y * PixelScale) + map.getHeight() / 2);
+    return static_cast<int>(std::round(-y * PixelScaleHeight) + map.getHeight() / 2);
 }
 
 double PerfectMatch::d_err(double d) {

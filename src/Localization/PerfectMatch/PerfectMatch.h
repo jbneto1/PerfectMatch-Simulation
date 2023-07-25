@@ -34,8 +34,10 @@ private:
     void IterLaser(const std::array<LaserPoint, 720> &LaserPoints);
 
     Map map;
-    double PixelSize;
-    double PixelScale;
+    double PixelSizeWidth;
+    double PixelScaleWidth;
+    double PixelSizeHeight;
+    double PixelScaleHeight;
     Pose RobotPose;
     const int c_err; // Need to know what is this about
     const double stepScale;
