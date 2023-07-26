@@ -10,7 +10,7 @@
 
 class PerfectMatch {
 public:
-    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10, const double stepScale = 0.005);
+    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10, const double stepScale = 0.01);
 
 
     Pose match(std::array<LaserPoint, 720> &data);

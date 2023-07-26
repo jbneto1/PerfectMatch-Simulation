@@ -64,7 +64,7 @@ void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
         int u = XTopixel(rx);
         int v = YTopixel(ry);
 
-        if (u > 0 && u < map.getWidth() - 1 && v > 0 && v < map.getHeight() - 1) {
+        if (u > 0 && u < map.getWidth() && v > 0 && v < map.getHeight()) { //TODO check limits of the image and their repercussions
             double gradX = map.getGradientX(u, v);
             double gradY = map.getGradientY(u, v);
 
@@ -89,7 +89,7 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
     for (auto &point: LaserPoints) {
         double currentAngleDegrees = degreeStep * (&point - &LaserPoints[0]);
         // convert the angle to radians
-        double angleRadians = currentAngleDegrees * M_PI / 180.0;
+        double angleRadians = currentAngleDegrees * M_PI / 180.0; //TODO angle normalization
 
         // set the angle for each LaserPoint
         point.setAngle(angleRadians);
@@ -105,7 +105,4 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
         point.setStdDev(1.0); // set the std_dev to 1 for now
     }
     logger.trace("Laser Points processed.");
-
-    //TODO after that, check what could be causing the 90 degree offset in theta
-    //
 }

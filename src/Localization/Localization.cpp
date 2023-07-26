@@ -27,12 +27,10 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     runtimePrevious = runtime;
 
     logger.info(fmt::format("ex [cm]: {:.2f}, ey [cm]: {:.2f}, etheta [deg]: {:.2f}, PM-Hz: {:.2f}",
-                               (groundTruth.getX() - matchedPose.getX()) * 100,
-                               (groundTruth.getY() - matchedPose.getY()) * 100,
-                               radToDeg(groundTruth.getTheta() - matchedPose.getTheta()),
-                               freq));
-
-
+                            (groundTruth.getX() - matchedPose.getX()) * 100,
+                            (groundTruth.getY() - matchedPose.getY()) * 100,
+                            radToDeg(groundTruth.getTheta() - matchedPose.getTheta()),
+                            freq));
 
     logger.trace("Data processed for Localization");
 }
