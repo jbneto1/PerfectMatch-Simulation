@@ -19,14 +19,18 @@ public:
     Localization(Logger &logger, AMRController &controller, const double control_cycle, const int maxIters);
 
     void processData(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData);
-    Pose getPose();
-    void setPose(Pose &startPose);
 
-    double radToDeg(const double angle);
+    Pose getPose();
+
+    void setPose(Pose &startPose);
 
     void setEncoders(const std::array<int, 4> &encoders);
 
     bool firstIter;
+
+    double radToDeg(double angle) {return (angle * 180 / M_PI);}
+
+
 
 private:
     Logger &logger;
@@ -38,7 +42,10 @@ private:
     const double dt;
 
     void updatePose(const std::array<int, 4> &encoders);
+
     void odometry(const std::array<int, 4> &encoders);
+
+    double diffAngle(const double ang1, const double ang2);
 };
 
 

@@ -17,6 +17,8 @@ public:
 
     void setPose(const Pose pose) { this->RobotPose = pose; }
 
+    double normalizeAngle(double angle);
+
 private:
     void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
 
@@ -27,6 +29,8 @@ private:
     int YTopixel(double y);
 
     void IterLaser(const std::array<LaserPoint, 720> &LaserPoints);
+
+    double degToRad(double angle);
 
     Map map;
     double PixelSizeWidth;

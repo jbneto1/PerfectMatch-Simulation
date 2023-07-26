@@ -64,7 +64,7 @@ void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
         int u = XTopixel(rx);
         int v = YTopixel(ry);
 
-        if (u > 0 && u < map.getWidth() && v > 0 && v < map.getHeight()) { //TODO check limits of the image and their repercussions
+        if (u > 0 && u < map.getWidth() && v > 0 && v < map.getHeight()) {
             double gradX = map.getGradientX(u, v);
             double gradY = map.getGradientY(u, v);
 
@@ -79,7 +79,7 @@ void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
 
     RobotPose.setX(RobotPose.getX() + stepScale * dx);
     RobotPose.setY(RobotPose.getY() + stepScale * dy);
-    RobotPose.setTheta(RobotPose.getTheta() + M_PI * stepScale * dtheta);
+    RobotPose.setTheta(normalizeAngle(RobotPose.getTheta() + M_PI * stepScale * dtheta));
     if (n > 0) RobotPose.setErr(RobotPose.getErr() / n);
     logger.debug("Match complete.");
 }
@@ -89,7 +89,9 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
     for (auto &point: LaserPoints) {
         double currentAngleDegrees = degreeStep * (&point - &LaserPoints[0]);
         // convert the angle to radians
-        double angleRadians = currentAngleDegrees * M_PI / 180.0; //TODO angle normalization
+        double angleRadians = degToRad(currentAngleDegrees);
+
+        angleRadians = normalizeAngle(angleRadians);
 
         // set the angle for each LaserPoint
         point.setAngle(angleRadians);
@@ -105,4 +107,12 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
         point.setStdDev(1.0); // set the std_dev to 1 for now
     }
     logger.trace("Laser Points processed.");
+}
+
+double PerfectMatch::normalizeAngle(double angle) {
+    return (fmod(angle + M_PI, 2.0 * M_PI) - M_PI);
+}
+
+double PerfectMatch::degToRad(double angle) {
+    return (angle * M_PI / 180);
 }

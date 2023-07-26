@@ -29,7 +29,7 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     logger.info(fmt::format("ex [cm]: {:.2f}, ey [cm]: {:.2f}, etheta [deg]: {:.2f}, PM-Hz: {:.2f}",
                             (groundTruth.getX() - matchedPose.getX()) * 100,
                             (groundTruth.getY() - matchedPose.getY()) * 100,
-                            radToDeg(groundTruth.getTheta() - matchedPose.getTheta()),
+                            radToDeg(diffAngle(groundTruth.getTheta(), matchedPose.getTheta())),
                             freq));
 
     logger.trace("Data processed for Localization");
@@ -68,6 +68,18 @@ void Localization::odometry(const std::array<int, 4> &encoders) {
     estimatedPose = propagatedPose;
 }
 
-double Localization::radToDeg(const double angle) {
-    return (angle * 180 / M_PI);
+double Localization::diffAngle(const double ang1, const double ang2) {
+    double result = ang1 - ang2;
+
+    if (result < -M_PI) {
+        result += 2 * M_PI;
+    } else if (result > M_PI) {
+        result -= 2 * M_PI;
+    }
+
+    return result;
 }
+
+
+
+
