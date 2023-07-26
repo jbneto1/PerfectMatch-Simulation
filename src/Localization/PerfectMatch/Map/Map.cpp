@@ -14,19 +14,23 @@ Map::Map(Logger &logger) : logger(logger) {
     unsigned char *img = stbi_load(path_distMap.c_str(), &ImgWidth, &ImgHeight, &channels, 0);
     if (!img || channels != 1) {
         logger.error("Failed to load dist grayscale image.");
-        throw std::runtime_error("Map - Failed to load dist grayscale image.\nLine: " + std::to_string(__LINE__) + "\nFile: " + __FILE__);
+        throw std::runtime_error(
+                "Map - Failed to load dist grayscale image.\nLine: " + std::to_string(__LINE__) + "\nFile: " +
+                __FILE__);
     }
 
     unsigned char *imgGradX = stbi_load(path_gradX.c_str(), &gradXWidth, &gradXHeight, &channels, 0);
     if (!imgGradX || channels != 1 || gradXWidth != ImgWidth || gradXHeight != ImgHeight) {
         logger.error("Failed to load grayscale GradX image with matching dimensions.");
-        throw std::runtime_error("Map - Failed to load grayscale GradX image with matching dimensions.\nLine: " + std::to_string(__LINE__) + "\nFile: " + __FILE__);
+        throw std::runtime_error("Map - Failed to load grayscale GradX image with matching dimensions.\nLine: " +
+                                 std::to_string(__LINE__) + "\nFile: " + __FILE__);
     }
 
     unsigned char *imgGradY = stbi_load(path_gradY.c_str(), &gradYWidth, &gradYHeight, &channels, 0);
     if (!imgGradY || channels != 1 || gradYWidth != ImgWidth || gradYHeight != ImgHeight) {
         logger.error("Failed to load grayscale GradY image with matching dimensions.");
-        throw std::runtime_error("Map - Failed to load grayscale GradY image with matching dimensions.\nLine: " + std::to_string(__LINE__) + "\nFile: " + __FILE__);
+        throw std::runtime_error("Map - Failed to load grayscale GradY image with matching dimensions.\nLine: " +
+                                 std::to_string(__LINE__) + "\nFile: " + __FILE__);
     }
 
     logger.trace("All images loaded successfully.");
@@ -36,19 +40,19 @@ Map::Map(Logger &logger) : logger(logger) {
     GradXMap = std::vector<std::vector<double>>(ImgHeight, std::vector<double>(ImgWidth, 0.0));
     GradYMap = std::vector<std::vector<double>>(ImgHeight, std::vector<double>(ImgWidth, 0.0));
 
-    // populate the matrices from the image data
+    // Populate the matrices from the image data
     for (int y = 0; y < ImgHeight; ++y) {
         for (int x = 0; x < ImgWidth; ++x) {
             int idx = y * ImgWidth + x;
 
             // populate the DistMap from the main image
-            DistMap[y][x] = img[idx];
+            DistMap[y][x] = (img[idx] / 255.0) * MAX_DIST_VALUE; //max distance value before normalization
 
             // populate the GradXMap from the gradient X image
-            GradXMap[y][x] = imgGradX[idx] / 255.0;
+            GradXMap[y][x] = ((imgGradX[idx] / 255.0) * 2 - 1) * MAX_GRAD_VALUE; // max gradient value after M est
 
             // populate the GradYMap from the gradient Y image
-            GradYMap[y][x] = imgGradY[idx] / 255.0;
+            GradYMap[y][x] = ((imgGradY[idx] / 255.0) * 2 - 1) * MAX_GRAD_VALUE; // same
         }
     }
     //Check if the maps were loaded correctly
@@ -70,9 +74,9 @@ void Map::checkMaps() {
     for (int y = 0; y < ImgHeight; ++y) {
         for (int x = 0; x < ImgWidth; ++x) {
             int idx = y * ImgWidth + x;
-            outputImg[idx] = DistMap[y][x];
-            outputGradX[idx] = static_cast<unsigned char>(GradXMap[y][x] * 255);
-            outputGradY[idx] = static_cast<unsigned char>(GradYMap[y][x] * 255);
+            outputImg[idx] = static_cast<unsigned char>((DistMap[y][x] / MAX_DIST_VALUE) * 255);
+            outputGradX[idx] = static_cast<unsigned char>(((GradXMap[y][x] / MAX_GRAD_VALUE + 1) / 2) * 255);
+            outputGradY[idx] = static_cast<unsigned char>(((GradYMap[y][x] / MAX_GRAD_VALUE + 1) / 2) * 255);
         }
     }
 

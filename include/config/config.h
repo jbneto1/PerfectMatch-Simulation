@@ -16,6 +16,9 @@
 #define LASER_RANGE 360.0
 #define LASER_RAYS 720
 
+#define MAX_DIST_VALUE 228.80559433720146
+#define MAX_GRAD_VALUE 0.018544618351754305
+
 #include <array>
 #include <stdexcept>
 

@@ -26,7 +26,7 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     Pose matchedPose = PM.match(lidarData); // Note the match result
     runtimePrevious = runtime;
 
-    logger.debug(fmt::format("ex [cm]: {:.2f}, ey [cm]: {:.2f}, etheta [deg]: {:.2f}, PM-Hz: {:.2f}",
+    logger.info(fmt::format("ex [cm]: {:.2f}, ey [cm]: {:.2f}, etheta [deg]: {:.2f}, PM-Hz: {:.2f}",
                                (groundTruth.getX() - matchedPose.getX()) * 100,
                                (groundTruth.getY() - matchedPose.getY()) * 100,
                                radToDeg(groundTruth.getTheta() - matchedPose.getTheta()),

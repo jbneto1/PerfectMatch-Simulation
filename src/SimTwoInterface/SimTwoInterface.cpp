@@ -123,6 +123,7 @@ SimTwoInterface::getSensorData(const std::string &data) {
             pose[pose_index++] = std::stod(line);
         } else if (line.find("lidar") != std::string::npos) {
             std::getline(iss, line);
+            logger.debug(line);
             std::istringstream iss_lidar(line);
             std::string val;
             while (std::getline(iss_lidar, val, ',')) {

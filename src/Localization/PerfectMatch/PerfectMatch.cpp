@@ -1,16 +1,14 @@
 #include "PerfectMatch.h"
 
-PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIters,
-                           const int cErr,
-                           const double stepScale) : logger(logger), map(logger),
+PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIters, const double stepScale) : logger(logger), map(logger),
                                                      RobotPose(
                                                              startPose),
                                                      maxIters(
-                                                             maxIters), c_err(cErr), stepScale(stepScale) {
+                                                             maxIters), stepScale(stepScale) {
     logger.debug(
             "Parameters: startPose (" + std::to_string(startPose.getX()) + ", " + std::to_string(startPose.getY()) +
             ", " + std::to_string(startPose.getTheta()) +
-            "), maxIters: " + std::to_string(maxIters) + ", cErr: " + std::to_string(cErr) + ", stepScale: " +
+            "), maxIters: " + std::to_string(maxIters) + ", stepScale: " +
             std::to_string(stepScale));
     PixelSizeWidth = 1.7 / map.getWidth();
     PixelScaleWidth = 1 / PixelSizeWidth;
@@ -49,7 +47,6 @@ int PerfectMatch::YTopixel(double y) {
 }
 
 void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
-    logger.trace("Iterating over Laser Points...");
     double dx = 0;
     double dy = 0;
     double dtheta = 0;
@@ -84,7 +81,7 @@ void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
     RobotPose.setY(RobotPose.getY() + stepScale * dy);
     RobotPose.setTheta(RobotPose.getTheta() + M_PI * stepScale * dtheta);
     if (n > 0) RobotPose.setErr(RobotPose.getErr() / n);
-    logger.trace("Match complete.");
+    logger.debug("Match complete.");
 }
 
 void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) {
@@ -109,6 +106,6 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
     }
     logger.trace("Laser Points processed.");
 
-    //TODO fix the logger msgs and check datagrams in real time to remove this hypothesis of error from the PM algorithm
     //TODO after that, check what could be causing the 90 degree offset in theta
+    //
 }

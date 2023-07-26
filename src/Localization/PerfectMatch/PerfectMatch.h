@@ -10,8 +10,7 @@
 
 class PerfectMatch {
 public:
-    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10,
-                 const int cErr = 100, const double stepScale = 0.01);
+    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10, const double stepScale = 0.005);
 
 
     Pose match(std::array<LaserPoint, 720> &data);
@@ -35,7 +34,6 @@ private:
     double PixelSizeHeight;
     double PixelScaleHeight;
     Pose RobotPose;
-    const int c_err; // Need to know what is this about
     const double stepScale;
     const int maxIters;
     static constexpr double degreeStep = LASER_RANGE / LASER_RAYS;

@@ -5,7 +5,7 @@
 
 int main() {
     try {
-        Logger &logger = Logger::getInstance(spdlog::level::trace);
+        Logger &logger = Logger::getInstance(spdlog::level::info);
         logger.setPattern(std::string("[%^%l%$] %v"));  // Set logging pattern
         logger.trace("Logger instantiated and pattern set"); // Add logging
         Manager manager = Manager(logger, CONTROL_CYCLE); // Create manager with specified control cycle and logger
