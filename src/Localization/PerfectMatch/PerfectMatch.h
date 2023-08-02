@@ -5,32 +5,28 @@
 #include <cmath>
 #include <stdexcept>
 #include "Map/Map.h"
-#include "config.h"
-#include "Logger/logger.h"
+#include <config/config.h>
+#include <Logger/logger.h>
+#include <utils/utils.h>
 
 class PerfectMatch {
 public:
     PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10, const double stepScale = 0.01);
 
-
     Pose match(std::array<LaserPoint, 720> &data);
 
     void setPose(const Pose pose) { this->RobotPose = pose; }
 
-    double normalizeAngle(double angle);
-
 private:
     void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
 
-    void ProcessLaserPoints(std::array<LaserPoint, 720>& LaserPoints);
+    void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints);
 
     int XTopixel(double x);
 
     int YTopixel(double y);
 
     void IterLaser(const std::array<LaserPoint, 720> &LaserPoints);
-
-    double degToRad(double angle);
 
     Map map;
     double PixelSizeWidth;

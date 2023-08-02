@@ -1,7 +1,7 @@
 #include <iostream>
-#include "Manager/Manager.h"
-#include "config.h"
-#include "Logger/logger.h"
+#include <Manager/Manager.h>
+#include <config/config.h>
+#include <Logger/logger.h>
 
 int main() {
     try {

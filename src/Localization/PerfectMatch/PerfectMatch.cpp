@@ -109,10 +109,3 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
     logger.trace("Laser Points processed.");
 }
 
-double PerfectMatch::normalizeAngle(double angle) {
-    return (fmod(angle + M_PI, 2.0 * M_PI) - M_PI);
-}
-
-double PerfectMatch::degToRad(double angle) {
-    return (angle * M_PI / 180);
-}

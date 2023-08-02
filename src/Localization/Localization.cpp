@@ -26,6 +26,8 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     Pose matchedPose = PM.match(lidarData); // Note the match result
     runtimePrevious = runtime;
 
+    estimatedPose = matchedPose;
+
     logger.info(fmt::format("ex [cm]: {:.2f}, ey [cm]: {:.2f}, etheta [deg]: {:.2f}, PM-Hz: {:.2f}",
                             (groundTruth.getX() - matchedPose.getX()) * 100,
                             (groundTruth.getY() - matchedPose.getY()) * 100,
@@ -36,7 +38,7 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
 }
 
 Pose Localization::getPose() {
-    return (EKF.getPose());
+    return (estimatedPose);
 }
 
 void Localization::setPose(Pose &startPose) {
@@ -68,18 +70,8 @@ void Localization::odometry(const std::array<int, 4> &encoders) {
     estimatedPose = propagatedPose;
 }
 
-double Localization::diffAngle(const double ang1, const double ang2) {
-    double result = ang1 - ang2;
-
-    if (result < -M_PI) {
-        result += 2 * M_PI;
-    } else if (result > M_PI) {
-        result -= 2 * M_PI;
-    }
-
-    return result;
+Pose Localization::getGTPose() {
+    return groundTruth;
 }
-
-
 
 

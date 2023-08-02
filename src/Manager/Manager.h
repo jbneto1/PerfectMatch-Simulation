@@ -5,11 +5,13 @@
 #ifndef AMR_PROJECT_MANAGER_H
 #define AMR_PROJECT_MANAGER_H
 
-#include "SimTwoInterface/SimTwoInterface.h"
-#include "Localization/Localization.h"
-#include "Logger/logger.h"
-#include "AMRController/AMRController.h"
+#include <SimTwoInterface/SimTwoInterface.h>
+#include <Localization/Localization.h>
+#include <Logger/logger.h>
+#include <AMRController/AMRController.h>
 #include <csignal>
+#include <Visualizer/Visualizer.h>
+#include <thread>
 
 class Manager {
 public:
@@ -25,6 +27,8 @@ private:
     AMRController controller = AMRController(logger);
     Localization localization = Localization(logger, controller, dt, MAX_ITERS);
     SimTwoInterface interface = SimTwoInterface(logger, localization, controller);
+    Visualizer visualizer;
+    std::thread visThread;
 
 
     static std::atomic<bool> run_loop;

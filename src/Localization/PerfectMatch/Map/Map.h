@@ -1,12 +1,12 @@
 #ifndef MAP_H
 #define MAP_H
 
+#include "third_party/stb/stb_image.h"
 #include <vector>
 #include <cmath>
 #include <stdexcept>
-#include "config.h"
-#include "stb/stb_image.h"
-#include "stb/stb_image_write.h"
+#include "config/config.h"
+#include "third_party/stb/stb_image_write.h"
 #include "Logger/logger.h"
 #include <sstream>
 #include <algorithm>
