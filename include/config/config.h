@@ -21,6 +21,7 @@
 
 #include <array>
 #include <stdexcept>
+#include <cmath>
 
 class Pose {
 private:
@@ -30,15 +31,17 @@ private:
     double err;
 
 public:
-    Pose() : x(0), y(0), theta(0) {}
+    Pose() : x(0), y(0), theta(0), err(0) {}
 
-    Pose(double x, double y, double theta) : x(x), y(y), theta(theta) {}
+    Pose(double x, double y, double theta) : x(x), y(y), theta(theta), err(0) {}
 
     double getX() const { return x; }
 
     double getY() const { return y; }
 
     double getTheta() const { return theta; }
+
+    double getThetaDeg() const { return (theta * 180/M_PI); }
 
     double getErr() const { return err; }
 
@@ -49,6 +52,20 @@ public:
     void setTheta(double theta) { this->theta = theta; }
 
     void setErr(double err) { this->err = err; }
+
+    Pose operator-(const Pose& other) const {
+        double dx = x - other.getX();
+        double dy = y - other.getY();
+        double dtheta = theta - other.getTheta();
+        // Normalize theta to be between -pi and pi.
+        dtheta = fmod(dtheta, 2 * M_PI);
+        if (dtheta >= M_PI) {
+            dtheta -= 2 * M_PI;
+        } else if (dtheta < -M_PI) {
+            dtheta += 2 * M_PI;
+        }
+        return Pose(dx, dy, dtheta);
+    }
 
     Pose &operator=(const std::array<double, 3> &arr) {
         if (arr.size() != 3) {

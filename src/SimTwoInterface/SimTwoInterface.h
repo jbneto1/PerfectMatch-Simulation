@@ -5,15 +5,15 @@
 
 #include <tuple>
 #include <array>
-#include "standalone_asio/asio.hpp"
+#include <asio.hpp>
 #include <thread>
-#include "Logger/logger.h"
-#include "config.h"
+#include <Logger/logger.h>
+#include <config/config.h>
 #include <iostream>
 #include <iterator>
 #include <algorithm>
 #include <sstream>
-#include "Localization/Localization.h"
+#include <Localization/Localization.h>
 #include <chrono>
 
 class SimTwoInterface {

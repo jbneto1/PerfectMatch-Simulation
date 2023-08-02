@@ -8,10 +8,13 @@ Manager::Manager(Logger &logger, const double control_cycle) : logger(logger), d
     run_loop = true;  // Initialize loop control variable
     std::signal(SIGINT, Manager::signalHandler);  // Register SIGINT handler
     logger.trace("SIGINT signal handler registered.");
+    visThread = std::thread(&Visualizer::render, &visualizer);
 }
 
 Manager::~Manager() {
     logger.trace("Manager destructor called.");
+    if (visThread.joinable())
+        visThread.join();
     // Placeholder for any cleanup tasks
 }
 
@@ -41,4 +44,5 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
     auto [encoders, groundTruth, lidarData] =  interface.getSensorData(data);
     logger.trace("Processing Perfect Match.");
     localization.processData(encoders, groundTruth, lidarData);
+    visualizer.update(localization.getGTPose(), localization.getPose());
 }

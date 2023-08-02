@@ -1,6 +1,6 @@
 // Logger.cpp
 #include "Logger.h"
-#include <iostream>
+
 
 Logger::Logger(spdlog::level::level_enum level) {
     std::vector<spdlog::sink_ptr> sinks;

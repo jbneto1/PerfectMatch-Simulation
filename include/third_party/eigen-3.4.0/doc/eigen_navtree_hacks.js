@@ -9,7 +9,7 @@ function generate_autotoc() {
     var footerHeight = footer.height();
     toc = toc.append('<ul></ul>');
     toc = toc.find('ul');
-    var indices = new Array();
+    var indices = [];
     indices[0] = 0;
     indices[1] = 0;
 
@@ -84,13 +84,13 @@ function resizeHeight()
 // Overloaded to save the root node into global_navtree_object
 function initNavTree(toroot,relpath)
 {
-  var o = new Object();
+  var o = {};
   global_navtree_object = o; // <- we added this line
   o.toroot = toroot;
-  o.node = new Object();
+  o.node = {};
   o.node.li = document.getElementById("nav-tree-contents");
   o.node.childrenData = NAVTREE;
-  o.node.children = new Array();
+  o.node.children = [];
   o.node.childrenUL = document.createElement("ul");
   o.node.getChildrenUL = function() { return o.node.childrenUL; };
   o.node.li.appendChild(o.node.childrenUL);

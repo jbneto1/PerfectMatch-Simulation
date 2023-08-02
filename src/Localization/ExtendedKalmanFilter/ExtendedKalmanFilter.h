@@ -6,7 +6,7 @@
 #define PERFECTMATCH_SIMULATION_EXTENDEDKALMANFILTER_H
 
 #include <vector>
-#include "config.h"
+#include "config/config.h"
 
 class ExtendedKalmanFilter {
 public:

@@ -7,12 +7,13 @@
 
 #include <tuple>
 #include <vector>
-#include "Logger/logger.h"
-#include "AMRController/AMRController.h"
+#include <Logger/logger.h>
+#include <AMRController/AMRController.h>
 #include "ExtendedKalmanFilter/ExtendedKalmanFilter.h"
 #include "PerfectMatch/PerfectMatch.h"
-#include "config.h"
-#include "Eigen/Dense"
+#include <config/config.h>
+#include <eigen-3.4.0/Eigen/Dense>
+#include <utils/utils.h>
 
 class Localization {
 public:
@@ -22,20 +23,19 @@ public:
 
     Pose getPose();
 
+    Pose getGTPose();
+
     void setPose(Pose &startPose);
 
     void setEncoders(const std::array<int, 4> &encoders);
 
     bool firstIter;
 
-    double radToDeg(double angle) {return (angle * 180 / M_PI);}
-
-
-
 private:
     Logger &logger;
     AMRController &controller;
-    ExtendedKalmanFilter EKF;
+    ExtendedKalmanFilter EKF; //TODO organize and unify the groundtruth and estimated poses
+    //TODO (differentiate EKF, PM estimate, encoder estimate, localization estimate)
     PerfectMatch PM;
     Pose groundTruth;
     Pose estimatedPose;
@@ -45,7 +45,7 @@ private:
 
     void odometry(const std::array<int, 4> &encoders);
 
-    double diffAngle(const double ang1, const double ang2);
+
 };
 
 
