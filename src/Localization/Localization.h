@@ -23,6 +23,8 @@ public:
 
     Pose getPose();
 
+    PerfectMatch& getPM() { return PM;}
+
     Pose getGTPose();
 
     void setPose(Pose &startPose);

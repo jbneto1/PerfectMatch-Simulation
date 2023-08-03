@@ -1,6 +1,6 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer() {
+Visualizer::Visualizer(PerfectMatch &perfectMatch) : pm(perfectMatch) {
     initialize();
 }
 
@@ -29,7 +29,7 @@ void Visualizer::setupGlfwWindow() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    window = glfwCreateWindow(800, 600, "Robot Localization", NULL, NULL);
+    window = glfwCreateWindow(800, 700, "Robot Localization", NULL, NULL);
     if (window == NULL) {
         std::cerr << "Failed to create GLFW window!" << std::endl;
         glfwTerminate();
@@ -99,12 +99,13 @@ void Visualizer::setupTexture() {
 }
 
 
-void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose) {
+void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint) {
     {
         // Use a lock_guard to ensure thread safety when updating the poses
         std::lock_guard<std::mutex> lock(cv_m);
         this->groundTruth = groundTruth;
         this->estimatedPose = estimatedPose;
+        this->laserPoint = laserPoint;
         newDataAvailable = true;
     }
     // Notify one waiting thread, if there is one
@@ -126,7 +127,7 @@ void Visualizer::render() {
 
         // Create a new ImGui window
         ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(800, 600));
+        ImGui::SetNextWindowSize(ImVec2(800, 800));
         ImGui::Begin("Robot Localization", nullptr,
                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoTitleBar);
@@ -183,6 +184,24 @@ void Visualizer::render() {
         drawTriangle(draw_list, groundTruth, x_scale, y_scale, x_center, y_center, ImColor(255, 0, 0)); // green
         drawTriangle(draw_list, estimatedPose, x_scale, y_scale, x_center, y_center, ImColor(0, 0, 255)); // red
         draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
+        drawLidarPoints(draw_list, groundTruth, laserPoint, x_scale, y_scale, x_center, y_center, IM_COL32(128, 0, 198, 255));
+
+        static float x = 0.0f, y = 0.0f, theta_deg = 0.0f;
+        static Pose pose;
+        bool x_changed = ImGui::InputFloat("iX", &x);
+        bool y_changed = ImGui::InputFloat("iY", &y);
+        bool theta_changed = ImGui::InputFloat("iTheta (deg)", &theta_deg);
+        if(x_changed | y_changed | theta_changed) {
+            float theta_rad = theta_deg * (M_PI / 180);  // Convert from degree to radians
+            pose.setX(x);
+            pose.setY(y);
+            pose.setTheta(theta_rad);
+        }
+
+        if (ImGui::Button("Set Pose")) {
+            pm.setPose(pose);
+            std::cout << pose.getX() << pose.getY() << pose.getThetaDeg() << std::endl;
+        }
 
         // Finish the ImGui window
         ImGui::End();
@@ -268,6 +287,8 @@ void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &pose, float x_s
     draw_list->AddTriangleFilled(vertices[0], vertices[1], vertices[2], color);
 }
 
+
+
 void Visualizer::glfw_error_callback(int error, const char *description) {
     std::cerr << "Glfw Error " << error << ": " << description << std::endl;
 }
@@ -280,3 +301,28 @@ void Visualizer::checkGlError() {
             std::cerr << "OpenGL error: " << err << std::endl;
     } while (err != GL_NO_ERROR);
 }
+
+void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose& robot, const std::array<LaserPoint, 720> &laserPoint,
+                                 float x_scale, float y_scale, float x_center, float y_center, const ImColor &color) {
+
+    if (draw_list == nullptr) {
+        throw std::invalid_argument("draw_list cannot be nullptr");
+    }
+
+    double robot_x = robot.getX();
+    double robot_y = robot.getY();
+    double robot_theta = robot.getTheta();  // assuming it's in radians
+
+    for (const auto &point: laserPoint) {
+        // Transform from robot's frame to global frame
+        double global_x = robot_x + point.getX() * cos(robot_theta) - point.getY() * sin(robot_theta);
+        double global_y = robot_y + point.getX() * sin(robot_theta) + point.getY() * cos(robot_theta);
+
+        // Transform from global frame to image frame
+        float image_x = global_x * x_scale + x_center;
+        float image_y = -(global_y * y_scale - y_center); //negate y values for flipping the image vertically
+
+        draw_list->AddCircleFilled(ImVec2(image_x, image_y), 2, color, 0);
+    }
+}
+

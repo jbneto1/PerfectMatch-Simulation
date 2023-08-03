@@ -26,4 +26,4 @@ add_library(Visualizer ${VISUALIZER_SRC})
 target_include_directories(Visualizer PRIVATE
                         ${PROJECT_SOURCE_DIR}/include/)
 
-target_link_libraries(Visualizer ImGui glfw gl3w)
+target_link_libraries(Visualizer ImGui glfw gl3w Localization Logger)

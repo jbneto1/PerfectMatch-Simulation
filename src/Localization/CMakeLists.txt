@@ -10,3 +10,5 @@ target_include_directories(Localization PUBLIC
                         ${PROJECT_SOURCE_DIR}/include/
                         ${PROJECT_SOURCE_DIR}/src/
                         ${PROJECT_SOURCE_DIR}/include/third_party/)
+
+target_link_libraries(Localization PUBLIC Logger)

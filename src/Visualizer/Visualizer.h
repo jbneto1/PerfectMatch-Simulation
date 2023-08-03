@@ -15,24 +15,28 @@
 #include <iostream>
 #include <condition_variable>
 #include <third_party/stb/stb_image.h>
+#include <../src/Localization/PerfectMatch/PerfectMatch.h>
+#include <Logger/logger.h>
 
 class Visualizer {
 public:
-    Visualizer();
+    Visualizer(PerfectMatch &perfectMatch);
 
     ~Visualizer();
 
-    void update(const Pose &groundTruth, const Pose &estimatedPose);
+    void update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint);
 
     void render();
 
 private:
+    PerfectMatch &pm;
 
     std::condition_variable cv;
     std::mutex cv_m;
     bool newDataAvailable = false;
     Pose groundTruth;
     Pose estimatedPose;
+    std::array<LaserPoint, 720> laserPoint;
     GLFWwindow *window;
     GLuint textureId;  // Added: Texture identifier for the map image
     int texWidth, texHeight;  // Added: Texture size variables
@@ -42,21 +46,24 @@ private:
 
     void checkGlError();
 
-    void drawRectangle(ImDrawList *draw_list, const Pose &pose, float x_scale, float y_scale, float x_center,
-                       float y_center, const ImColor &color);
-    void drawTriangle(ImDrawList *draw_list, const Pose &pose, float x_scale, float y_scale, float x_center, float y_center, const ImColor &color);
 
-    void drawMiniTriangle(ImVec2 position, const ImColor &color);
+    void
+    drawTriangle(ImDrawList *draw_list, const Pose &pose, float x_scale, float y_scale, float x_center, float y_center,
+                 const ImColor &color);
+
+    void drawLidarPoints(ImDrawList *draw_list, const Pose &robot, const std::array<LaserPoint, 720> &laserPoint,
+                         float x_scale, float y_scale, float x_center, float y_center, const ImColor &color);
 
     void setupGlfwWindow();
+
     void setupGLoaderAndImGui();
+
     void setupTexture();
 
-    void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+    void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 
-    static void framebuffer_size_callback_wrapper(GLFWwindow* window, int width, int height)
-    {
-        Visualizer* self = static_cast<Visualizer*>(glfwGetWindowUserPointer(window));
+    static void framebuffer_size_callback_wrapper(GLFWwindow *window, int width, int height) {
+        Visualizer *self = static_cast<Visualizer *>(glfwGetWindowUserPointer(window));
         self->framebuffer_size_callback(window, width, height);
     }
 };

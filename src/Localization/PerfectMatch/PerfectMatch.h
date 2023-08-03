@@ -26,7 +26,7 @@ private:
 
     int YTopixel(double y);
 
-    void IterLaser(const std::array<LaserPoint, 720> &LaserPoints);
+    void IterLaser(std::array<LaserPoint, 720> &LaserPoints);
 
     Map map;
     double PixelSizeWidth;

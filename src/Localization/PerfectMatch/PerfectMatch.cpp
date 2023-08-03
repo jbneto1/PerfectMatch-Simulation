@@ -46,7 +46,7 @@ int PerfectMatch::YTopixel(double y) {
     return static_cast<int>(std::round(-y * PixelScaleHeight) + map.getHeight() / 2);
 }
 
-void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
+void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
     double dx = 0;
     double dy = 0;
     double dtheta = 0;
@@ -55,7 +55,7 @@ void PerfectMatch::IterLaser(const std::array<LaserPoint, 720> &LaserPoints) {
     RobotPose.setErr(0);
     int n = 0;
 
-    for (const auto &laserPoint: LaserPoints) {
+    for (auto &laserPoint: LaserPoints) {
         if (laserPoint.getD() < 0.1)
             continue;
 
