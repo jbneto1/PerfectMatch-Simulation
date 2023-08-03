@@ -175,8 +175,8 @@ void Visualizer::render() {
                     temp.getY(), temp.getThetaDeg());
 
         // Setup for drawing rectangles
-        float x_scale = 640.0f / 1.7f;
-        float y_scale = 452.0f / 1.2f;
+        float x_scale = 234.0f / 0.62f;
+        float y_scale = x_scale;
         float x_center = 640.0f / 2;
         float y_center = 452.0f / 2;
 
@@ -314,13 +314,15 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose& robot, const
     double robot_theta = robot.getTheta();  // assuming it's in radians
 
     for (const auto &point: laserPoint) {
+
+        if(point.getD() <= 0) continue;
         // Transform from robot's frame to global frame
         double global_x = robot_x + point.getX() * cos(robot_theta) - point.getY() * sin(robot_theta);
         double global_y = robot_y + point.getX() * sin(robot_theta) + point.getY() * cos(robot_theta);
 
         // Transform from global frame to image frame
         float image_x = global_x * x_scale + x_center;
-        float image_y = -(global_y * y_scale - y_center); //negate y values for flipping the image vertically
+        float image_y = - global_y * y_scale + y_center; //negate y values for flipping the image vertically
 
         draw_list->AddCircleFilled(ImVec2(image_x, image_y), 2, color, 0);
     }
