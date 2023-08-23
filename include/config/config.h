@@ -16,8 +16,8 @@
 #define LASER_RANGE 360.0
 #define LASER_RAYS 720
 
-#define MAX_DIST_VALUE 228.80559433720146
-#define MAX_GRAD_VALUE 0.018544618351754305
+#define MAX_DIST_VALUE 286.60251220113196
+#define MAX_GRAD_VALUE 0.016230100485491672
 
 #include <array>
 #include <stdexcept>
@@ -41,7 +41,7 @@ public:
 
     double getTheta() const { return theta; }
 
-    double getThetaDeg() const { return (theta * 180/M_PI); }
+    double getThetaDeg() const { return (theta * 180 / M_PI); }
 
     double getErr() const { return err; }
 
@@ -53,7 +53,7 @@ public:
 
     void setErr(double err) { this->err = err; }
 
-    Pose operator-(const Pose& other) const {
+    Pose operator-(const Pose &other) const {
         double dx = x - other.getX();
         double dy = y - other.getY();
         double dtheta = theta - other.getTheta();
@@ -116,11 +116,13 @@ private:
     double y;
     double std_dev;
 
+    double dx, dy, dtheta;
+
 public:
     LaserPoint() : d(0), angle(0), x(0), y(0), std_dev(1) {}
 
     LaserPoint(double d, double angle, double x, double y, double std_dev = 1) : d(d), angle(angle), x(x), y(y),
-                                                                             std_dev(std_dev) {}
+                                                                                 std_dev(std_dev) {}
 
     double getD() const { return d; }
 
@@ -141,6 +143,18 @@ public:
     void setY(double y) { this->y = y; }
 
     void setStdDev(double std_dev) { this->std_dev = std_dev; }
+
+    void setDx(const double dx) { this->dx = dx; }
+
+    void setDy(const double dy) { this->dy = dy; }
+
+    void setDtheta(const double dtheta) { this->dtheta = dtheta; }
+
+    double getDx() const { return dx; }
+
+    double getDy() const { return dy; }
+
+    double getDtheta() const { return dtheta; }
 };
 
 #endif //AMR_PROJECT_CONFIG_H

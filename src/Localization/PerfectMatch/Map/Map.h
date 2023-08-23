@@ -11,6 +11,7 @@
 #include <sstream>
 #include <algorithm>
 #include <filesystem>
+#include <limits>
 
 class Map {
 public:
@@ -18,15 +19,15 @@ public:
 
     int getWidth() const { return ImgWidth; }
     int getHeight() const { return ImgHeight; }
-    int getDistance(int x, int y) const { return DistMap[y][x]; }
-    float getGradientX(int x, int y) const { return GradXMap[y][x]; }
-    float getGradientY(int x, int y) const { return GradYMap[y][x]; }
+    double getDistance(int x, int y) const { return DistMap[y][x]; }
+    double getGradientX(int x, int y) const { return GradXMap[y][x]; }
+    double getGradientY(int x, int y) const { return GradYMap[y][x]; }
     void checkMaps();
 
 private:
     int ImgWidth;
     int ImgHeight;
-    std::vector<std::vector<int>> DistMap;
+    std::vector<std::vector<double>> DistMap;
     std::vector<std::vector<double>> GradXMap;
     std::vector<std::vector<double>> GradYMap;
     Logger &logger;

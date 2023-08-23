@@ -132,7 +132,7 @@ SimTwoInterface::getSensorData(const std::string &data) {
         }
     }
 
-    logger.error("Finished parsing sensor data. Encoders: (" +
+    logger.trace("Finished parsing sensor data. Encoders: (" +
                  std::to_string(encoders[0]) + ", " + std::to_string(encoders[1]) + ", " + std::to_string(encoders[2]) +
                  ", " + std::to_string(encoders[3]) +
                  "), Pose: (" + std::to_string(pose[0]) + ", " + std::to_string(pose[1]) + ", " +

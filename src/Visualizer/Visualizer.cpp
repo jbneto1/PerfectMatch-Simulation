@@ -29,7 +29,7 @@ void Visualizer::setupGlfwWindow() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    window = glfwCreateWindow(800, 700, "Robot Localization", NULL, NULL);
+    window = glfwCreateWindow(800, 920, "Robot Localization", NULL, NULL);
     if (window == NULL) {
         std::cerr << "Failed to create GLFW window!" << std::endl;
         glfwTerminate();
@@ -127,7 +127,7 @@ void Visualizer::render() {
 
         // Create a new ImGui window
         ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(800, 800));
+        ImGui::SetNextWindowSize(ImVec2(800, 920));
         ImGui::Begin("Robot Localization", nullptr,
                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoTitleBar);
@@ -169,16 +169,18 @@ void Visualizer::render() {
 
         p = ImGui::GetCursorScreenPos();
 
+        ImGui::Text("PM error:  %.3f", pm.getError());
+
         Pose temp = estimatedPose - groundTruth;
 
         ImGui::Text("Error:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
                     temp.getY(), temp.getThetaDeg());
 
         // Setup for drawing rectangles
-        float x_scale = 234.0f / 0.62f;
+        float x_scale = 295.0f / 0.62f;
         float y_scale = x_scale;
-        float x_center = 640.0f / 2;
-        float y_center = 452.0f / 2;
+        float x_center = 800.0f / 2;
+        float y_center = 566.0f / 2;
 
         // Draw triangles for GroundTruth and EstimatedPose
         drawTriangle(draw_list, groundTruth, x_scale, y_scale, x_center, y_center, ImColor(255, 0, 0)); // green
@@ -313,9 +315,15 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose& robot, const
     double robot_y = robot.getY();
     double robot_theta = robot.getTheta();  // assuming it's in radians
 
+    const float norm_length = 0.02f; // Choose an appropriate length for the gradient arrows
+
+    // Additional parameters for the triangle
+    const float half_base_width = 2; // half width of triangle base in pixels
+
     for (const auto &point: laserPoint) {
 
         if(point.getD() <= 0) continue;
+
         // Transform from robot's frame to global frame
         double global_x = robot_x + point.getX() * cos(robot_theta) - point.getY() * sin(robot_theta);
         double global_y = robot_y + point.getX() * sin(robot_theta) + point.getY() * cos(robot_theta);
@@ -324,7 +332,35 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose& robot, const
         float image_x = global_x * x_scale + x_center;
         float image_y = - global_y * y_scale + y_center; //negate y values for flipping the image vertically
 
-        draw_list->AddCircleFilled(ImVec2(image_x, image_y), 2, color, 0);
+        draw_list->AddCircleFilled(ImVec2(image_x, image_y), 3.5, color, 0);
+
+        double dx = point.getDx();
+        double dy = point.getDy();
+
+        // Calculate the direction of the gradient vector
+        double magnitude = sqrt(dx * dx + dy * dy);
+        double dX_world = dx / magnitude;
+        double dY_world = dy / magnitude;
+
+
+        //TODO I DONT KNOW IF I NEED TO FLIP THE Y BECAUSE THE GRADIENT IS TAKEN FROM AN IMAGE AS WELL
+        //TODO MAYBE THE GRADIENT IS ALREADY IN THE IMAGE FRAME
+        ///////////////////////
+        // Get the triangle tip coordinates
+        float triangle_tip_x = image_x + dX_world * norm_length * x_scale;
+        float triangle_tip_y = image_y - dY_world * norm_length * y_scale; // negating dY to flip the image vertically
+
+        // calculate the base vertices of the triangle
+        float base_vertex1_x = image_x + half_base_width * (-dY_world);
+        float base_vertex1_y = image_y - half_base_width * dX_world; // negating dY to flip the image vertically
+
+        float base_vertex2_x = image_x - half_base_width * (-dY_world);
+        float base_vertex2_y = image_y + half_base_width * dX_world; // negating dY to flip the image vertically
+////////////////////////////////////////
+        ImVec2 triangle_tip(triangle_tip_x, triangle_tip_y);
+        ImVec2 base_vertex1(base_vertex1_x, base_vertex1_y);
+        ImVec2 base_vertex2(base_vertex2_x, base_vertex2_y);
+
+        draw_list->AddTriangleFilled(triangle_tip, base_vertex1, base_vertex2, IM_COL32(255, 0, 0, 255));
     }
 }
-

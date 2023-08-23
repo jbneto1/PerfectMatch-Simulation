@@ -1,10 +1,13 @@
 #include "PerfectMatch.h"
 
-PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIters, const double stepScale) : logger(logger), map(logger),
-                                                     RobotPose(
-                                                             startPose),
-                                                     maxIters(
-                                                             maxIters), stepScale(stepScale) {
+PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIters, const double stepScale) : logger(
+        logger), map(logger),
+                                                                                                               RobotPose(
+                                                                                                                       startPose),
+                                                                                                               maxIters(
+                                                                                                                       maxIters),
+                                                                                                               stepScale(
+                                                                                                                       stepScale) {
     logger.debug(
             "Parameters: startPose (" + std::to_string(startPose.getX()) + ", " + std::to_string(startPose.getY()) +
             ", " + std::to_string(startPose.getTheta()) +
@@ -14,6 +17,7 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIt
     PixelScaleWidth = 1 / PixelSizeWidth;
     PixelSizeHeight = 1.2 / map.getHeight();
     PixelScaleHeight = 1 / PixelSizeHeight;
+
 }
 
 Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
@@ -43,7 +47,7 @@ int PerfectMatch::XTopixel(double x) {
 }
 
 int PerfectMatch::YTopixel(double y) {
-    return static_cast<int>(std::round(-y * PixelScaleHeight) + map.getHeight() / 2);
+    return static_cast<int>(std::round(y * PixelScaleHeight) + map.getHeight() / 2);
 }
 
 void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
@@ -72,6 +76,9 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
             dy += gradY / laserPoint.getStdDev();
             dtheta -= gradX / laserPoint.getStdDev() * (-laserPoint.getX() * st - laserPoint.getY() * ct)
                       + gradY / laserPoint.getStdDev() * (laserPoint.getX() * ct - laserPoint.getY() * st);
+            laserPoint.setDx(dx);
+            laserPoint.setDy(dy);
+            laserPoint.setDtheta(dtheta);
             RobotPose.setErr(RobotPose.getErr() + map.getDistance(u, v));
             ++n;
         }
