@@ -282,7 +282,7 @@ void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &pose, float x_s
     // translate the vertices to their final position in the map, with flipped y-axis
     for (int i = 0; i < 3; i++) {
         vertices[i].x = x * x_scale + vertices[i].x + x_center;
-        vertices[i].y = -(y * y_scale + vertices[i].y - y_center); //negate y values
+        vertices[i].y = - y * y_scale - vertices[i].y + y_center; //negate y values
     }
 
     // draw the triangle
@@ -324,6 +324,15 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose& robot, const
 
         if(point.getD() <= 0) continue;
 
+        if(visualizeRaw) {
+            // Plot the raw points without any transformations
+            float raw_x = point.getX() * x_scale + x_center;
+            float raw_y = -point.getY() * y_scale + y_center;
+            draw_list->AddCircleFilled(ImVec2(raw_x, raw_y), 3.5, color, 0);
+
+            continue;  // Skip the rest of the loop for raw visualization
+        }
+
         // Transform from robot's frame to global frame
         double global_x = robot_x + point.getX() * cos(robot_theta) - point.getY() * sin(robot_theta);
         double global_y = robot_y + point.getX() * sin(robot_theta) + point.getY() * cos(robot_theta);
@@ -342,10 +351,6 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose& robot, const
         double dX_world = dx / magnitude;
         double dY_world = dy / magnitude;
 
-
-        //TODO I DONT KNOW IF I NEED TO FLIP THE Y BECAUSE THE GRADIENT IS TAKEN FROM AN IMAGE AS WELL
-        //TODO MAYBE THE GRADIENT IS ALREADY IN THE IMAGE FRAME
-        ///////////////////////
         // Get the triangle tip coordinates
         float triangle_tip_x = image_x + dX_world * norm_length * x_scale;
         float triangle_tip_y = image_y - dY_world * norm_length * y_scale; // negating dY to flip the image vertically
@@ -356,7 +361,7 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose& robot, const
 
         float base_vertex2_x = image_x - half_base_width * (-dY_world);
         float base_vertex2_y = image_y + half_base_width * dX_world; // negating dY to flip the image vertically
-////////////////////////////////////////
+
         ImVec2 triangle_tip(triangle_tip_x, triangle_tip_y);
         ImVec2 base_vertex1(base_vertex1_x, base_vertex1_y);
         ImVec2 base_vertex2(base_vertex2_x, base_vertex2_y);

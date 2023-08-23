@@ -140,6 +140,8 @@ void Map::checkMaps() {
     stbi_write_png("outputGradX.png", ImgWidth, ImgHeight, 1, outputGradX, ImgWidth * sizeof(unsigned char));
     stbi_write_png("outputGradY.png", ImgWidth, ImgHeight, 1, outputGradY, ImgWidth * sizeof(unsigned char));
 
+    //TODO CHECK THE GRADIENT CONTAINERS VALUES AND THEIR SIGNALS TO SEE IF THE SIGNALS ARE CONSISTENT
+
     delete[] outputImg;
     delete[] outputGradX;
     delete[] outputGradY;

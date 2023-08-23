@@ -68,7 +68,7 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
         int u = XTopixel(rx);
         int v = YTopixel(ry);
 
-        if (u > 0 && u < map.getWidth() && v > 0 && v < map.getHeight()) {
+        if (u >= 0 && u < map.getWidth() && v >= 0 && v < map.getHeight()) {
             double gradX = map.getGradientX(u, v);
             double gradY = map.getGradientY(u, v);
 

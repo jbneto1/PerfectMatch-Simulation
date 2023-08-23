@@ -31,6 +31,8 @@ public:
 private:
     PerfectMatch &pm;
 
+    bool visualizeRaw = false;
+
     std::condition_variable cv;
     std::mutex cv_m;
     bool newDataAvailable = false;

@@ -17,7 +17,7 @@ public:
 
     void setPose(const Pose pose) { this->RobotPose = pose; }
 
-    double getError() const { this->RobotPose.getErr(); }
+    double getError() const { return this->RobotPose.getErr(); }
 
 private:
     void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
