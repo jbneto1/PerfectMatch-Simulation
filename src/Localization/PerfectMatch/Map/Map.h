@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <limits>
+#include <fstream>
 
 class Map {
 public:
@@ -22,7 +23,6 @@ public:
     double getDistance(int x, int y) const { return DistMap[y][x]; }
     double getGradientX(int x, int y) const { return GradXMap[y][x]; }
     double getGradientY(int x, int y) const { return GradYMap[y][x]; }
-    void checkMaps();
 
 private:
     int ImgWidth;
@@ -31,6 +31,8 @@ private:
     std::vector<std::vector<double>> GradXMap;
     std::vector<std::vector<double>> GradYMap;
     Logger &logger;
+    void writeMapToCSV(const std::vector<std::vector<double>>& map, const std::string& fileName);
+    std::vector<std::vector<double>> readCSV(const std::string &filePath);
 };
 
 #endif // MAP_H

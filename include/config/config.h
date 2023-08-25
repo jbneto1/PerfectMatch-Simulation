@@ -5,19 +5,14 @@
 #ifndef AMR_PROJECT_CONFIG_H
 #define AMR_PROJECT_CONFIG_H
 
-#define MAX_BUFFER_SIZE 16256
-#define SIMTWO_RECEIVE_PORT 9000
+constexpr int MAX_BUFFER_SIZE = 16256;
+constexpr int SIMTWO_RECEIVE_PORT = 9000;
 
-#define ENCODER_RESOLUTION 1920
-#define CONTROL_CYCLE 0.025
-#define MAX_ITERS 10
-#define C_ERR 100
-#define STEPSCALE 0.01
-#define LASER_RANGE 360.0
-#define LASER_RAYS 720
-
-#define MAX_DIST_VALUE 286.60251220113196
-#define MAX_GRAD_VALUE 0.016230100485491672
+constexpr int ENCODER_RESOLUTION = 1920;
+constexpr double CONTROL_CYCLE = 0.025;
+constexpr int MAX_ITERS = 10;
+constexpr double LASER_RANGE = 360.0;
+constexpr int LASER_RAYS = 720;
 
 #include <array>
 #include <stdexcept>

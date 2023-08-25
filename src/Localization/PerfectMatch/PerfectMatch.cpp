@@ -27,6 +27,7 @@ Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
     ProcessLaserPoints(data);
 
     logger.trace("Running IterLaser for max iterations...");
+
     for (int i = 0; i < maxIters; i++) {
         IterLaser(data);
     }
