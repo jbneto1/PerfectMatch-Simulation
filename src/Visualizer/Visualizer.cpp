@@ -1,7 +1,10 @@
 #include "Visualizer.h"
 
 Visualizer::Visualizer(PerfectMatch &perfectMatch) : pm(perfectMatch) {
-    initialize();
+    if (!initialize()) {
+        std::cerr << "Initialization failed!" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 Visualizer::~Visualizer() {
@@ -14,36 +17,42 @@ Visualizer::~Visualizer() {
     glDeleteTextures(1, &textureId);
 }
 
-void Visualizer::initialize() {
+bool Visualizer::initialize() {
     glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit())
-        return;
-    setupGlfwWindow();
-    setupGLoaderAndImGui();
-    setupTexture();
+    if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW!" << std::endl;
+        return false;
+    }
+
+    if (!setupGlfwWindow() || !setupGLLoaderAndImGui() || !setupTexture()) {
+        return false;
+    }
+
+    return true;
 }
 
-void Visualizer::setupGlfwWindow() {
+bool Visualizer::setupGlfwWindow() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    window = glfwCreateWindow(800, 920, "Robot Localization", NULL, NULL);
+    window = glfwCreateWindow(800, 980, "Robot Localization", NULL, NULL); // Change to desired size
     if (window == NULL) {
         std::cerr << "Failed to create GLFW window!" << std::endl;
         glfwTerminate();
-        exit(EXIT_FAILURE);
+        return false;
     }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
-}
 
-void Visualizer::setupGLoaderAndImGui() {
+    return true;
+}
+bool Visualizer::setupGLLoaderAndImGui() {
     if (gl3wInit() != 0) {
-        fprintf(stderr, "Failed to initialize OpenGL loader!\n");
+        std::cerr << "Failed to initialize OpenGL loader!" << std::endl;
         glfwTerminate();
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     IMGUI_CHECKVERSION();
@@ -55,66 +64,58 @@ void Visualizer::setupGLoaderAndImGui() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     const char *glsl_version = "#version 420";
     ImGui_ImplOpenGL3_Init(glsl_version);
+
+    return true;
 }
 
-void Visualizer::setupTexture() {
-    // Load the texture (image for the robot map)
+bool Visualizer::setupTexture() {
     int texChannels;
-    unsigned char *pixels = stbi_load("../src/Localization/PerfectMatch/Map/RAFmap.png", &texWidth, &texHeight,
-                                      &texChannels, STBI_rgb_alpha);
+    unsigned char *pixels = stbi_load("../srcPython/map/matrix.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     if (!pixels) {
         std::cerr << "Failed to load texture image!" << std::endl;
         std::cerr << "STBI Error: " << stbi_failure_reason() << std::endl;
-        return;
+        return false;
     }
 
-    // After loading the image, modify its pixels
-    for (int i = 0; i < texWidth * texHeight * 4; i += 4) {
-        // If the pixel is not black
-        if (!(pixels[i] == 0 && pixels[i + 1] == 0 && pixels[i + 2] == 0)) {
-            // Change it to white but keep the alpha value
-            pixels[i] = pixels[i + 1] = pixels[i + 2] = 255;
-            pixels[i + 3] = 255;
-        }
-    }
+//    // ImGui style setting is independent of the texture loading process.
+//    // If not used elsewhere, consider moving this outside of this function.
+//    ImGui::StyleColorsClassic();
 
-    ImGui::StyleColorsClassic();
-
-// Generate and bind the texture
     glGenTextures(1, &textureId);
     glBindTexture(GL_TEXTURE_2D, textureId);
 
-// Set the texture's filtering parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     checkGlError();
 
-// Upload the image data to the texture
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
     checkGlError();
 
-// Free the image from memory after uploading its data to the texture
     stbi_image_free(pixels);
+
+    return true;
 }
 
-
 void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint) {
-    {
-        // Use a lock_guard to ensure thread safety when updating the poses
-        std::lock_guard<std::mutex> lock(cv_m);
-        this->groundTruth = groundTruth;
-        this->estimatedPose = estimatedPose;
-        this->laserPoint = laserPoint;
-        newDataAvailable = true;
-    }
-    // Notify one waiting thread, if there is one
+    std::lock_guard<std::mutex> lock(cv_m);
+    this->groundTruth = groundTruth;
+    this->estimatedPose = estimatedPose;
+    this->laserPoint = laserPoint;
+    newDataAvailable = true;
+
     cv.notify_one();
 }
 
 void Visualizer::render() {
     // Render loop
     while (!glfwWindowShouldClose(window)) {
+
+//        auto start_time = std::chrono::high_resolution_clock::now();
+
         // Wait for new data
         std::unique_lock<std::mutex> lk(cv_m);
         cv.wait(lk, [this]() { return newDataAvailable; });
@@ -127,16 +128,17 @@ void Visualizer::render() {
 
         // Create a new ImGui window
         ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(800, 920));
+        ImGui::SetNextWindowSize(ImVec2(800, 980));
         ImGui::Begin("Robot Localization", nullptr,
                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoTitleBar);
 
         ImGui::SetWindowFontScale(2); // Change the scale value to what suits you
+// Set the cursor position
+        ImGui::SetCursorPos(ImVec2(0, 0));
 
-        // Draw the map
+// Draw the map
         ImGui::Image((void *) (intptr_t) textureId, ImVec2(texWidth, texHeight));
-
         // Display the pose data
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
         ImVec2 p = ImGui::GetCursorScreenPos();
@@ -177,14 +179,14 @@ void Visualizer::render() {
                     temp.getY(), temp.getThetaDeg());
 
         // Setup for drawing rectangles
-        float x_scale = 295.0f / 0.62f;
-        float y_scale = x_scale;
+        float x_scale = 800 / 1.68f;
+        float y_scale = 700 / 1.18f;
         float x_center = 800.0f / 2;
-        float y_center = 566.0f / 2;
+        float y_center = 700.0f / 2;
 
         // Draw triangles for GroundTruth and EstimatedPose
         drawTriangle(draw_list, groundTruth, x_scale, y_scale, x_center, y_center, ImColor(255, 0, 0)); // green
-        drawTriangle(draw_list, estimatedPose, x_scale, y_scale, x_center, y_center, ImColor(0, 0, 255)); // red
+        drawTriangle(draw_list, estimatedPose, x_scale, y_scale, x_center, y_center, ImColor(0, 0, 255)); // blue
         draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
         drawLidarPoints(draw_list, groundTruth, laserPoint, x_scale, y_scale, x_center, y_center, IM_COL32(128, 0, 198, 255));
 
@@ -227,20 +229,17 @@ void Visualizer::render() {
         // Poll for and process events
         glfwPollEvents();
         newDataAvailable = false;
+
+//        auto end_time = std::chrono::high_resolution_clock::now();
+//        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+//        const int target_duration = 25;  // 25ms for 40 Hz
+//        int sleep_time = target_duration - duration.count();
+//        if (sleep_time > 0) {
+//            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
+//        }
     }
     glfwTerminate();
     exit(EXIT_SUCCESS);
-}
-
-void Visualizer::framebuffer_size_callback(GLFWwindow *window, int width, int height) {
-    float aspectRatio = (float) width / (float) height;
-    glViewport(0, 0, width, height);
-
-    if (width >= height) {
-        texWidth = texWidth * aspectRatio;
-    } else {
-        texHeight = texHeight / aspectRatio;
-    }
 }
 
 void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &pose, float x_scale, float y_scale, float x_center,
@@ -315,52 +314,53 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose& robot, const
     double robot_y = robot.getY();
     double robot_theta = robot.getTheta();  // assuming it's in radians
 
-    const float norm_length = 0.02f; // Choose an appropriate length for the gradient arrows
+    const float norm_length = 0.02f;
 
     // Additional parameters for the triangle
-    const float half_base_width = 2; // half width of triangle base in pixels
+    const float half_base_width = 2;
 
     for (const auto &point: laserPoint) {
 
         if(point.getD() <= 0) continue;
 
         if(visualizeRaw) {
-            // Plot the raw points without any transformations
             float raw_x = point.getX() * x_scale + x_center;
-            float raw_y = -point.getY() * y_scale + y_center;
+            float raw_y = point.getY() * y_scale + y_center; // No y flipping
             draw_list->AddCircleFilled(ImVec2(raw_x, raw_y), 3.5, color, 0);
 
-            continue;  // Skip the rest of the loop for raw visualization
+            continue;
         }
 
         // Transform from robot's frame to global frame
         double global_x = robot_x + point.getX() * cos(robot_theta) - point.getY() * sin(robot_theta);
         double global_y = robot_y + point.getX() * sin(robot_theta) + point.getY() * cos(robot_theta);
 
-        // Transform from global frame to image frame
+        // Transform to matrix frame
         float image_x = global_x * x_scale + x_center;
-        float image_y = - global_y * y_scale + y_center; //negate y values for flipping the image vertically
+        float image_y = - global_y * y_scale + y_center;
 
         draw_list->AddCircleFilled(ImVec2(image_x, image_y), 3.5, color, 0);
 
         double dx = point.getDx();
         double dy = point.getDy();
 
-        // Calculate the direction of the gradient vector
-        double magnitude = sqrt(dx * dx + dy * dy);
-        double dX_world = dx / magnitude;
-        double dY_world = dy / magnitude;
+        // Apply the rotation of robot to gradient vector
+        double grad_x_world = dx * cos(robot_theta) - dy * sin(robot_theta);
+        double grad_y_world = dx * sin(robot_theta) + dy * cos(robot_theta);
 
-        // Get the triangle tip coordinates
-        float triangle_tip_x = image_x + dX_world * norm_length * x_scale;
-        float triangle_tip_y = image_y - dY_world * norm_length * y_scale; // negating dY to flip the image vertically
+        // Make the gradient vectors as uniform
+        double magnitude = std::sqrt(grad_x_world * grad_x_world + grad_y_world * grad_y_world);
+        double normalized_grad_x_world = grad_x_world / magnitude;
+        double normalized_grad_y_world = grad_y_world / magnitude;
 
-        // calculate the base vertices of the triangle
-        float base_vertex1_x = image_x + half_base_width * (-dY_world);
-        float base_vertex1_y = image_y - half_base_width * dX_world; // negating dY to flip the image vertically
+        float triangle_tip_x = image_x + normalized_grad_x_world * norm_length * x_scale;
+        float triangle_tip_y = image_y + normalized_grad_y_world * norm_length * y_scale;
 
-        float base_vertex2_x = image_x - half_base_width * (-dY_world);
-        float base_vertex2_y = image_y + half_base_width * dX_world; // negating dY to flip the image vertically
+        float base_vertex1_x = image_x + half_base_width * (-normalized_grad_y_world);
+        float base_vertex1_y = image_y + half_base_width * normalized_grad_x_world;
+
+        float base_vertex2_x = image_x - half_base_width * (-normalized_grad_y_world);
+        float base_vertex2_y = image_y - half_base_width * normalized_grad_x_world;
 
         ImVec2 triangle_tip(triangle_tip_x, triangle_tip_y);
         ImVec2 base_vertex1(base_vertex1_x, base_vertex1_y);

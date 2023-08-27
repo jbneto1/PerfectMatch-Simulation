@@ -13,9 +13,9 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIt
             ", " + std::to_string(startPose.getTheta()) +
             "), maxIters: " + std::to_string(maxIters) + ", stepScale: " +
             std::to_string(stepScale));
-    PixelSizeWidth = 1.7 / map.getWidth();
+    PixelSizeWidth = 1.68 / map.getWidth();
     PixelScaleWidth = 1 / PixelSizeWidth;
-    PixelSizeHeight = 1.2 / map.getHeight();
+    PixelSizeHeight = 1.18/ map.getHeight();
     PixelScaleHeight = 1 / PixelSizeHeight;
 
 }
@@ -48,7 +48,7 @@ int PerfectMatch::XTopixel(double x) {
 }
 
 int PerfectMatch::YTopixel(double y) {
-    return static_cast<int>(std::round(y * PixelScaleHeight) + map.getHeight() / 2);
+    return static_cast<int>(std::round(- y * PixelScaleHeight) + map.getHeight() / 2);
 }
 
 void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {

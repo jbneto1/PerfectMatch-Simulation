@@ -7,15 +7,15 @@ from scipy import ndimage
 map_width = 1.68
 map_height = 1.18
 
-# Matrix dimensions
-matrix_width = 800
-matrix_height = 640
+# Matrix dimensions corresponding to 1mm per pixel
+matrix_width = 1680
+matrix_height = 1180
 
-c_err = 45
+c_err = 60
 
 # Scaling factors to transform real-world coordinates to matrix indices
-scale_x = matrix_width / map_width
-scale_y = matrix_height / map_height
+scale_x = matrix_width / map_width  # Uniform scale for x and y
+scale_y = matrix_height / map_height  # Uniform scale for x and y
 
 # Define constants from the XML
 cell_x = 0.15
@@ -50,11 +50,11 @@ def real_to_matrix(x, y):
     y_translated = y + map_height / 2
 
     # Scale coordinates
-    j = int(np.floor(x_translated * scale_x))
-    i = int(np.floor(y_translated * scale_y))
+    j = int(np.round(x_translated * scale_y))
+    i = int(np.round(y_translated * scale_x))
 
     # Flip the y-coordinate due to matrix representation
-    i = matrix_height - 1 - i
+    i = matrix_height - i
 
     return i, j
 
@@ -69,31 +69,10 @@ def draw_obstacle(matrix, obstacle):
         size_x, size_y = size_y, size_x
 
     # Calculate bounds
-    start_i = pos_i - round(size_y / 2)
-    end_i = start_i + round(size_y)
-    start_j = pos_j - round(size_x / 2)
-    end_j = start_j + round(size_x)
-
-    # Draw the obstacle
-    matrix[start_i:end_i, start_j:end_j] = 0
-
-    return matrix
-
-def draw_obstacle_outgoing(matrix, obstacle):
-    size_x = obstacle['size'][0] * scale_x
-    size_y = obstacle['size'][1] * scale_y
-    pos_i, pos_j = real_to_matrix(obstacle['pos'][0], obstacle['pos'][1])
-    rotation = obstacle.get('rotation', 0)
-
-    # If rotated, swap the sizes
-    if rotation == 90 or rotation == -90:
-        size_x, size_y = size_y, size_x
-
-    # Calculate bounds
-    start_i = pos_i - round(size_y / 2)
-    end_i = start_i + round(size_y)
-    start_j = pos_j - round(size_x / 2)
-    end_j = start_j + round(size_x)
+    start_i = pos_i - int(np.round(size_y / 2))
+    end_i = start_i + int(np.round(size_y))
+    start_j = pos_j - int(np.round(size_x / 2))
+    end_j = start_j + int(np.round(size_x))
 
     # Draw the obstacle
     matrix[start_i:end_i, start_j:end_j] = 0
@@ -126,17 +105,31 @@ machine_B = {
 matrix = np.ones((matrix_height, matrix_width))
 
 # Draw the obstacles
-for obs in [incoming_warehouse, machine_A, machine_B]:
+for obs in [incoming_warehouse, outgoing_warehouse, machine_A, machine_B]:
     draw_obstacle(matrix, obs)
 
-for obs in [outgoing_warehouse]:
-    draw_obstacle_outgoing(matrix, obs)
+# for obs in [outgoing_warehouse]:
+#     draw_obstacle_outgoing(matrix, obs)
 
 # Visualization
 plt.imshow(matrix, cmap='gray', interpolation='none')
 plt.colorbar()
 plt.title('2D Matrix Map Representation')
 plt.show()
+
+# Convert matrix to a format suitable for visualization [0-255]
+matrix_png = (matrix * 255).astype(np.uint8)
+
+# Create an image from the array
+image = Image.fromarray(matrix_png)
+
+# Resize the image
+resized_image = image.resize((800, 700), Image.LANCZOS)
+
+# Save the resized image as PNG
+resized_image.save('matrix.png')
+
+
 
 # Add this part to the end of your code:
 
