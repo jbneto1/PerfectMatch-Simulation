@@ -23,6 +23,7 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     }
     runtime += dt;
     double freq = 1 / (runtime - runtimePrevious);
+    PM.setFreq(freq);
     Pose matchedPose = PM.match(lidarData); // Note the match result
     runtimePrevious = runtime;
 

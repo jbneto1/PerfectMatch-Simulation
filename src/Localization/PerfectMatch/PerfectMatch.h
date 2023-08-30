@@ -19,7 +19,14 @@ public:
 
     double getError() const { return this->RobotPose.getErr(); }
 
+    float getFreq() const { return this->freq; }
+
+    void setFreq(const float hz) { this->freq = hz; }
+
 private:
+
+    float freq = 0.0f;
+
     void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
 
     void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints);
@@ -31,10 +38,8 @@ private:
     void IterLaser(std::array<LaserPoint, 720> &LaserPoints);
 
     Map map;
-    double PixelSizeWidth;
-    double PixelScaleWidth;
-    double PixelSizeHeight;
-    double PixelScaleHeight;
+    double meterToPixel;
+    double pixelToMeter;
     Pose RobotPose;
     const double stepScale;
     const int maxIters;

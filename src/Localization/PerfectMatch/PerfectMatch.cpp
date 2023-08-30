@@ -13,11 +13,8 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIt
             ", " + std::to_string(startPose.getTheta()) +
             "), maxIters: " + std::to_string(maxIters) + ", stepScale: " +
             std::to_string(stepScale));
-    PixelSizeWidth = 1.68 / map.getWidth();
-    PixelScaleWidth = 1 / PixelSizeWidth;
-    PixelSizeHeight = 1.18/ map.getHeight();
-    PixelScaleHeight = 1 / PixelSizeHeight;
-
+    meterToPixel = map.getWidth() / 1.68;
+    pixelToMeter = 1 / meterToPixel;
 }
 
 Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
@@ -44,11 +41,11 @@ void PerfectMatch::RotateAndTranslate(double &rx, double &ry, double px, double 
 }
 
 int PerfectMatch::XTopixel(double x) {
-    return static_cast<int>(std::round(x * PixelScaleWidth) + map.getWidth() / 2);
+    return static_cast<int>(std::round(x * meterToPixel) + map.getWidth() / 2);
 }
 
 int PerfectMatch::YTopixel(double y) {
-    return static_cast<int>(std::round(- y * PixelScaleHeight) + map.getHeight() / 2);
+    return static_cast<int>(std::round( - y * meterToPixel) + map.getHeight() / 2);
 }
 
 void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
@@ -75,8 +72,9 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
 
             dx -= gradX / laserPoint.getStdDev();
             dy += gradY / laserPoint.getStdDev();
-            dtheta -= gradX / laserPoint.getStdDev() * (-laserPoint.getX() * st - laserPoint.getY() * ct)
-                      + gradY / laserPoint.getStdDev() * (laserPoint.getX() * ct - laserPoint.getY() * st);
+            //TODO i dont understand
+            dtheta -= gradX / laserPoint.getStdDev() * ( - laserPoint.getX() * ct - laserPoint.getY() * st)
+                      + gradY / laserPoint.getStdDev() * (laserPoint.getX() * st + laserPoint.getY() * ct);
             laserPoint.setDx(dx);
             laserPoint.setDy(dy);
             laserPoint.setDtheta(dtheta);
@@ -95,6 +93,7 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
 void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) {
     logger.trace("Processing Laser Points...");
     for (auto &point: LaserPoints) {
+        if (point.getD() <= 0) continue;
         double currentAngleDegrees = degreeStep * (&point - &LaserPoints[0]);
         // convert the angle to radians
         double angleRadians = degToRad(currentAngleDegrees);

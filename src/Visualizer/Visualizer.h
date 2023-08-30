@@ -24,7 +24,7 @@
 
 class Visualizer {
 public:
-    Visualizer(PerfectMatch &perfectMatch);
+    explicit Visualizer(PerfectMatch &perfectMatch);
 
     ~Visualizer();
 
@@ -33,9 +33,16 @@ public:
     void render();
 
 private:
-    PerfectMatch &pm;
 
-    bool visualizeRaw = false;
+    // Setup for drawing rectangles
+    float x_scale;
+    float y_scale;
+    float x_center;
+    float y_center;
+    float freq_PM;
+    float freq_vis;
+
+    PerfectMatch &pm;
 
     std::condition_variable cv;
     std::mutex cv_m;
@@ -43,9 +50,9 @@ private:
     Pose groundTruth;
     Pose estimatedPose;
     std::array<LaserPoint, 720> laserPoint;
-    GLFWwindow *window;
-    GLuint textureId;  // Texture identifier for the map image
-    int texWidth, texHeight;  // Texture size variables
+    GLFWwindow *window{};
+    GLuint textureId{};  // Texture identifier for the map image
+    int texWidth{}, texHeight{};  // Texture size variables
 
     bool initialize();
 
@@ -53,19 +60,16 @@ private:
 
     static void glfw_error_callback(int error, const char *description);
 
-    void checkGlError();
+    static void checkGlError();
 
-    void drawTriangle(ImDrawList *draw_list, const Pose &pose, float x_scale, float y_scale, float x_center, float y_center,
-                      const ImColor &color);
+    void drawTriangle(ImDrawList *draw_list, const Pose &pose, const ImColor &color) const;
 
     void drawLidarPoints(ImDrawList *draw_list, const Pose &robot, const std::array<LaserPoint, 720> &laserPoint,
-                         float x_scale, float y_scale, float x_center, float y_center, const ImColor &color);
+                         const ImColor &color) const;
 
     bool setupGlfwWindow();
 
     bool setupGLLoaderAndImGui();
-
-    void renderImGuiWindow();
 };
 
 #endif //PM_PROJECT_VISUALIZER_H

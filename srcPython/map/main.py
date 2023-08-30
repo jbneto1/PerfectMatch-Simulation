@@ -50,11 +50,12 @@ def real_to_matrix(x, y):
     y_translated = y + map_height / 2
 
     # Scale coordinates
-    j = int(np.round(x_translated * scale_y))
-    i = int(np.round(y_translated * scale_x))
+    j = int(np.round(x_translated * scale_x))
+    i = int(np.round(y_translated * scale_y))
 
-    # Flip the y-coordinate due to matrix representation
+    # Flip the y-coordinate due to matrix representation and adjust for 0-based indexing
     i = matrix_height - i
+    j = j
 
     return i, j
 
@@ -73,6 +74,12 @@ def draw_obstacle(matrix, obstacle):
     end_i = start_i + int(np.round(size_y))
     start_j = pos_j - int(np.round(size_x / 2))
     end_j = start_j + int(np.round(size_x))
+
+    # Ensure that the indices are within the matrix bounds
+    start_i = max(0, start_i)
+    end_i = min(matrix_height, end_i)
+    start_j = max(0, start_j)
+    end_j = min(matrix_width, end_j)
 
     # Draw the obstacle
     matrix[start_i:end_i, start_j:end_j] = 0
@@ -105,11 +112,8 @@ machine_B = {
 matrix = np.ones((matrix_height, matrix_width))
 
 # Draw the obstacles
-for obs in [incoming_warehouse, outgoing_warehouse, machine_A, machine_B]:
+for obs in [outgoing_warehouse, incoming_warehouse, machine_A, machine_B]:
     draw_obstacle(matrix, obs)
-
-# for obs in [outgoing_warehouse]:
-#     draw_obstacle_outgoing(matrix, obs)
 
 # Visualization
 plt.imshow(matrix, cmap='gray', interpolation='none')
@@ -123,8 +127,12 @@ matrix_png = (matrix * 255).astype(np.uint8)
 # Create an image from the array
 image = Image.fromarray(matrix_png)
 
-# Resize the image
-resized_image = image.resize((800, 700), Image.LANCZOS)
+original_width, original_height = image.size
+aspect_ratio = original_width / original_height
+new_height = 700  # Fixing height, width will be defined based on this
+new_width = int(new_height * aspect_ratio)
+
+resized_image = image.resize((new_width, new_height), Image.LANCZOS)
 
 # Save the resized image as PNG
 resized_image.save('matrix.png')

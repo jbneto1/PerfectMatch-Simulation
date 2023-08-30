@@ -1,6 +1,6 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer(PerfectMatch &perfectMatch) : pm(perfectMatch) {
+Visualizer::Visualizer(PerfectMatch &perfectMatch) : pm(perfectMatch){
     if (!initialize()) {
         std::cerr << "Initialization failed!" << std::endl;
         exit(EXIT_FAILURE);
@@ -37,8 +37,8 @@ bool Visualizer::setupGlfwWindow() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    window = glfwCreateWindow(800, 980, "Robot Localization", NULL, NULL); // Change to desired size
-    if (window == NULL) {
+    window = glfwCreateWindow(996, 980, "Robot Localization", nullptr, nullptr); // Change to desired size
+    if (window == nullptr) {
         std::cerr << "Failed to create GLFW window!" << std::endl;
         glfwTerminate();
         return false;
@@ -48,6 +48,7 @@ bool Visualizer::setupGlfwWindow() {
 
     return true;
 }
+
 bool Visualizer::setupGLLoaderAndImGui() {
     if (gl3wInit() != 0) {
         std::cerr << "Failed to initialize OpenGL loader!" << std::endl;
@@ -57,7 +58,6 @@ bool Visualizer::setupGLLoaderAndImGui() {
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
 
     ImGui::StyleColorsDark();
 
@@ -70,12 +70,18 @@ bool Visualizer::setupGLLoaderAndImGui() {
 
 bool Visualizer::setupTexture() {
     int texChannels;
-    unsigned char *pixels = stbi_load("../srcPython/map/matrix.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    unsigned char *pixels = stbi_load("../srcPython/map/matrix.png", &texWidth, &texHeight, &texChannels,
+                                      STBI_rgb_alpha);
     if (!pixels) {
         std::cerr << "Failed to load texture image!" << std::endl;
         std::cerr << "STBI Error: " << stbi_failure_reason() << std::endl;
         return false;
     }
+
+    x_center = texWidth / 2;
+    y_center = texHeight / 2;
+    x_scale = texWidth / 1.68f;
+    y_scale = texHeight / 1.18f;
 
 //    // ImGui style setting is independent of the texture loading process.
 //    // If not used elsewhere, consider moving this outside of this function.
@@ -100,11 +106,13 @@ bool Visualizer::setupTexture() {
     return true;
 }
 
-void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint) {
-    std::lock_guard<std::mutex> lock(cv_m);
+void
+Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint) {
+    std::lock_guard <std::mutex> lock(cv_m);
     this->groundTruth = groundTruth;
     this->estimatedPose = estimatedPose;
     this->laserPoint = laserPoint;
+    this->freq_PM = pm.getFreq();
     newDataAvailable = true;
 
     cv.notify_one();
@@ -114,10 +122,10 @@ void Visualizer::render() {
     // Render loop
     while (!glfwWindowShouldClose(window)) {
 
-//        auto start_time = std::chrono::high_resolution_clock::now();
+        auto start_time = std::chrono::high_resolution_clock::now();
 
         // Wait for new data
-        std::unique_lock<std::mutex> lk(cv_m);
+        std::unique_lock <std::mutex> lk(cv_m);
         cv.wait(lk, [this]() { return newDataAvailable; });
         glfwMakeContextCurrent(window);
 
@@ -128,7 +136,7 @@ void Visualizer::render() {
 
         // Create a new ImGui window
         ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(800, 980));
+        ImGui::SetNextWindowSize(ImVec2(texWidth, texHeight + 280));
         ImGui::Begin("Robot Localization", nullptr,
                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoTitleBar);
@@ -169,34 +177,26 @@ void Visualizer::render() {
         ImGui::Text("Ground Truth:  x=%.3f, y=%.3f, theta=%.3fº", groundTruth.getX(), groundTruth.getY(),
                     groundTruth.getThetaDeg());
 
-        p = ImGui::GetCursorScreenPos();
-
-        ImGui::Text("PM error:  %.3f", pm.getError());
+        ImGui::Text("PM error: %.3f, PM freq: %.2f Hz, Vis freq: %.2f Hz", pm.getError(), freq_PM, 1000.0f / freq_vis);
 
         Pose temp = estimatedPose - groundTruth;
 
         ImGui::Text("Error:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
                     temp.getY(), temp.getThetaDeg());
 
-        // Setup for drawing rectangles
-        float x_scale = 800 / 1.68f;
-        float y_scale = 700 / 1.18f;
-        float x_center = 800.0f / 2;
-        float y_center = 700.0f / 2;
-
         // Draw triangles for GroundTruth and EstimatedPose
-        drawTriangle(draw_list, groundTruth, x_scale, y_scale, x_center, y_center, ImColor(255, 0, 0)); // green
-        drawTriangle(draw_list, estimatedPose, x_scale, y_scale, x_center, y_center, ImColor(0, 0, 255)); // blue
+        drawTriangle(draw_list, groundTruth, ImColor(255, 0, 0)); // green
+        drawTriangle(draw_list, estimatedPose, ImColor(0, 0, 255)); // blue
         draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
-        drawLidarPoints(draw_list, groundTruth, laserPoint, x_scale, y_scale, x_center, y_center, IM_COL32(128, 0, 198, 255));
+        drawLidarPoints(draw_list, estimatedPose, laserPoint, IM_COL32(128, 0, 198, 255));
 
-        static float x = 0.0f, y = 0.0f, theta_deg = 0.0f;
+        static double x = 0.0f, y = 0.0f, theta_deg = 0.0f;
         static Pose pose;
-        bool x_changed = ImGui::InputFloat("iX", &x);
-        bool y_changed = ImGui::InputFloat("iY", &y);
-        bool theta_changed = ImGui::InputFloat("iTheta (deg)", &theta_deg);
-        if(x_changed | y_changed | theta_changed) {
-            float theta_rad = theta_deg * (M_PI / 180);  // Convert from degree to radians
+        bool x_changed = ImGui::InputDouble("iX", &x);
+        bool y_changed = ImGui::InputDouble("iY", &y);
+        bool theta_changed = ImGui::InputDouble("iTheta (deg)", &theta_deg);
+        if (x_changed | y_changed | theta_changed) {
+            double theta_rad = theta_deg * (M_PI / 180);  // Convert from degree to radians
             pose.setX(x);
             pose.setY(y);
             pose.setTheta(theta_rad);
@@ -230,64 +230,63 @@ void Visualizer::render() {
         glfwPollEvents();
         newDataAvailable = false;
 
-//        auto end_time = std::chrono::high_resolution_clock::now();
-//        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-//        const int target_duration = 25;  // 25ms for 40 Hz
-//        int sleep_time = target_duration - duration.count();
-//        if (sleep_time > 0) {
-//            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
-//        }
-    }
+        auto end_time = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+        freq_vis = 1000.0f / duration.count();
+        const int target_duration = 25;  // 25ms for 40 Hz
+        int sleep_time = target_duration - duration.count();
+        if (sleep_time > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
+        }
+
+        //TODO TALK TO PACO ABOUT INCONSISTENT SCALING, dont understand dtheta, show the way the maps were computed , orientatio and positions where it diverges, NON-SQUARE PX, GRADIENT ORIENTATION,
+        // APP BURNING MY CPU EVEN WITH SLEEP
+}
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
 
-void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &pose, float x_scale, float y_scale, float x_center,
-                              float y_center, const ImColor &color) {
-
-    if (draw_list == nullptr) {
-        throw std::invalid_argument("draw_list cannot be nullptr");
-    }
+void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &robot, const ImColor &color) const {
 
     // get the pose information
-    float x = pose.getX();
-    float y = pose.getY();
-    float theta = pose.getTheta();
-
-    // Set fixed triangle size and define isosceles triangle
-    float triangleHeight = 25.0f; // fixed size
-    float triangleHalfBase = triangleHeight / 3; // adjust for isosceles triangle
+    double x = robot.getX();
+    double y = robot.getY();
+    double theta = robot.getTheta();
+// Set fixed triangle size and define isosceles triangle
+    const float triangleHeight = 25.0f; // fixed size
+    const float triangleHalfBase = triangleHeight / 3; // adjust for isosceles triangle
+    const float centroidOffset = triangleHeight * 2.0f / 3.0f;
 
     ImVec2 vertices[3];
 
-    // calculate triangle vertices relative to the origin, isosceles triangle
-    vertices[0].x = triangleHeight * 2 / 3; // apex pointing right
+// calculate triangle vertices relative to the centroid, isosceles triangle
+    vertices[0].x = centroidOffset; // apex pointing right
     vertices[0].y = 0;
 
-    vertices[1].x = -triangleHeight / 3;
-    vertices[1].y = triangleHalfBase;
+    vertices[1].x = -centroidOffset / 2;
+    vertices[1].y = -triangleHalfBase;
 
-    vertices[2].x = -triangleHeight / 3;
-    vertices[2].y = -triangleHalfBase;
+    vertices[2].x = -centroidOffset / 2;
+    vertices[2].y = triangleHalfBase;
+
 
     // apply the pose rotation to the vertices
-    for (int i = 0; i < 3; i++) {
-        float temp_x = vertices[i].x;
-        float temp_y = vertices[i].y;
-        vertices[i].x = temp_x * cosf(theta) - temp_y * sinf(theta); // negate theta to correct direction
-        vertices[i].y = temp_x * sinf(theta) + temp_y * cosf(theta); // negate theta to correct direction
+    for (auto &vertice: vertices) {
+        double temp_x = vertice.x;
+        double temp_y = vertice.y;
+        vertice.x = temp_x * cos(theta) - temp_y * sin(theta);
+        vertice.y = temp_x * sin(theta) + temp_y * cos(theta);
     }
 
     // translate the vertices to their final position in the map, with flipped y-axis
-    for (int i = 0; i < 3; i++) {
-        vertices[i].x = x * x_scale + vertices[i].x + x_center;
-        vertices[i].y = - y * y_scale - vertices[i].y + y_center; //negate y values
+    for (auto &vertice: vertices) {
+        vertice.x = x * x_scale + vertice.x + x_center;
+        vertice.y = -y * y_scale - vertice.y + y_center; //negate y values
     }
 
     // draw the triangle
     draw_list->AddTriangleFilled(vertices[0], vertices[1], vertices[2], color);
 }
-
 
 
 void Visualizer::glfw_error_callback(int error, const char *description) {
@@ -303,64 +302,72 @@ void Visualizer::checkGlError() {
     } while (err != GL_NO_ERROR);
 }
 
-void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose& robot, const std::array<LaserPoint, 720> &laserPoint,
-                                 float x_scale, float y_scale, float x_center, float y_center, const ImColor &color) {
+void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const std::array<LaserPoint, 720> &laserP,
+                                 const ImColor &color) const {
 
-    if (draw_list == nullptr) {
-        throw std::invalid_argument("draw_list cannot be nullptr");
-    }
+    // get the pose information
+    double x = pose.getX();
+    double y = pose.getY();
+    double theta = pose.getTheta();
+// Set fixed triangle size and define isosceles triangle
+    const float triangleHeight = 0.02f; // fixed size
+    const float triangleHalfBase = triangleHeight / 3; // adjust for isosceles triangle
+    const float centroidOffset = triangleHeight * 2.0f / 3.0f;
 
-    double robot_x = robot.getX();
-    double robot_y = robot.getY();
-    double robot_theta = robot.getTheta();  // assuming it's in radians
+    ImVec2 original_vertices[3];
+    original_vertices[0].x = centroidOffset;
+    original_vertices[0].y = 0;
+    original_vertices[1].x = -centroidOffset / 2;
+    original_vertices[1].y = -triangleHalfBase;
+    original_vertices[2].x = -centroidOffset / 2;
+    original_vertices[2].y = triangleHalfBase;
 
-    const float norm_length = 0.02f;
 
-    // Additional parameters for the triangle
-    const float half_base_width = 2;
+    for (const auto &point: laserP) {
 
-    for (const auto &point: laserPoint) {
-
-        if(point.getD() <= 0) continue;
-
-        if(visualizeRaw) {
-            float raw_x = point.getX() * x_scale + x_center;
-            float raw_y = point.getY() * y_scale + y_center; // No y flipping
-            draw_list->AddCircleFilled(ImVec2(raw_x, raw_y), 3.5, color, 0);
-
-            continue;
-        }
+        if (point.getD() <= 0) continue;
 
         // Transform from robot's frame to global frame
-        double global_x = robot_x + point.getX() * cos(robot_theta) - point.getY() * sin(robot_theta);
-        double global_y = robot_y + point.getX() * sin(robot_theta) + point.getY() * cos(robot_theta);
+        double global_x = x + point.getX() * cos(theta) - point.getY() * sin(theta);
+        double global_y = y + point.getX() * sin(theta) + point.getY() * cos(theta);
 
         // Transform to matrix frame
         float image_x = global_x * x_scale + x_center;
-        float image_y = - global_y * y_scale + y_center;
+        float image_y = -global_y * y_scale + y_center;
 
         draw_list->AddCircleFilled(ImVec2(image_x, image_y), 3.5, color, 0);
 
         double dx = point.getDx();
         double dy = point.getDy();
 
-        // Apply the rotation of robot to gradient vector
-        double grad_x_world = dx * cos(robot_theta) - dy * sin(robot_theta);
-        double grad_y_world = dx * sin(robot_theta) + dy * cos(robot_theta);
-
         // Make the gradient vectors as uniform
-        double magnitude = std::sqrt(grad_x_world * grad_x_world + grad_y_world * grad_y_world);
-        double normalized_grad_x_world = grad_x_world / magnitude;
-        double normalized_grad_y_world = grad_y_world / magnitude;
+        double magnitude = std::sqrt(dx * dx + dy * dy);
+        if (magnitude == 0) continue;  // Avoid division by zero
+        double normalized_grad_x_world = dx / magnitude;
+        double normalized_grad_y_world = dy / magnitude;
 
-        float triangle_tip_x = image_x + normalized_grad_x_world * norm_length * x_scale;
-        float triangle_tip_y = image_y + normalized_grad_y_world * norm_length * y_scale;
+        double angle = atan2(normalized_grad_y_world, normalized_grad_x_world);
 
-        float base_vertex1_x = image_x + half_base_width * (-normalized_grad_y_world);
-        float base_vertex1_y = image_y + half_base_width * normalized_grad_x_world;
+        // apply the pose rotation to the vertices
+        // Use a temporary array for the rotated vertices
+        ImVec2 rotated_vertices[3];
+        for (int i = 0; i < 3; i++) {
+            double temp_x = original_vertices[i].x;
+            double temp_y = original_vertices[i].y;
+            rotated_vertices[i].x = temp_x * cos(angle) - temp_y * sin(angle);
+            rotated_vertices[i].y = temp_x * sin(angle) + temp_y * cos(angle);
+        }
 
-        float base_vertex2_x = image_x - half_base_width * (-normalized_grad_y_world);
-        float base_vertex2_y = image_y - half_base_width * normalized_grad_x_world;
+
+        float triangle_tip_x = image_x + rotated_vertices[0].x * x_scale;
+        float triangle_tip_y = image_y - rotated_vertices[0].y * y_scale;  // Note the negative sign for y-axis inversion
+
+        float base_vertex1_x = image_x + rotated_vertices[1].x * x_scale;
+        float base_vertex1_y = image_y - rotated_vertices[1].y * y_scale;  // Note the negative sign for y-axis inversion
+
+        float base_vertex2_x = image_x + rotated_vertices[2].x * x_scale;
+        float base_vertex2_y = image_y - rotated_vertices[2].y * y_scale;  // Note the negative sign for y-axis inversion
+
 
         ImVec2 triangle_tip(triangle_tip_x, triangle_tip_y);
         ImVec2 base_vertex1(base_vertex1_x, base_vertex1_y);
