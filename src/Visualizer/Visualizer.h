@@ -40,7 +40,6 @@ private:
     float x_center;
     float y_center;
     float freq_PM;
-    float freq_vis;
 
     PerfectMatch &pm;
 

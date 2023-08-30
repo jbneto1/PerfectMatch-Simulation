@@ -1,5 +1,10 @@
 #include "Visualizer.h"
 
+// Named constants for better clarity
+const float TRIANGLE_HEIGHT = 25.0f;
+const float TRIANGLE_HALF_BASE = TRIANGLE_HEIGHT / 3.0f;
+const float CENTROID_OFFSET = TRIANGLE_HEIGHT * 2.0f / 3.0f;
+
 Visualizer::Visualizer(PerfectMatch &perfectMatch) : pm(perfectMatch){
     if (!initialize()) {
         std::cerr << "Initialization failed!" << std::endl;
@@ -37,7 +42,7 @@ bool Visualizer::setupGlfwWindow() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    window = glfwCreateWindow(996, 980, "Robot Localization", nullptr, nullptr); // Change to desired size
+    window = glfwCreateWindow(996, 1000, "Robot Localization", nullptr, nullptr); // Change to desired size
     if (window == nullptr) {
         std::cerr << "Failed to create GLFW window!" << std::endl;
         glfwTerminate();
@@ -83,10 +88,6 @@ bool Visualizer::setupTexture() {
     x_scale = texWidth / 1.68f;
     y_scale = texHeight / 1.18f;
 
-//    // ImGui style setting is independent of the texture loading process.
-//    // If not used elsewhere, consider moving this outside of this function.
-//    ImGui::StyleColorsClassic();
-
     glGenTextures(1, &textureId);
     glBindTexture(GL_TEXTURE_2D, textureId);
 
@@ -121,9 +122,6 @@ Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std
 void Visualizer::render() {
     // Render loop
     while (!glfwWindowShouldClose(window)) {
-
-        auto start_time = std::chrono::high_resolution_clock::now();
-
         // Wait for new data
         std::unique_lock <std::mutex> lk(cv_m);
         cv.wait(lk, [this]() { return newDataAvailable; });
@@ -136,7 +134,7 @@ void Visualizer::render() {
 
         // Create a new ImGui window
         ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(texWidth, texHeight + 280));
+        ImGui::SetNextWindowSize(ImVec2(texWidth, texHeight + 310));
         ImGui::Begin("Robot Localization", nullptr,
                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoTitleBar);
@@ -177,7 +175,9 @@ void Visualizer::render() {
         ImGui::Text("Ground Truth:  x=%.3f, y=%.3f, theta=%.3fº", groundTruth.getX(), groundTruth.getY(),
                     groundTruth.getThetaDeg());
 
-        ImGui::Text("PM error: %.3f, PM freq: %.2f Hz, Vis freq: %.2f Hz", pm.getError(), freq_PM, 1000.0f / freq_vis);
+        ImGui::Text("PM error: %.3f", pm.getError());
+
+        ImGui::Text("PM freq: %.2f Hz", freq_PM);
 
         Pose temp = estimatedPose - groundTruth;
 
@@ -204,7 +204,12 @@ void Visualizer::render() {
 
         if (ImGui::Button("Set Pose")) {
             pm.setPose(pose);
-            std::cout << pose.getX() << pose.getY() << pose.getThetaDeg() << std::endl;
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Reset")) {
+            pm.setPose(groundTruth);
         }
 
         // Finish the ImGui window
@@ -229,15 +234,6 @@ void Visualizer::render() {
         // Poll for and process events
         glfwPollEvents();
         newDataAvailable = false;
-
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-        freq_vis = 1000.0f / duration.count();
-        const int target_duration = 25;  // 25ms for 40 Hz
-        int sleep_time = target_duration - duration.count();
-        if (sleep_time > 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time));
-        }
 
         //TODO TALK TO PACO ABOUT INCONSISTENT SCALING, dont understand dtheta, show the way the maps were computed , orientatio and positions where it diverges, NON-SQUARE PX, GRADIENT ORIENTATION,
         // APP BURNING MY CPU EVEN WITH SLEEP
@@ -347,6 +343,8 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
         double normalized_grad_y_world = dy / magnitude;
 
         double angle = atan2(normalized_grad_y_world, normalized_grad_x_world);
+
+        angle = normalizeAngle(angle);
 
         // apply the pose rotation to the vertices
         // Use a temporary array for the rotated vertices
