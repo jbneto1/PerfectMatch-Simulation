@@ -21,13 +21,11 @@ Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
     // Implement the matching algorithm and return the results
 
     logger.trace("Processing Laser Points for matching...");
-    ProcessLaserPoints(data);
+    //ProcessLaserPoints(data);
 
     logger.trace("Running IterLaser for max iterations...");
 
-    for (int i = 0; i < maxIters; i++) {
-        IterLaser(data);
-    }
+    IterLaser(data);
 
     return RobotPose;
 }
@@ -45,7 +43,7 @@ int PerfectMatch::XTopixel(double x) {
 }
 
 int PerfectMatch::YTopixel(double y) {
-    return static_cast<int>(std::round( - y * meterToPixel) + map.getHeight() / 2);
+    return static_cast<int>(std::round(-y * meterToPixel) + map.getHeight() / 2);
 }
 
 void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
@@ -63,6 +61,7 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
 
         double rx, ry;
         RotateAndTranslate(rx, ry, laserPoint.getX(), laserPoint.getY(), RobotPose.getX(), RobotPose.getY(), st, ct);
+
         int u = XTopixel(rx);
         int v = YTopixel(ry);
 
@@ -70,24 +69,34 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
             double gradX = map.getGradientX(u, v);
             double gradY = map.getGradientY(u, v);
 
+
             dx -= gradX / laserPoint.getStdDev();
             dy += gradY / laserPoint.getStdDev();
             //TODO i dont understand
-            dtheta -= gradX / laserPoint.getStdDev() * ( - laserPoint.getX() * ct - laserPoint.getY() * st)
+            dtheta -= gradX / laserPoint.getStdDev() * (-laserPoint.getX() * ct - laserPoint.getY() * st)
                       + gradY / laserPoint.getStdDev() * (laserPoint.getX() * st + laserPoint.getY() * ct);
             laserPoint.setDx(dx);
             laserPoint.setDy(dy);
             laserPoint.setDtheta(dtheta);
             RobotPose.setErr(RobotPose.getErr() + map.getDistance(u, v));
+            logger.fileLog("gradX: " + std::to_string(gradX) + " gradY: " + std::to_string(gradY) + " dx: " +
+                           std::to_string(dx) + " dy: " + std::to_string(dy) + " dtheta: " + std::to_string(dtheta));
             ++n;
         }
     }
 
-    RobotPose.setX(RobotPose.getX() + stepScale * dx);
-    RobotPose.setY(RobotPose.getY() + stepScale * dy);
-    RobotPose.setTheta(normalizeAngle(RobotPose.getTheta() + M_PI * stepScale * dtheta));
+    double adjusted_X = RobotPose.getX() + stepScale * dx;
+    double adjusted_Y = RobotPose.getY() + stepScale * dy;
+    double adjusted_Theta = normalizeAngle(RobotPose.getTheta() + M_PI * stepScale * dtheta);
+    RobotPose.setX(adjusted_X);
+    RobotPose.setY(adjusted_Y);
+    RobotPose.setTheta(adjusted_Theta);
+
     if (n > 0) RobotPose.setErr(RobotPose.getErr() / n);
     logger.debug("Match complete.");
+
+    logger.fileLog("adjX: " + std::to_string(adjusted_X) + " adjY: " + std::to_string(adjusted_Y) + " adjTheta: " +
+                   std::to_string(adjusted_Theta) + " PMerr: " + std::to_string(RobotPose.getErr()));
 }
 
 void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) {

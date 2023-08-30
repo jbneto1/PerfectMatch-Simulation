@@ -11,7 +11,7 @@ map_height = 1.18
 matrix_width = 1680
 matrix_height = 1180
 
-c_err = 60
+c_err = 70
 
 # Scaling factors to transform real-world coordinates to matrix indices
 scale_x = matrix_width / map_width  # Uniform scale for x and y

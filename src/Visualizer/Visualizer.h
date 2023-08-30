@@ -55,6 +55,8 @@ private:
 
     bool initialize();
 
+    void cleanup();
+
     bool setupTexture();
 
     static void glfw_error_callback(int error, const char *description);

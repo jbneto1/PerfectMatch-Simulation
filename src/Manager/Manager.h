@@ -22,6 +22,7 @@ public:
     void run();
 
 private:
+    void runOptimization();
     const double dt;
     Logger &logger;
     AMRController controller = AMRController(logger);
@@ -29,6 +30,13 @@ private:
     SimTwoInterface interface = SimTwoInterface(logger, localization, controller);
     Visualizer visualizer;
     std::thread visThread;
+
+    std::array<int, 4> encoder_readings;
+    Pose GT_reading;
+    std::array<LaserPoint, 720> laserReadings;
+
+    std::mutex dataMutex;
+
 
 
     static std::atomic<bool> run_loop;

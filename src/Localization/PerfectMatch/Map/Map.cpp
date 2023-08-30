@@ -28,10 +28,10 @@ Map::Map(Logger &logger) : logger(logger) {
     ImgHeight = DistMap.size();
 
     logger.trace("All csvs read successfully.");
-
-    writeMapToCSV(DistMap, "DistMap.csv");
-    writeMapToCSV(GradXMap, "GradXMap.csv");
-    writeMapToCSV(GradYMap, "GradYMap.csv");
+//
+//    writeMapToCSV(DistMap, "DistMap.csv");
+//    writeMapToCSV(GradXMap, "GradXMap.csv");
+//    writeMapToCSV(GradYMap, "GradYMap.csv");
 
 }
 
