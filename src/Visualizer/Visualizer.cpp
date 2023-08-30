@@ -1,23 +1,30 @@
 #include "Visualizer.h"
 
-// Named constants for better clarity
-const float TRIANGLE_HEIGHT = 25.0f;
-const float TRIANGLE_HALF_BASE = TRIANGLE_HEIGHT / 3.0f;
-const float CENTROID_OFFSET = TRIANGLE_HEIGHT * 2.0f / 3.0f;
+constexpr float TRIANGLE_HEIGHT = 25.0f;
+constexpr float TRIANGLE_HALF_BASE = TRIANGLE_HEIGHT / 3.0f;
+constexpr float CENTROID_OFFSET = TRIANGLE_HEIGHT * 2.0f / 3.0f;
 
-Visualizer::Visualizer(PerfectMatch &perfectMatch) : pm(perfectMatch){
+Visualizer::Visualizer(PerfectMatch &perfectMatch) : pm(perfectMatch) {
     if (!initialize()) {
+        cleanup();
         std::cerr << "Initialization failed!" << std::endl;
         exit(EXIT_FAILURE);
     }
 }
 
 Visualizer::~Visualizer() {
+    cleanup();
+}
+
+void Visualizer::cleanup() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    glfwDestroyWindow(window);
+    if (window) {
+        glfwDestroyWindow(window);
+    }
+
     glfwTerminate();
     glDeleteTextures(1, &textureId);
 }
@@ -289,6 +296,7 @@ void Visualizer::glfw_error_callback(int error, const char *description) {
     std::cerr << "Glfw Error " << error << ": " << description << std::endl;
 }
 
+#ifdef DEBUG
 void Visualizer::checkGlError() {
     GLenum err;
     do {
@@ -297,6 +305,9 @@ void Visualizer::checkGlError() {
             std::cerr << "OpenGL error: " << err << std::endl;
     } while (err != GL_NO_ERROR);
 }
+#else
+void Visualizer::checkGlError() {}
+#endif
 
 void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const std::array<LaserPoint, 720> &laserP,
                                  const ImColor &color) const {
@@ -306,7 +317,7 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
     double y = pose.getY();
     double theta = pose.getTheta();
 // Set fixed triangle size and define isosceles triangle
-    const float triangleHeight = 0.02f; // fixed size
+    const float triangleHeight = 0.025f; // fixed size
     const float triangleHalfBase = triangleHeight / 3; // adjust for isosceles triangle
     const float centroidOffset = triangleHeight * 2.0f / 3.0f;
 
@@ -319,7 +330,8 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
     original_vertices[2].y = triangleHalfBase;
 
 
-    for (const auto &point: laserP) {
+    for(size_t i = 0; i < laserP.size(); i += 6) {
+        const auto &point = laserP[i];
 
         if (point.getD() <= 0) continue;
 
@@ -371,6 +383,6 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
         ImVec2 base_vertex1(base_vertex1_x, base_vertex1_y);
         ImVec2 base_vertex2(base_vertex2_x, base_vertex2_y);
 
-        draw_list->AddTriangleFilled(triangle_tip, base_vertex1, base_vertex2, IM_COL32(255, 0, 0, 255));
+        draw_list->AddTriangleFilled(triangle_tip, base_vertex1, base_vertex2, IM_COL32(0, 128, 255, 255));
     }
 }
