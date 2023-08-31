@@ -1,9 +1,5 @@
 #include "Visualizer.h"
 
-constexpr float TRIANGLE_HEIGHT = 25.0f;
-constexpr float TRIANGLE_HALF_BASE = TRIANGLE_HEIGHT / 3.0f;
-constexpr float CENTROID_OFFSET = TRIANGLE_HEIGHT * 2.0f / 3.0f;
-
 Visualizer::Visualizer(PerfectMatch &perfectMatch) : pm(perfectMatch) {
     if (!initialize()) {
         cleanup();
@@ -116,7 +112,7 @@ bool Visualizer::setupTexture() {
 
 void
 Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint) {
-    std::lock_guard <std::mutex> lock(cv_m);
+    std::lock_guard<std::mutex> lock(cv_m);
     this->groundTruth = groundTruth;
     this->estimatedPose = estimatedPose;
     this->laserPoint = laserPoint;
@@ -130,7 +126,7 @@ void Visualizer::render() {
     // Render loop
     while (!glfwWindowShouldClose(window)) {
         // Wait for new data
-        std::unique_lock <std::mutex> lk(cv_m);
+        std::unique_lock<std::mutex> lk(cv_m);
         cv.wait(lk, [this]() { return newDataAvailable; });
         glfwMakeContextCurrent(window);
 
@@ -147,15 +143,14 @@ void Visualizer::render() {
                      ImGuiWindowFlags_NoTitleBar);
 
         ImGui::SetWindowFontScale(2); // Change the scale value to what suits you
-// Set the cursor position
+        // Set the cursor position
         ImGui::SetCursorPos(ImVec2(0, 0));
 
-// Draw the map
+        // Draw the map
         ImGui::Image((void *) (intptr_t) textureId, ImVec2(texWidth, texHeight));
         // Display the pose data
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
         ImVec2 p = ImGui::GetCursorScreenPos();
-
 
         float size = 14.0f; //adjust size to match your font
         float halfBase = size / 2.0f;
@@ -167,7 +162,7 @@ void Visualizer::render() {
                 ImColor(0, 0, 255)
         );  // Red filled Triangle // Red filled Triangle
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20); // Push cursor to right by 50 units
-        ImGui::Text("Estimated Pose:  x=%.3f, y=%.3f, theta=%.3fº", estimatedPose.getX(), estimatedPose.getY(),
+        ImGui::Text("Estimated Pose [m]:  x=%.3f, y=%.3f, theta=%.3fº", estimatedPose.getX(), estimatedPose.getY(),
                     estimatedPose.getThetaDeg());
 
         p = ImGui::GetCursorScreenPos();
@@ -179,17 +174,17 @@ void Visualizer::render() {
                 ImColor(255, 0, 0)
         );  // Red filled Triangle
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20); // Push cursor to right by 50 units
-        ImGui::Text("Ground Truth:  x=%.3f, y=%.3f, theta=%.3fº", groundTruth.getX(), groundTruth.getY(),
+        ImGui::Text("Ground Truth [m]:  x=%.3f, y=%.3f, theta=%.3fº", groundTruth.getX(), groundTruth.getY(),
                     groundTruth.getThetaDeg());
-
-        ImGui::Text("PM error: %.3f", pm.getError());
-
-        ImGui::Text("PM freq: %.2f Hz", freq_PM);
 
         Pose temp = estimatedPose - groundTruth;
 
-        ImGui::Text("Error:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
+        ImGui::Text("Error [m]:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
                     temp.getY(), temp.getThetaDeg());
+
+        ImGui::Text("PM error [m]: %.3f", pm.getError());
+
+        ImGui::Text("PM freq [Hz]: %.2f", freq_PM);
 
         // Draw triangles for GroundTruth and EstimatedPose
         drawTriangle(draw_list, groundTruth, ImColor(255, 0, 0)); // green
@@ -199,9 +194,9 @@ void Visualizer::render() {
 
         static double x = 0.0f, y = 0.0f, theta_deg = 0.0f;
         static Pose pose;
-        bool x_changed = ImGui::InputDouble("iX", &x);
-        bool y_changed = ImGui::InputDouble("iY", &y);
-        bool theta_changed = ImGui::InputDouble("iTheta (deg)", &theta_deg);
+        bool x_changed = ImGui::InputDouble("iX [m]", &x);
+        bool y_changed = ImGui::InputDouble("iY [m]", &y);
+        bool theta_changed = ImGui::InputDouble("iTheta [deg]", &theta_deg);
         if (x_changed | y_changed | theta_changed) {
             double theta_rad = theta_deg * (M_PI / 180);  // Convert from degree to radians
             pose.setX(x);
@@ -244,7 +239,7 @@ void Visualizer::render() {
 
         //TODO TALK TO PACO ABOUT INCONSISTENT SCALING, dont understand dtheta, show the way the maps were computed , orientatio and positions where it diverges, NON-SQUARE PX, GRADIENT ORIENTATION,
         // APP BURNING MY CPU EVEN WITH SLEEP
-}
+    }
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
@@ -255,14 +250,14 @@ void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &robot, const Im
     double x = robot.getX();
     double y = robot.getY();
     double theta = robot.getTheta();
-// Set fixed triangle size and define isosceles triangle
+    // Set fixed triangle size and define isosceles triangle
     const float triangleHeight = 25.0f; // fixed size
     const float triangleHalfBase = triangleHeight / 3; // adjust for isosceles triangle
     const float centroidOffset = triangleHeight * 2.0f / 3.0f;
 
     ImVec2 vertices[3];
 
-// calculate triangle vertices relative to the centroid, isosceles triangle
+    // calculate triangle vertices relative to the centroid, isosceles triangle
     vertices[0].x = centroidOffset; // apex pointing right
     vertices[0].y = 0;
 
@@ -271,7 +266,6 @@ void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &robot, const Im
 
     vertices[2].x = -centroidOffset / 2;
     vertices[2].y = triangleHalfBase;
-
 
     // apply the pose rotation to the vertices
     for (auto &vertice: vertices) {
@@ -291,7 +285,6 @@ void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &robot, const Im
     draw_list->AddTriangleFilled(vertices[0], vertices[1], vertices[2], color);
 }
 
-
 void Visualizer::glfw_error_callback(int error, const char *description) {
     std::cerr << "Glfw Error " << error << ": " << description << std::endl;
 }
@@ -306,7 +299,9 @@ void Visualizer::checkGlError() {
     } while (err != GL_NO_ERROR);
 }
 #else
+
 void Visualizer::checkGlError() {}
+
 #endif
 
 void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const std::array<LaserPoint, 720> &laserP,
@@ -316,20 +311,18 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
     double x = pose.getX();
     double y = pose.getY();
     double theta = pose.getTheta();
-// Set fixed triangle size and define isosceles triangle
-    const float triangleHeight = 0.025f; // fixed size
-    const float triangleHalfBase = triangleHeight / 3; // adjust for isosceles triangle
-    const float centroidOffset = triangleHeight * 2.0f / 3.0f;
 
-    ImVec2 original_vertices[3];
-    original_vertices[0].x = centroidOffset;
-    original_vertices[0].y = 0;
-    original_vertices[1].x = -centroidOffset / 2;
-    original_vertices[1].y = -triangleHalfBase;
-    original_vertices[2].x = -centroidOffset / 2;
-    original_vertices[2].y = triangleHalfBase;
+    // Set fixed triangle size and define isosceles triangle
+    const float h = 0.025f;  // triangle height
+    const float b = h / 2.0f;  // triangle base
 
-    for(size_t i = 0; i < laserP.size(); i += 8) {
+    // Define triangle vertices relative to its centroid in robot's frame
+    ImVec2 vertices[3];
+    vertices[0] = ImVec2(h/2, 0);  // tip
+    vertices[1] = ImVec2(-h/2, -b/2);  // bottom left
+    vertices[2] = ImVec2(-h/2, b/2);  // bottom right
+
+    for (size_t i = 0; i < laserP.size(); i += 8) {
         const auto &point = laserP[i];
 
         if (point.getD() <= 0) continue;
@@ -347,41 +340,32 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
         double dx = point.getDx();
         double dy = point.getDy();
 
-        // Make the gradient vectors as uniform
+// Normalize the gradient vector
         double magnitude = std::sqrt(dx * dx + dy * dy);
         if (magnitude == 0) continue;  // Avoid division by zero
-        double normalized_grad_x_world = dx / magnitude;
-        double normalized_grad_y_world = dy / magnitude;
+        double normalized_grad_x = dx / magnitude;
+        double normalized_grad_y = dy / magnitude;
 
-        double angle = atan2(normalized_grad_y_world, normalized_grad_x_world);
+// Compute the gradient direction
+        double angle = atan2(normalized_grad_y, normalized_grad_x);
 
-        angle = normalizeAngle(angle);
-
-        // apply the pose rotation to the vertices
-        // Use a temporary array for the rotated vertices
+// Rotate and scale the triangle vertices to point in the gradient direction
         ImVec2 rotated_vertices[3];
-        for (int i = 0; i < 3; i++) {
-            double temp_x = original_vertices[i].x;
-            double temp_y = original_vertices[i].y;
-            rotated_vertices[i].x = temp_x * cos(angle) - temp_y * sin(angle);
-            rotated_vertices[i].y = temp_x * sin(angle) + temp_y * cos(angle);
+        for (int j = 0; j < 3; j++) {
+            float temp_x = vertices[j].x;
+            float temp_y = vertices[j].y;
+            rotated_vertices[j].x = (temp_x * cos(angle) - temp_y * sin(angle)) * x_scale;
+            rotated_vertices[j].y = (temp_x * sin(angle) + temp_y * cos(angle)) * y_scale;
         }
 
+// Translate the triangle vertices to the laser point's position in the image's frame
+        for (int j = 0; j < 3; j++) {
+            rotated_vertices[j].x += image_x;
+            rotated_vertices[j].y = image_y - rotated_vertices[j].y;  // Invert the y-axis
+        }
 
-        float triangle_tip_x = image_x + rotated_vertices[0].x * x_scale;
-        float triangle_tip_y = image_y - rotated_vertices[0].y * y_scale;  // Note the negative sign for y-axis inversion
+// Draw the triangle
+        draw_list->AddTriangleFilled(rotated_vertices[0], rotated_vertices[1], rotated_vertices[2], IM_COL32(0, 128, 255, 255));
 
-        float base_vertex1_x = image_x + rotated_vertices[1].x * x_scale;
-        float base_vertex1_y = image_y - rotated_vertices[1].y * y_scale;  // Note the negative sign for y-axis inversion
-
-        float base_vertex2_x = image_x + rotated_vertices[2].x * x_scale;
-        float base_vertex2_y = image_y - rotated_vertices[2].y * y_scale;  // Note the negative sign for y-axis inversion
-
-
-        ImVec2 triangle_tip(triangle_tip_x, triangle_tip_y);
-        ImVec2 base_vertex1(base_vertex1_x, base_vertex1_y);
-        ImVec2 base_vertex2(base_vertex2_x, base_vertex2_y);
-
-        draw_list->AddTriangleFilled(triangle_tip, base_vertex1, base_vertex2, IM_COL32(0, 128, 255, 255));
     }
 }

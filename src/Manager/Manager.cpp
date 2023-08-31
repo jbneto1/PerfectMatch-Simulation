@@ -48,10 +48,10 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
     std::tie(encoder_readings, GT_reading, laserReadings) = interface.getSensorData(data);
     localization.getPM().ProcessLaserPoints(laserReadings);
     logger.trace("Processing Perfect Match.");
-    visualizer.update(localization.getGTPose(), localization.getPose(), laserReadings);
 }
 
 void Manager::runOptimization() {
     std::lock_guard<std::mutex> lock(dataMutex);
     localization.processData(encoder_readings, GT_reading, laserReadings);
+    visualizer.update(localization.getGTPose(), localization.getPose(), laserReadings);
 }
