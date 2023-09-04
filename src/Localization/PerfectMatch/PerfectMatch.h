@@ -5,39 +5,46 @@
 #include <cmath>
 #include <stdexcept>
 #include "Map/Map.h"
-#include "config.h"
-#include "Logger/logger.h"
+#include <config/config.h>
+#include <Logger/logger.h>
+#include <utils/utils.h>
 
 class PerfectMatch {
 public:
-    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10, const double stepScale = 0.005);
-
+    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10, const double stepScale = 0.04);
 
     Pose match(std::array<LaserPoint, 720> &data);
 
     void setPose(const Pose pose) { this->RobotPose = pose; }
 
-private:
-    void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
+    double getError() const { return this->RobotPose.getErr(); }
 
-    void ProcessLaserPoints(std::array<LaserPoint, 720>& LaserPoints);
+    float getFreq() const { return this->freq; }
+
+    void setFreq(const float hz) { this->freq = hz; }
+
+    void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints);
+
+private:
+    float freq = 0.0f;
+
+    void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
 
     int XTopixel(double x);
 
     int YTopixel(double y);
 
-    void IterLaser(const std::array<LaserPoint, 720> &LaserPoints);
+    void IterLaser(std::array<LaserPoint, 720> &LaserPoints);
 
     Map map;
-    double PixelSizeWidth;
-    double PixelScaleWidth;
-    double PixelSizeHeight;
-    double PixelScaleHeight;
+    double meterToPixel;
+    double pixelToMeter;
     Pose RobotPose;
     const double stepScale;
     const int maxIters;
     static constexpr double degreeStep = LASER_RANGE / LASER_RAYS;
     Logger &logger;
+
 };
 
 #endif // PERFECTMATCH_H

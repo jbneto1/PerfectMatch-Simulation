@@ -5,22 +5,18 @@
 #ifndef AMR_PROJECT_CONFIG_H
 #define AMR_PROJECT_CONFIG_H
 
-#define MAX_BUFFER_SIZE 16256
-#define SIMTWO_RECEIVE_PORT 9000
+constexpr int MAX_BUFFER_SIZE = 16256;
+constexpr int SIMTWO_RECEIVE_PORT = 9000;
 
-#define ENCODER_RESOLUTION 1920
-#define CONTROL_CYCLE 0.025
-#define MAX_ITERS 10
-#define C_ERR 100
-#define STEPSCALE 0.01
-#define LASER_RANGE 360.0
-#define LASER_RAYS 720
-
-#define MAX_DIST_VALUE 228.80559433720146
-#define MAX_GRAD_VALUE 0.018544618351754305
+constexpr int ENCODER_RESOLUTION = 1920;
+constexpr double CONTROL_CYCLE = 0.025;
+constexpr int MAX_ITERS = 10;
+constexpr double LASER_RANGE = 360.0;
+constexpr int LASER_RAYS = 720;
 
 #include <array>
 #include <stdexcept>
+#include <cmath>
 
 class Pose {
 private:
@@ -30,15 +26,17 @@ private:
     double err;
 
 public:
-    Pose() : x(0), y(0), theta(0) {}
+    Pose() : x(0), y(0), theta(0), err(0) {}
 
-    Pose(double x, double y, double theta) : x(x), y(y), theta(theta) {}
+    Pose(double x, double y, double theta) : x(x), y(y), theta(theta), err(0) {}
 
     double getX() const { return x; }
 
     double getY() const { return y; }
 
     double getTheta() const { return theta; }
+
+    double getThetaDeg() const { return (theta * 180 / M_PI); }
 
     double getErr() const { return err; }
 
@@ -49,6 +47,20 @@ public:
     void setTheta(double theta) { this->theta = theta; }
 
     void setErr(double err) { this->err = err; }
+
+    Pose operator-(const Pose &other) const {
+        double dx = x - other.getX();
+        double dy = y - other.getY();
+        double dtheta = theta - other.getTheta();
+        // Normalize theta to be between -pi and pi.
+        dtheta = fmod(dtheta, 2 * M_PI);
+        if (dtheta >= M_PI) {
+            dtheta -= 2 * M_PI;
+        } else if (dtheta < -M_PI) {
+            dtheta += 2 * M_PI;
+        }
+        return Pose(dx, dy, dtheta);
+    }
 
     Pose &operator=(const std::array<double, 3> &arr) {
         if (arr.size() != 3) {
@@ -99,11 +111,13 @@ private:
     double y;
     double std_dev;
 
+    double dx, dy, dtheta;
+
 public:
     LaserPoint() : d(0), angle(0), x(0), y(0), std_dev(1) {}
 
     LaserPoint(double d, double angle, double x, double y, double std_dev = 1) : d(d), angle(angle), x(x), y(y),
-                                                                             std_dev(std_dev) {}
+                                                                                 std_dev(std_dev) {}
 
     double getD() const { return d; }
 
@@ -124,6 +138,18 @@ public:
     void setY(double y) { this->y = y; }
 
     void setStdDev(double std_dev) { this->std_dev = std_dev; }
+
+    void setDx(const double dx) { this->dx = dx; }
+
+    void setDy(const double dy) { this->dy = dy; }
+
+    void setDtheta(const double dtheta) { this->dtheta = dtheta; }
+
+    double getDx() const { return dx; }
+
+    double getDy() const { return dy; }
+
+    double getDtheta() const { return dtheta; }
 };
 
 #endif //AMR_PROJECT_CONFIG_H

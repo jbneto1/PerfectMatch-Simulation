@@ -1,11 +1,11 @@
 #include <iostream>
-#include "Manager/Manager.h"
-#include "config.h"
-#include "Logger/logger.h"
+#include <Manager/Manager.h>
+#include <config/config.h>
+#include <Logger/logger.h>
 
 int main() {
     try {
-        Logger &logger = Logger::getInstance(spdlog::level::info);
+        Logger &logger = Logger::getInstance(spdlog::level::off);
         logger.setPattern(std::string("[%^%l%$] %v"));  // Set logging pattern
         logger.trace("Logger instantiated and pattern set"); // Add logging
         Manager manager = Manager(logger, CONTROL_CYCLE); // Create manager with specified control cycle and logger

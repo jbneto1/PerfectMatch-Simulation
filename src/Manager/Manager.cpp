@@ -4,14 +4,18 @@
 
 std::atomic<bool> Manager::run_loop; // Control variable for the main run loop
 
-Manager::Manager(Logger &logger, const double control_cycle) : logger(logger), dt(control_cycle) {
+Manager::Manager(Logger &logger, const double control_cycle) : logger(logger), dt(control_cycle),
+                                                               visualizer(localization.getPM()) {
     run_loop = true;  // Initialize loop control variable
     std::signal(SIGINT, Manager::signalHandler);  // Register SIGINT handler
     logger.trace("SIGINT signal handler registered.");
+    visThread = std::thread(&Visualizer::render, &visualizer);
 }
 
 Manager::~Manager() {
     logger.trace("Manager destructor called.");
+    if (visThread.joinable())
+        visThread.join();
     // Placeholder for any cleanup tasks
 }
 
@@ -23,8 +27,10 @@ void Manager::run() {
 
     logger.debug("Waiting for simulator.");
 
-    logger.fileLog("[GT.x],[GT.y],[GT.theta],[Match.x],[Match.y],[Match.theta],[runtime]");
-    while (run_loop);  // Main run loop
+    while (run_loop) {
+        runOptimization();
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    };  // Main run loop
 
     logger.trace("Terminating program...");
 }
@@ -37,8 +43,15 @@ void Manager::signalHandler(int sig) {
 // This is the function that will be called when data is received.
 void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface, Localization &localization,
                              AMRController &controller, Logger &logger) {
+    std::lock_guard<std::mutex> lock(dataMutex);
     logger.trace("Data received. Handler callback called.");
-    auto [encoders, groundTruth, lidarData] =  interface.getSensorData(data);
+    std::tie(encoder_readings, GT_reading, laserReadings) = interface.getSensorData(data);
+    localization.getPM().ProcessLaserPoints(laserReadings);
     logger.trace("Processing Perfect Match.");
-    localization.processData(encoders, groundTruth, lidarData);
+}
+
+void Manager::runOptimization() {
+    std::lock_guard<std::mutex> lock(dataMutex);
+    localization.processData(encoder_readings, GT_reading, laserReadings);
+    visualizer.update(localization.getGTPose(), localization.getPose(), laserReadings);
 }

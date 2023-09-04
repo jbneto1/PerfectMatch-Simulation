@@ -23,22 +23,38 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     }
     runtime += dt;
     double freq = 1 / (runtime - runtimePrevious);
+    logger.fileLog("------------------------------------------");
+    PM.setFreq(freq);
     Pose matchedPose = PM.match(lidarData); // Note the match result
     runtimePrevious = runtime;
 
-    logger.info(fmt::format("ex [cm]: {:.2f}, ey [cm]: {:.2f}, etheta [deg]: {:.2f}, PM-Hz: {:.2f}",
-                               (groundTruth.getX() - matchedPose.getX()) * 100,
-                               (groundTruth.getY() - matchedPose.getY()) * 100,
-                               radToDeg(groundTruth.getTheta() - matchedPose.getTheta()),
-                               freq));
+    estimatedPose = matchedPose;
 
+    logger.fileLog(fmt::format("gtX [m]: {:.2f}, gtY [m]: {:.2f}, gtTheta [deg]: {:.2f}",
+                            groundTruth.getX(),
+                            groundTruth.getY(),
+                            radToDeg(groundTruth.getTheta()),
+                            freq));
 
+    logger.fileLog(fmt::format("pmX [m]: {:.2f}, pmY [m]: {:.2f}, pmTheta [deg]: {:.2f}",
+                            matchedPose.getX(),
+                            matchedPose.getY(),
+                            radToDeg(matchedPose.getTheta()),
+                            freq));
+
+    logger.fileLog(fmt::format("ex [m]: {:.2f}, ey [m]: {:.2f}, etheta [deg]: {:.2f}, PM-Hz: {:.2f}",
+                            (groundTruth.getX() - matchedPose.getX()),
+                            (groundTruth.getY() - matchedPose.getY()),
+                            radToDeg(diffAngle(groundTruth.getTheta(), matchedPose.getTheta())),
+                            freq));
+
+    logger.fileLog(fmt::format("Freq [Hz]: {:.2f}", freq));
 
     logger.trace("Data processed for Localization");
 }
 
 Pose Localization::getPose() {
-    return (EKF.getPose());
+    return (estimatedPose);
 }
 
 void Localization::setPose(Pose &startPose) {
@@ -70,6 +86,8 @@ void Localization::odometry(const std::array<int, 4> &encoders) {
     estimatedPose = propagatedPose;
 }
 
-double Localization::radToDeg(const double angle) {
-    return (angle * 180 / M_PI);
+Pose Localization::getGTPose() {
+    return groundTruth;
 }
+
+

@@ -1,16 +1,18 @@
 #ifndef MAP_H
 #define MAP_H
 
+#include <third_party/stb/stb_image.h>
 #include <vector>
 #include <cmath>
 #include <stdexcept>
-#include "config.h"
-#include "stb/stb_image.h"
-#include "stb/stb_image_write.h"
-#include "Logger/logger.h"
+#include <config/config.h>
+#include <third_party/stb/stb_image_write.h>
+#include <Logger/logger.h>
 #include <sstream>
 #include <algorithm>
 #include <filesystem>
+#include <limits>
+#include <fstream>
 
 class Map {
 public:
@@ -18,18 +20,19 @@ public:
 
     int getWidth() const { return ImgWidth; }
     int getHeight() const { return ImgHeight; }
-    int getDistance(int x, int y) const { return DistMap[y][x]; }
-    float getGradientX(int x, int y) const { return GradXMap[y][x]; }
-    float getGradientY(int x, int y) const { return GradYMap[y][x]; }
-    void checkMaps();
+    double getDistance(int x, int y) const { return DistMap[y][x]; }
+    double getGradientX(int x, int y) const { return GradXMap[y][x]; }
+    double getGradientY(int x, int y) const { return GradYMap[y][x]; }
 
 private:
     int ImgWidth;
     int ImgHeight;
-    std::vector<std::vector<int>> DistMap;
+    std::vector<std::vector<double>> DistMap;
     std::vector<std::vector<double>> GradXMap;
     std::vector<std::vector<double>> GradYMap;
     Logger &logger;
+    void writeMapToCSV(const std::vector<std::vector<double>>& map, const std::string& fileName);
+    std::vector<std::vector<double>> readCSV(const std::string &filePath);
 };
 
 #endif // MAP_H

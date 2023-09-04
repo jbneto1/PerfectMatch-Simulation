@@ -1,27 +1,21 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.22.1)
 project(PM_project)
 set(CMAKE_CXX_STANDARD 20)
-
-include_directories(
-        include/config
-        ${PROJECT_SOURCE_DIR}/include/third_party
-        ${PROJECT_SOURCE_DIR}/include/third_party/standalone_asio
-        ${PROJECT_SOURCE_DIR}/include/third_party/eigen-3.4.0
-        ${PROJECT_SOURCE_DIR}/include/third_party/stb
-        ${PROJECT_SOURCE_DIR}/include/third_party/spdlog
-        ${PROJECT_SOURCE_DIR}/src
-)
-
-add_definitions(-DASIO_STANDALONE)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
 
 add_executable(${PROJECT_NAME} src/main.cpp)
-target_link_libraries(${PROJECT_NAME} Manager SimTwoInterface Localization AMRController Logger)
-
-# Define STB_IMAGE_IMPLEMENTATION and STB_IMAGE_WRITE_IMPLEMENTATION macros
-target_compile_definitions(${PROJECT_NAME} PRIVATE STB_IMAGE_IMPLEMENTATION STB_IMAGE_WRITE_IMPLEMENTATION)
 
 # Include the STB headers
-target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include/third_party/stb)
+target_include_directories(${PROJECT_NAME} PRIVATE
+        ${PROJECT_SOURCE_DIR}/include/
+        ${PROJECT_SOURCE_DIR}/src/
+        ${PROJECT_SOURCE_DIR}/include/third_party/)
+
+add_library(UtilsLibrary src/utils/utils.cpp)
+add_library(stbImageInit src/utils/stb_image_init.cpp)
+
+# Link OpenGL libraries
+target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} Manager SimTwoInterface Localization AMRController Logger
+        UtilsLibrary Visualizer stbImageInit ImGui glfw gl3w)
