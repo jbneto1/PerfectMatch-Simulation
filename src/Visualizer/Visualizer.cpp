@@ -155,6 +155,12 @@ void Visualizer::render() {
         float size = 14.0f; //adjust size to match your font
         float halfBase = size / 2.0f;
 
+        // Draw triangles for GroundTruth and EstimatedPose
+        drawTriangle(draw_list, groundTruth, ImColor(255, 0, 0)); // green
+        drawTriangle(draw_list, estimatedPose, ImColor(0, 0, 255)); // blue
+        draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
+        drawLidarPoints(draw_list, estimatedPose, laserPoint, IM_COL32(128, 0, 198, 255));
+
         draw_list->AddTriangleFilled(
                 ImVec2(p.x + halfBase, p.y + 5),               // Top vertex
                 ImVec2(p.x, p.y + size + 5),                   // Bottom left vertex
@@ -182,21 +188,33 @@ void Visualizer::render() {
         ImGui::Text("Error [m]:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
                     temp.getY(), temp.getThetaDeg());
 
+        ImGui::Text("PM freq [Hz]: %.2f", freq_PM);
+        ImGui::SameLine();
         ImGui::Text("PM error [m]: %.3f", pm.getError());
 
-        ImGui::Text("PM freq [Hz]: %.2f", freq_PM);
 
-        // Draw triangles for GroundTruth and EstimatedPose
-        drawTriangle(draw_list, groundTruth, ImColor(255, 0, 0)); // green
-        drawTriangle(draw_list, estimatedPose, ImColor(0, 0, 255)); // blue
-        draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
-        drawLidarPoints(draw_list, estimatedPose, laserPoint, IM_COL32(128, 0, 198, 255));
+        static double k = 0.0f;
+        ImGui::PushItemWidth(160);
+        ImGui::InputDouble("Step scale", &k, 0.0005, 0.0005, "%.4f");
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+
+        if(ImGui::Button("Set step")) {
+            pm.setStep(k);
+        }
+
+        ImGui::SameLine();
+
+        std::string stepScaleText = "Current step: " + fmt::format("{:.4f}", pm.getStep());
+        ImGui::Text("%s", stepScaleText.c_str());
 
         static double x = 0.0f, y = 0.0f, theta_deg = 0.0f;
         static Pose pose;
-        bool x_changed = ImGui::InputDouble("iX [m]", &x);
-        bool y_changed = ImGui::InputDouble("iY [m]", &y);
-        bool theta_changed = ImGui::InputDouble("iTheta [deg]", &theta_deg);
+        ImGui::PushItemWidth(80);
+        bool x_changed = ImGui::InputDouble("iX [m]", &x, 0.0, 0.0, "%.3f");
+        bool y_changed = ImGui::InputDouble("iY [m]", &y, 0.0, 0.0, "%.3f");
+        bool theta_changed = ImGui::InputDouble("iTheta [deg]", &theta_deg, 0.0, 0.0, "%.3f");
+        ImGui::PopItemWidth();
         if (x_changed | y_changed | theta_changed) {
             double theta_rad = theta_deg * (M_PI / 180);  // Convert from degree to radians
             pose.setX(x);

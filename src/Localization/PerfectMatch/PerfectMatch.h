@@ -25,6 +25,10 @@ public:
 
     void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints);
 
+    void setStep(const double stepScale) { this->stepScale = stepScale; }
+
+    double getStep() const { return this->stepScale; }
+
 private:
     float freq = 0.0f;
 
@@ -40,7 +44,7 @@ private:
     double meterToPixel;
     double pixelToMeter;
     Pose RobotPose;
-    const double stepScale;
+    double stepScale;
     const int maxIters;
     static constexpr double degreeStep = LASER_RANGE / LASER_RAYS;
     Logger &logger;
