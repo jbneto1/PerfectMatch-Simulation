@@ -11,7 +11,7 @@
 
 class PerfectMatch {
 public:
-    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10, const double stepScale = 0.01);
+    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10, const double stepScale = 0.04);
 
     Pose match(std::array<LaserPoint, 720> &data);
 
@@ -26,12 +26,9 @@ public:
     void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints);
 
 private:
-
     float freq = 0.0f;
 
     void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
-
-
 
     int XTopixel(double x);
 
@@ -47,6 +44,7 @@ private:
     const int maxIters;
     static constexpr double degreeStep = LASER_RANGE / LASER_RAYS;
     Logger &logger;
+
 };
 
 #endif // PERFECTMATCH_H
