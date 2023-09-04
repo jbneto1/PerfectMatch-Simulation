@@ -4,8 +4,8 @@
 
 std::atomic<bool> Manager::run_loop; // Control variable for the main run loop
 
-Manager::Manager(Logger &logger, const double control_cycle) : logger(logger), dt(control_cycle),
-                                                               visualizer(localization.getPM()) {
+Manager::Manager(Logger &logger) : logger(logger),
+                                                               visualizer(localization) {
     run_loop = true;  // Initialize loop control variable
     std::signal(SIGINT, Manager::signalHandler);  // Register SIGINT handler
     logger.trace("SIGINT signal handler registered.");

@@ -16,15 +16,16 @@
 #include <condition_variable>
 #include <mutex>  // Added for std::mutex
 #include <third_party/stb/stb_image.h>
-#include <../src/Localization/PerfectMatch/PerfectMatch.h>
+#include "../src/Localization/PerfectMatch/PerfectMatch.h"
 #include <Logger/logger.h>
 #include <chrono>
 #include <thread>
+#include "../src/Localization/Localization.h"
 
 
 class Visualizer {
 public:
-    explicit Visualizer(PerfectMatch &perfectMatch);
+    explicit Visualizer(Localization &localization);
 
     ~Visualizer();
 
@@ -39,9 +40,9 @@ private:
     float y_scale;
     float x_center;
     float y_center;
-    float freq_PM;
+    float freq_localization;
 
-    PerfectMatch &pm;
+    Localization &localization;
 
     std::condition_variable cv;
     std::mutex cv_m;

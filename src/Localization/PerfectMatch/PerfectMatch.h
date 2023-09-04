@@ -19,10 +19,6 @@ public:
 
     double getError() const { return this->RobotPose.getErr(); }
 
-    float getFreq() const { return this->freq; }
-
-    void setFreq(const float hz) { this->freq = hz; }
-
     void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints);
 
     void setStep(const double stepScale) { this->stepScale = stepScale; }
@@ -30,7 +26,6 @@ public:
     double getStep() const { return this->stepScale; }
 
 private:
-    float freq = 0.0f;
 
     void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
 

@@ -17,38 +17,30 @@
 
 class Localization {
 public:
-    Localization(Logger &logger, AMRController &controller, const double control_cycle, const int maxIters);
+    Localization(Logger &logger, const double control_cycle);
+    Localization(Logger &logger, const double control_cycle, const int maxIters);
 
     void processData(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData);
 
-    Pose getPose();
+    Pose getPose() { return EKF.getPose(); };
 
-    PerfectMatch& getPM() { return PM;}
+    PerfectMatch& getPM() { return PM; };
 
-    Pose getGTPose();
+    Pose getGTPose() const { return groundTruth; };
+
+    float getFreq() const { return freq; };
 
     void setPose(Pose &startPose);
-
-    void setEncoders(const std::array<int, 4> &encoders);
 
     bool firstIter;
 
 private:
     Logger &logger;
-    AMRController &controller;
-    ExtendedKalmanFilter EKF; //TODO organize and unify the groundtruth and estimated poses
-    //TODO (differentiate EKF, PM estimate, encoder estimate, localization estimate)
+    ExtendedKalmanFilter EKF;
     PerfectMatch PM;
     Pose groundTruth;
-    Pose estimatedPose;
     const double dt;
-
-    void updatePose(const std::array<int, 4> &encoders);
-
-    void odometry(const std::array<int, 4> &encoders);
-
-
+    float freq = 0.0f;
 };
-
 
 #endif //PERFECTMATCH_SIMULATION_LOCALIZATION_H

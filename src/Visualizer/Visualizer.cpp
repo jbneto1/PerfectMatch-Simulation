@@ -1,6 +1,6 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer(PerfectMatch &perfectMatch) : pm(perfectMatch) {
+Visualizer::Visualizer(Localization &localization) : localization(localization) {
     if (!initialize()) {
         cleanup();
         std::cerr << "Initialization failed!" << std::endl;
@@ -116,7 +116,7 @@ Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std
     this->groundTruth = groundTruth;
     this->estimatedPose = estimatedPose;
     this->laserPoint = laserPoint;
-    this->freq_PM = pm.getFreq();
+    this->freq_localization = localization.getFreq();
     newDataAvailable = true;
 
     cv.notify_one();
@@ -188,9 +188,9 @@ void Visualizer::render() {
         ImGui::Text("Error [m]:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
                     temp.getY(), temp.getThetaDeg());
 
-        ImGui::Text("PM freq [Hz]: %.2f", freq_PM);
+        ImGui::Text("Localization freq [Hz]: %.2f", freq_localization);
         ImGui::SameLine();
-        ImGui::Text("PM error [m]: %.3f", pm.getError());
+        ImGui::Text("PM error [m]: %.3f", localization.getPM().getError());
 
 
         static double k = 0.0f;
@@ -199,13 +199,13 @@ void Visualizer::render() {
         ImGui::PopItemWidth();
         ImGui::SameLine();
 
-        if(ImGui::Button("Set step")) {
-            pm.setStep(k);
+        if (ImGui::Button("Set step")) {
+            localization.getPM().setStep(k);
         }
 
         ImGui::SameLine();
 
-        std::string stepScaleText = "Current step: " + fmt::format("{:.4f}", pm.getStep());
+        std::string stepScaleText = "Current step: " + fmt::format("{:.4f}", localization.getPM().getStep());
         ImGui::Text("%s", stepScaleText.c_str());
 
         static double x = 0.0f, y = 0.0f, theta_deg = 0.0f;
@@ -223,13 +223,13 @@ void Visualizer::render() {
         }
 
         if (ImGui::Button("Set Pose")) {
-            pm.setPose(pose);
+            localization.setPose(pose);
         }
 
         ImGui::SameLine();
 
         if (ImGui::Button("Reset")) {
-            pm.setPose(groundTruth);
+            localization.setPose(groundTruth);
         }
 
         // Finish the ImGui window
@@ -336,9 +336,9 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
 
     // Define triangle vertices relative to its centroid in robot's frame
     ImVec2 vertices[3];
-    vertices[0] = ImVec2(h/2, 0);  // tip
-    vertices[1] = ImVec2(-h/2, -b/2);  // bottom left
-    vertices[2] = ImVec2(-h/2, b/2);  // bottom right
+    vertices[0] = ImVec2(h / 2, 0);  // tip
+    vertices[1] = ImVec2(-h / 2, -b / 2);  // bottom left
+    vertices[2] = ImVec2(-h / 2, b / 2);  // bottom right
 
     for (size_t i = 0; i < laserP.size(); i += 8) {
         const auto &point = laserP[i];
@@ -383,7 +383,8 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
         }
 
 // Draw the triangle
-        draw_list->AddTriangleFilled(rotated_vertices[0], rotated_vertices[1], rotated_vertices[2], IM_COL32(0, 128, 255, 255));
+        draw_list->AddTriangleFilled(rotated_vertices[0], rotated_vertices[1], rotated_vertices[2],
+                                     IM_COL32(0, 128, 255, 255));
 
     }
 }

@@ -12,12 +12,8 @@ class ExtendedKalmanFilter {
 public:
     ExtendedKalmanFilter();
 
-
-
     void predict();
-    void update();
-
-
+    void update(const Pose measurement);
 
     Pose getPose();
     void setPose(const Pose startPose);

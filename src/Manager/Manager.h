@@ -16,17 +16,16 @@
 class Manager {
 public:
 
-    Manager(Logger &logger, const double control_cycle);
+    Manager(Logger &logger);
     ~Manager();
 
     void run();
 
 private:
     void runOptimization();
-    const double dt;
     Logger &logger;
     AMRController controller = AMRController(logger);
-    Localization localization = Localization(logger, controller, dt, MAX_ITERS);
+    Localization localization = Localization(logger, CONTROL_CYCLE);
     SimTwoInterface interface = SimTwoInterface(logger, localization, controller);
     Visualizer visualizer;
     std::thread visThread;
@@ -36,8 +35,6 @@ private:
     std::array<LaserPoint, 720> laserReadings;
 
     std::mutex dataMutex;
-
-
 
     static std::atomic<bool> run_loop;
 
