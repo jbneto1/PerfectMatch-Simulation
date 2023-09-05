@@ -10,7 +10,7 @@ def d_err(d, c_err):
 d_values = np.linspace(-701, 701, 1000)  # You can adjust the range as needed
 
 # Define a list of c_err values to visualize
-c_err_values = [40]  # This is just an example list; adjust as needed
+c_err_values = [70]  # This is just an example list; adjust as needed
 
 # Plot d_err for each c_err value
 plt.figure(figsize=(10, 6))
