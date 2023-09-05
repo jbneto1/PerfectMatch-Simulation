@@ -71,7 +71,6 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
 
             dx -= gradX / laserPoint.getStdDev();
             dy += gradY / laserPoint.getStdDev();
-            //TODO i dont understand
             dtheta -= gradX / laserPoint.getStdDev() * (-laserPoint.getX() * st - laserPoint.getY() * ct)
                       - gradY / laserPoint.getStdDev() * (laserPoint.getX() * ct - laserPoint.getY() * st);
             laserPoint.setDx(dx);
