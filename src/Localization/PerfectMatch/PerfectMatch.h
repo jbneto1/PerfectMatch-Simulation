@@ -8,10 +8,11 @@
 #include <config/config.h>
 #include <Logger/logger.h>
 #include <utils/utils.h>
+#include <chrono>
 
 class PerfectMatch {
 public:
-    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const int maxIters = 10, const double stepScale = 0.04);
+    PerfectMatch(Logger &logger, const Pose startPose = Pose(), const double stepScale = STEP_SCALE);
 
     Pose match(std::array<LaserPoint, 720> &data);
 
@@ -26,7 +27,6 @@ public:
     double getStep() const { return this->stepScale; }
 
 private:
-
     void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
 
     int XTopixel(double x);
@@ -37,13 +37,10 @@ private:
 
     Map map;
     double meterToPixel;
-    double pixelToMeter;
     Pose RobotPose;
     double stepScale;
-    const int maxIters;
     static constexpr double degreeStep = LASER_RANGE / LASER_RAYS;
     Logger &logger;
-
 };
 
 #endif // PERFECTMATCH_H

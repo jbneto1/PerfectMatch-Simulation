@@ -29,7 +29,7 @@ public:
 
     ~Visualizer();
 
-    void update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint);
+    void update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint, const bool haveLaser);
 
     void render();
 
@@ -52,7 +52,8 @@ private:
     std::array<LaserPoint, 720> laserPoint;
     GLFWwindow *window{};
     GLuint textureId{};  // Texture identifier for the map image
-    int texWidth{}, texHeight{};  // Texture size variables
+    int texWidth{}, texHeight{};  // Texture size
+    bool drawLaser;
 
     bool initialize();
 

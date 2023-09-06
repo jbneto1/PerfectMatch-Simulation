@@ -10,7 +10,7 @@ constexpr int SIMTWO_RECEIVE_PORT = 9000;
 
 constexpr int ENCODER_RESOLUTION = 1920;
 constexpr double CONTROL_CYCLE = 0.025;
-constexpr int MAX_ITERS = 10;
+constexpr double STEP_SCALE = 0.04;
 constexpr double LASER_RANGE = 360.0;
 constexpr int LASER_RAYS = 720;
 

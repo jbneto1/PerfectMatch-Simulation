@@ -6,6 +6,7 @@ Visualizer::Visualizer(Localization &localization) : localization(localization) 
         std::cerr << "Initialization failed!" << std::endl;
         exit(EXIT_FAILURE);
     }
+    drawLaser = false;
 }
 
 Visualizer::~Visualizer() {
@@ -111,12 +112,14 @@ bool Visualizer::setupTexture() {
 }
 
 void
-Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint) {
+Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint,
+                   const bool haveLaser) {
     std::lock_guard<std::mutex> lock(cv_m);
     this->groundTruth = groundTruth;
     this->estimatedPose = estimatedPose;
     this->laserPoint = laserPoint;
     this->freq_localization = localization.getFreq();
+    this->drawLaser = haveLaser;
     newDataAvailable = true;
 
     cv.notify_one();
@@ -159,7 +162,7 @@ void Visualizer::render() {
         drawTriangle(draw_list, groundTruth, ImColor(255, 0, 0)); // green
         drawTriangle(draw_list, estimatedPose, ImColor(0, 0, 255)); // blue
         draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
-        drawLidarPoints(draw_list, estimatedPose, laserPoint, IM_COL32(128, 0, 198, 255));
+        if (drawLaser) drawLidarPoints(draw_list, estimatedPose, laserPoint, IM_COL32(128, 0, 198, 255));
 
         draw_list->AddTriangleFilled(
                 ImVec2(p.x + halfBase, p.y + 5),               // Top vertex
@@ -255,8 +258,6 @@ void Visualizer::render() {
         glfwPollEvents();
         newDataAvailable = false;
 
-        //TODO TALK TO PACO ABOUT INCONSISTENT SCALING, dont understand dtheta, show the way the maps were computed , orientatio and positions where it diverges, NON-SQUARE PX, GRADIENT ORIENTATION,
-        // APP BURNING MY CPU EVEN WITH SLEEP
     }
     glfwTerminate();
     exit(EXIT_SUCCESS);

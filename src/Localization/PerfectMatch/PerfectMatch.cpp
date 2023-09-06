@@ -1,28 +1,21 @@
 #include "PerfectMatch.h"
 
-PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const int maxIters, const double stepScale) : logger(
+PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double stepScale) : logger(
         logger), map(logger),
-                                                                                                               RobotPose(
-                                                                                                                       startPose),
-                                                                                                               maxIters(
-                                                                                                                       maxIters),
-                                                                                                               stepScale(
-                                                                                                                       stepScale) {
+                                                                                           RobotPose(
+                                                                                                   startPose),
+                                                                                           stepScale(
+                                                                                                   stepScale) {
     logger.debug(
             "Parameters: startPose (" + std::to_string(startPose.getX()) + ", " + std::to_string(startPose.getY()) +
-            ", " + std::to_string(startPose.getTheta()) +
-            "), maxIters: " + std::to_string(maxIters) + ", stepScale: " +
+            ", " + std::to_string(startPose.getTheta()) + "), "
+            + ", stepScale: " +
             std::to_string(stepScale));
     meterToPixel = map.getWidth() / 1.68;
-    pixelToMeter = 1 / meterToPixel;
 }
 
 Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
     // Implement the matching algorithm and return the results
-
-    logger.trace("Processing Laser Points for matching...");
-    //ProcessLaserPoints(data);
-
     logger.trace("Running IterLaser for max iterations...");
 
     IterLaser(data);
@@ -47,6 +40,7 @@ int PerfectMatch::YTopixel(double y) {
 }
 
 void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
+    auto start = std::chrono::high_resolution_clock::now();
     double dx = 0;
     double dy = 0;
     double dtheta = 0;
@@ -77,8 +71,6 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
             laserPoint.setDy(dy);
             laserPoint.setDtheta(dtheta);
             RobotPose.setErr(RobotPose.getErr() + map.getDistance(u, v));
-            logger.fileLog("gradX: " + std::to_string(gradX) + " gradY: " + std::to_string(gradY) + " dx: " +
-                           std::to_string(dx) + " dy: " + std::to_string(dy) + " dtheta: " + std::to_string(dtheta));
             ++n;
         }
     }
@@ -89,16 +81,14 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
     RobotPose.setX(adjusted_X);
     RobotPose.setY(adjusted_Y);
     RobotPose.setTheta(adjusted_Theta);
-
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    logger.info("PerfectMatch [us]: " + std::to_string(duration.count()));
     if (n > 0) RobotPose.setErr(RobotPose.getErr() / n);
-    logger.debug("Match complete.");
-
-    logger.fileLog("adjX: " + std::to_string(adjusted_X) + " adjY: " + std::to_string(adjusted_Y) + " adjTheta: " +
-                   std::to_string(adjusted_Theta) + " PMerr: " + std::to_string(RobotPose.getErr()));
 }
 
 void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) {
-    logger.trace("Processing Laser Points...");
+    auto start = std::chrono::high_resolution_clock::now();
     for (auto &point: LaserPoints) {
         if (point.getD() <= 0) continue;
         double currentAngleDegrees = degreeStep * (&point - &LaserPoints[0]);
@@ -120,6 +110,7 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
         point.setY(y);
         point.setStdDev(1.0); // set the std_dev to 1 for now
     }
-    logger.trace("Laser Points processed.");
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    logger.info("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
 }
-

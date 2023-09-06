@@ -99,8 +99,9 @@ void SimTwoInterface::sendWheelSpeeds(double frontLeftSpeed, double frontRightSp
 }
 
 // Parse received data
-std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>>
+std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>, bool>
 SimTwoInterface::getSensorData(const std::string &data) {
+    bool laser_flag = false;
     std::istringstream iss(data);
     std::string line;
     std::array<int, 4> encoders{}; // encs (1..4) (FL, FR, BL, BR)
@@ -123,24 +124,17 @@ SimTwoInterface::getSensorData(const std::string &data) {
             pose[pose_index++] = std::stod(line);
         } else if (line.find("lidar") != std::string::npos) {
             std::getline(iss, line);
-            logger.debug(line);
             std::istringstream iss_lidar(line);
             std::string val;
             while (std::getline(iss_lidar, val, ',')) {
                 lidar[lidar_index++].setD(std::stod(val));
+                laser_flag = true;
             }
         }
     }
 
-    logger.trace("Finished parsing sensor data. Encoders: (" +
-                 std::to_string(encoders[0]) + ", " + std::to_string(encoders[1]) + ", " + std::to_string(encoders[2]) +
-                 ", " + std::to_string(encoders[3]) +
-                 "), Pose: (" + std::to_string(pose[0]) + ", " + std::to_string(pose[1]) + ", " +
-                 std::to_string(pose[2]) +
-                 "), Lidar points: " + std::to_string(lidar.size()));
-
     Pose tmp = Pose();
     tmp = pose;
 
-    return std::make_tuple(encoders, tmp, lidar);
+    return std::make_tuple(encoders, tmp, lidar, laser_flag);
 }

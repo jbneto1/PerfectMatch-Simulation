@@ -33,6 +33,7 @@ private:
     std::array<int, 4> encoder_readings;
     Pose GT_reading;
     std::array<LaserPoint, 720> laserReadings;
+    bool haveLaser;
 
     std::mutex dataMutex;
 

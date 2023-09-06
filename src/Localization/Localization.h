@@ -18,7 +18,6 @@
 class Localization {
 public:
     Localization(Logger &logger, const double control_cycle);
-    Localization(Logger &logger, const double control_cycle, const int maxIters);
 
     void processData(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData);
 
@@ -33,7 +32,6 @@ public:
     void setPose(Pose &startPose);
 
     bool firstIter;
-
 private:
     Logger &logger;
     ExtendedKalmanFilter EKF;

@@ -8,14 +8,6 @@ Localization::Localization(Logger &logger, const double control_cycle)
     logger.debug("Localization system initialized.");
 }
 
-Localization::Localization(Logger &logger, const double control_cycle, const int maxIters)
-        : logger(logger),
-          dt(control_cycle), PM(logger) {
-    // Initialize the localization system
-    firstIter = true;
-    logger.debug("Localization system initialized.");
-}
-
 void Localization::processData(const std::array<int, 4> &encoders, const Pose &GT,
                                std::array<LaserPoint, 720> &lidarData) {
     static double runtime = 0;

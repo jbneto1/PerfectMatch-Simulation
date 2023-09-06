@@ -10,6 +10,7 @@ Manager::Manager(Logger &logger) : logger(logger),
     std::signal(SIGINT, Manager::signalHandler);  // Register SIGINT handler
     logger.trace("SIGINT signal handler registered.");
     visThread = std::thread(&Visualizer::render, &visualizer);
+    haveLaser = false;
 }
 
 Manager::~Manager() {
@@ -29,7 +30,7 @@ void Manager::run() {
 
     while (run_loop) {
         runOptimization();
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     };  // Main run loop
 
     logger.trace("Terminating program...");
@@ -45,13 +46,13 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
                              AMRController &controller, Logger &logger) {
     std::lock_guard<std::mutex> lock(dataMutex);
     logger.trace("Data received. Handler callback called.");
-    std::tie(encoder_readings, GT_reading, laserReadings) = interface.getSensorData(data);
-    localization.getPM().ProcessLaserPoints(laserReadings);
+    std::tie(encoder_readings, GT_reading, laserReadings, haveLaser) = interface.getSensorData(data);
+    if (haveLaser) localization.getPM().ProcessLaserPoints(laserReadings);
     logger.trace("Processing Perfect Match.");
 }
 
 void Manager::runOptimization() {
     std::lock_guard<std::mutex> lock(dataMutex);
-    localization.processData(encoder_readings, GT_reading, laserReadings);
-    visualizer.update(localization.getGTPose(), localization.getPose(), laserReadings);
+    if (haveLaser) localization.processData(encoder_readings, GT_reading, laserReadings);
+    visualizer.update(localization.getGTPose(), localization.getPose(), laserReadings, haveLaser);
 }

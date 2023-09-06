@@ -26,7 +26,7 @@ public:
 
     void registerCallback(DataCallback callback);
 
-    std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>>
+    std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>, bool>
     getSensorData(const std::string &data);
 
     void sendWheelSpeeds(double frontLeftSpeed, double frontRightSpeed, double backLeftSpeed, double backRightSpeed);
