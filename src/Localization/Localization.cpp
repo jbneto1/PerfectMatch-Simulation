@@ -11,9 +11,8 @@ Localization::Localization(Logger &logger)
     firstIter = true;
 }
 
-
 void Localization::processData(const std::array<int, 4> &encoders, const Pose &GT,
-                               std::array<LaserPoint, 720> &lidarData) {
+                               std::array<LaserPoint, 720> &lidarData, bool laserData) {
     static double runtime = 0;
     static double runtimePrevious = 0;
 

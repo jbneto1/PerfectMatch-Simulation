@@ -19,7 +19,7 @@ class Localization {
 public:
     Localization(Logger &logger);
 
-    void processData(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData);
+    void processData(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData, bool laserData);
 
     Pose getPose() { return EKF.getPose(); };
 
