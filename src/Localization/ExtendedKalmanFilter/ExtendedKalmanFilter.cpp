@@ -10,11 +10,11 @@ ExtendedKalmanFilter::ExtendedKalmanFilter() {
 }
 
 Pose ExtendedKalmanFilter::getPose() {
-    return this->pose;
+    return this->mu;
 }
 
 void ExtendedKalmanFilter::setPose(const Pose startPose) {
-    pose = startPose;
+    mu = startPose;
 }
 
 void ExtendedKalmanFilter::predict() {
@@ -23,7 +23,8 @@ void ExtendedKalmanFilter::predict() {
 
 void ExtendedKalmanFilter::update(const Pose measurement) {
 //placeholder
-    pose = measurement;
+//TODO
+    mu = measurement;
 
 }
 

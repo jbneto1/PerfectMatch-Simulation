@@ -12,6 +12,7 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
             + ", stepScale: " +
             std::to_string(stepScale));
     meterToPixel = map.getWidth() / 1.68;
+    pmError = 0;
 }
 
 Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
@@ -46,7 +47,7 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
     double dtheta = 0;
     double st = std::sin(RobotPose.getTheta());
     double ct = std::cos(RobotPose.getTheta());
-    RobotPose.setErr(0);
+    pmError = 0;
     int n = 0;
 
     for (auto &laserPoint: LaserPoints) {
@@ -70,7 +71,7 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
             laserPoint.setDx(dx);
             laserPoint.setDy(dy);
             laserPoint.setDtheta(dtheta);
-            RobotPose.setErr(RobotPose.getErr() + map.getDistance(u, v));
+            pmError += map.getDistance(u, v);
             ++n;
         }
     }
@@ -84,7 +85,7 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     logger.info("PerfectMatch [us]: " + std::to_string(duration.count()));
-    if (n > 0) RobotPose.setErr(RobotPose.getErr() / n);
+    if (n > 0) pmError = pmError / n;
 }
 
 void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) {

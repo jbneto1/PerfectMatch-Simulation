@@ -54,5 +54,5 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
 void Manager::runOptimization() {
     std::lock_guard<std::mutex> lock(dataMutex);
     if (haveLaser) localization.processData(encoder_readings, GT_reading, laserReadings);
-    visualizer.update(localization.getGTPose(), localization.getPose(), laserReadings, haveLaser);
+    visualizer.update(GT_reading, localization.getPose(), laserReadings, haveLaser);
 }

@@ -25,7 +25,7 @@ private:
     void runOptimization();
     Logger &logger;
     AMRController controller = AMRController(logger);
-    Localization localization = Localization(logger, CONTROL_CYCLE);
+    Localization localization = Localization(logger);
     SimTwoInterface interface = SimTwoInterface(logger, localization, controller);
     Visualizer visualizer;
     std::thread visThread;

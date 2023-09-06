@@ -18,7 +18,7 @@ public:
 
     void setPose(const Pose pose) { this->RobotPose = pose; }
 
-    double getError() const { return this->RobotPose.getErr(); }
+    double getError() const { return this->pmError; }
 
     void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints);
 
@@ -40,6 +40,8 @@ private:
     Pose RobotPose;
     double stepScale;
     static constexpr double degreeStep = LASER_RANGE / LASER_RAYS;
+    double pmError;
+
     Logger &logger;
 };
 
