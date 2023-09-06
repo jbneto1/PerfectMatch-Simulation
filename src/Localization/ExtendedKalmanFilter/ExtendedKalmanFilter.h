@@ -21,8 +21,8 @@ public:
     ExtendedKalmanFilter();
 
     //Methods
-    void predict();
-    void update(const Pose measurement);
+    void ExtendedKalmanFilter::predict(const Pose propagatedPose, const Eigen::Vector3d twist);
+    void update(const Pose Zk);
 
     //Getters
     Pose getPose();
