@@ -19,11 +19,13 @@ class Localization {
 public:
     Localization(Logger &logger);
 
-    void processData(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData, bool laserData);
+    void processData(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData);
+
+    void processData(const std::array<int, 4> &encoders, const Pose &GT);
 
     Pose getPose() { return EKF.getPose(); };
 
-    PerfectMatch& getPM() { return PM; };
+    PerfectMatch &getPM() { return PM; };
 
     float getFreq() const { return freq; };
 
@@ -34,8 +36,13 @@ private:
 
     //Robot methods
 
+    Pose PMMatchingWithLimit(PerfectMatch &PM, std::array<LaserPoint, 720> &lidarData, int max_iter,
+                             std::chrono::milliseconds max_duration);
+
     void forward_kinematics(const Eigen::Vector4d encs);
+
     void wSpeeds_estimation(const Eigen::Vector4d encs);
+
     Pose odometry();
 
     Logger &logger;

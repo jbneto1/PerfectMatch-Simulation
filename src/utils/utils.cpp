@@ -21,8 +21,15 @@ double diffAngle(const double ang1, const double ang2) {
 }
 
 double normalizeAngle(double angle) {
-    return (fmod(angle + M_PI, 2.0 * M_PI) - M_PI);
+    while (angle > M_PI) {
+        angle -= 2.0 * M_PI;
+    }
+    while (angle <= -M_PI) {
+        angle += 2.0 * M_PI;
+    }
+    return angle;
 }
+
 
 double degToRad(double angle) {
     return (angle * M_PI / 180);

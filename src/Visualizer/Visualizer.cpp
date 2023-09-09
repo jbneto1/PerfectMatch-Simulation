@@ -1,6 +1,6 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer(Localization &localization) : localization(localization) {
+Visualizer::Visualizer(Localization &localization) : localization(localization), runRenderLoop(true) {
     if (!initialize()) {
         cleanup();
         std::cerr << "Initialization failed!" << std::endl;
@@ -10,7 +10,7 @@ Visualizer::Visualizer(Localization &localization) : localization(localization) 
 }
 
 Visualizer::~Visualizer() {
-    cleanup();
+    this->cleanup();
 }
 
 void Visualizer::cleanup() {
@@ -20,10 +20,11 @@ void Visualizer::cleanup() {
 
     if (window) {
         glfwDestroyWindow(window);
+        window = nullptr;
     }
-
     glfwTerminate();
     glDeleteTextures(1, &textureId);
+
 }
 
 bool Visualizer::initialize() {
@@ -112,14 +113,15 @@ bool Visualizer::setupTexture() {
 }
 
 void
-Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint,
-                   const bool haveLaser) {
+Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::array<LaserPoint, 720>> &laserPoint) {
     std::lock_guard<std::mutex> lock(cv_m);
     this->groundTruth = groundTruth;
     this->estimatedPose = estimatedPose;
-    this->laserPoint = laserPoint;
+    this->drawLaser = laserPoint.has_value();
+    if(this->drawLaser) {
+        this->laserPoint = laserPoint.value();
+    }
     this->freq_localization = localization.getFreq();
-    this->drawLaser = haveLaser;
     newDataAvailable = true;
 
     cv.notify_one();
@@ -127,10 +129,15 @@ Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std
 
 void Visualizer::render() {
     // Render loop
-    while (!glfwWindowShouldClose(window)) {
+
+    while (runRenderLoop && (!glfwWindowShouldClose(window))) {
         // Wait for new data
         std::unique_lock<std::mutex> lk(cv_m);
         cv.wait(lk, [this]() { return newDataAvailable; });
+        if (!runRenderLoop) {
+            break;
+        }
+
         glfwMakeContextCurrent(window);
 
         // Start the Dear ImGui frame
@@ -259,8 +266,6 @@ void Visualizer::render() {
         newDataAvailable = false;
 
     }
-    glfwTerminate();
-    exit(EXIT_SUCCESS);
 }
 
 void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &robot, const ImColor &color) const {
@@ -387,5 +392,19 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
         draw_list->AddTriangleFilled(rotated_vertices[0], rotated_vertices[1], rotated_vertices[2],
                                      IM_COL32(0, 128, 255, 255));
 
+    }
+}
+
+void Visualizer::stop() {
+    runRenderLoop = false;
+
+    {
+        std::lock_guard<std::mutex> lock(cv_m);
+        newDataAvailable = true;
+        cv.notify_all();
+    }
+
+    if (window) {
+        glfwSetWindowShouldClose(window, GL_TRUE);
     }
 }

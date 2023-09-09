@@ -5,20 +5,21 @@
 // Constructor
 SimTwoInterface::SimTwoInterface(Logger &logger, Localization &localization, AMRController &controller)
         : socket(io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), SIMTWO_RECEIVE_PORT)),
-          logger(logger), localization(localization), controller(controller) {
+          logger(logger), localization(localization), controller(controller),
+          strand(io_context.get_executor()) {
+    run = true;
     startReceive();
-    thread = std::thread([this]() { io_context.run(); });
     logger.info("Simulator Interface created and listening for data.");
     logger.info("Listening for UDP datagrams on port: " + std::to_string(SIMTWO_RECEIVE_PORT));
 }
 
+
 // Destructor
 SimTwoInterface::~SimTwoInterface() {
-    io_context.stop();
-    if (thread.joinable()) {
-        thread.join();
-    }
-    logger.trace("Simulator Interface destroyed.");
+}
+
+void SimTwoInterface::runIoContext() {
+    io_context.run();
 }
 
 // Register a callback function for when data is received
@@ -27,64 +28,39 @@ void SimTwoInterface::registerCallback(DataCallback callback) {
     logger.debug("Data callback registered.");
 }
 
+
 // Start receiving data
 void SimTwoInterface::startReceive() {
+    asio::post(strand, [&] { startReceiveInStrand(); });
+}
+
+void SimTwoInterface::startReceiveInStrand() {
     // Fill the receive buffer with zeros.
     std::fill(recv_buffer.begin(), recv_buffer.end(), 0);
 
-    // Initiate an asynchronous receive operation. The data will be placed in recv_buffer.
-    // The sender's endpoint (address and port) will be stored in sender_endpoint.
-    // When the receive operation completes (whether successful or not),
-    // the lambda function will be called with the results.
     socket.async_receive_from(
-            // Buffer to store the received data.
             asio::buffer(recv_buffer),
-
-            // This will hold the sender's endpoint after the receive operation.
             sender_endpoint,
-
-            // Lambda function to be called when the receive operation completes.
-            // The function is capturing 'this' so it can access member functions and data.
-            // The parameters are an error code (indicating success or the type of failure)
-            // and the number of bytes received.
             [this](std::error_code ec, std::size_t bytes_received) {
                 handleReceive(ec, bytes_received);
             }
     );
 }
 
-//// Alternative using std::bind instead of a lambda function:
-//void SimTwoInterface::startReceive() {
-//    std::fill(recv_buffer.begin(), recv_buffer.end(), 0);
-//    socket.async_receive_from(
-//            asio::buffer(recv_buffer),
-//            sender_endpoint,
-//
-//            // std::bind creates a new function object that, when called, will call handleReceive
-//            // on the correct object with the correct arguments.
-//            // &SimTwoInterface::handleReceive is a pointer to the member function.
-//            // 'this' is a pointer to the object to invoke the function on.
-//            // std::placeholders::_1 and std::placeholders::_2 are placeholders for the arguments
-//            // that will be provided by async_receive_from.
-//            std::bind(&SimTwoInterface::handleReceive, this, std::placeholders::_1, std::placeholders::_2)
-//    );
-//    logger.trace("Receiving started.");
-//}
-
-
-// Handle data received from the socket
 void SimTwoInterface::handleReceive(const asio::error_code &error, std::size_t /*bytes_transferred*/) {
     if (!error) {
-        logger.trace("Received data without error. Handler called.");
+        this->logger.trace("Received data without error. Handler called.");
         if (dataCallback) {
             dataCallback(std::string(recv_buffer.data()));
         }
-    } else {
-        logger.error("Error while receiving data: " + error.message());
-    }
 
-    // Set up to receive more data
-    startReceive();
+        // Set up to receive more data
+        if (run) {
+            this->startReceive();
+        }
+    } else {
+        this->logger.error("Error while receiving data: " + error.message());
+    }
 }
 
 // Send wheel speeds
@@ -99,18 +75,16 @@ void SimTwoInterface::sendWheelSpeeds(double frontLeftSpeed, double frontRightSp
 }
 
 // Parse received data
-std::tuple<std::array<int, 4>, Pose, std::array<LaserPoint, 720>, bool>
+std::tuple<std::array<int, 4>, Pose, std::optional<std::array<LaserPoint, 720>>>
 SimTwoInterface::getSensorData(const std::string &data) {
-    bool laser_flag = false;
     std::istringstream iss(data);
     std::string line;
     std::array<int, 4> encoders{}; // encs (1..4) (FL, FR, BL, BR)
     std::array<double, 3> pose{};  // Pose (X, Y, Theta)
-    std::array<LaserPoint, 720> lidar{};
+    std::optional<std::array<LaserPoint, 720>> lidar = std::nullopt;
 
     int encoder_index = 0;
     int pose_index = 0;
-    int lidar_index = 0;
 
     logger.trace("Starting to parse sensor data...");
 
@@ -123,12 +97,18 @@ SimTwoInterface::getSensorData(const std::string &data) {
             std::getline(iss, line);
             pose[pose_index++] = std::stod(line);
         } else if (line.find("lidar") != std::string::npos) {
+            // Initialize the lidar data if not done before
+            if (!lidar) {
+                lidar = std::array<LaserPoint, 720>{};
+            }
+
             std::getline(iss, line);
             std::istringstream iss_lidar(line);
             std::string val;
+
+            int lidar_index = 0;
             while (std::getline(iss_lidar, val, ',')) {
-                lidar[lidar_index++].setD(std::stod(val));
-                laser_flag = true;
+                lidar.value()[lidar_index++].setD(std::stod(val));
             }
         }
     }
@@ -136,5 +116,45 @@ SimTwoInterface::getSensorData(const std::string &data) {
     Pose tmp = Pose();
     tmp = pose;
 
-    return std::make_tuple(encoders, tmp, lidar, laser_flag);
+    return std::make_tuple(encoders, tmp, lidar);
 }
+
+
+void SimTwoInterface::stopIoContext() {
+    run = false;
+
+    std::cout << "stop io context" << std::endl;
+
+    io_context.restart();
+
+    // Ensure the io_context isn't already stopped.
+    if (!io_context.stopped()) {
+        // do the real stop
+        guard.reset();
+        io_context.stop();
+
+        // Double-check if it's really stopped.
+        if (io_context.stopped()) {
+            logger.debug("io_context has been successfully stopped.");
+        } else {
+            logger.error("Failed to stop io_context.");
+        }
+    } else {
+        logger.warn("io_context was already stopped.");
+    }
+    if (socket.is_open()) {
+        asio::error_code ec;
+
+        socket.close(ec);
+        if (ec) {
+            logger.error("Error while closing socket: " + ec.message());
+        }
+    }
+}
+
+
+asio::io_context &SimTwoInterface::getIoContext() {
+    return this->io_context;
+}
+
+

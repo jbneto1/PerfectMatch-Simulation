@@ -31,12 +31,12 @@ void ExtendedKalmanFilter::setPose(const Pose startPose) {
     mu = startPose;
 }
 
-void ExtendedKalmanFilter::predict(const Pose propagatedPose, const Eigen::Vector3d twist) {
+void ExtendedKalmanFilter::predict(const Eigen::Vector3d twist) {
     //odometry variable is already ^Xk_k_1
     double deriv_fx;
     double deriv_fy;
-    double a = cos(propagatedPose.getTheta());
-    double b = sin(propagatedPose.getTheta());
+    double a = cos(mu.getTheta());
+    double b = sin(mu.getTheta());
 
     deriv_fx = (-b * twist[0] - a * twist[1]);
     deriv_fy = (-b * twist[0] + a * twist[1]);
@@ -45,7 +45,6 @@ void ExtendedKalmanFilter::predict(const Pose propagatedPose, const Eigen::Vecto
     Fk(1, 2) = deriv_fy;
 
     Pk = Fk * Pk * Fk.transpose() + Qk;
-    mu = propagatedPose;
 }
 
 void ExtendedKalmanFilter::update(const Pose Zk) {

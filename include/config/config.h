@@ -8,13 +8,13 @@
 constexpr int MAX_BUFFER_SIZE = 16256;
 constexpr int SIMTWO_RECEIVE_PORT = 9000;
 
-constexpr int ENCODER_RESOLUTION = 1920;
+constexpr int ENCODER_RESOLUTION = 3840;
 constexpr double CONTROL_CYCLE = 0.025;
 constexpr double STEP_SCALE = 0.04;
 constexpr double LASER_RANGE = 360.0;
 constexpr int LASER_RAYS = 720;
-constexpr double A = 0.15;
-constexpr double B = 0.185;
+constexpr double A = 0.25 / 2 - 0.05;
+constexpr double B = 0.155 / 2 + 0.015;
 constexpr double C = A + B;
 constexpr double R = 0.065 / 2;
 
@@ -60,7 +60,7 @@ public:
     }
 
     Pose operator-(const Eigen::Vector3d &vec) const {
-        return Pose(x - vec[0], y - vec[1], normalizeAngle(theta - vec[2]));
+        return Pose(x - vec[0], y - vec[1], diffAngle(theta, vec[2]));
     }
 
     Pose &operator=(const Eigen::Vector3d &vec) {
@@ -73,9 +73,8 @@ public:
     Pose operator-(const Pose &other) const {
         double dx = x - other.getX();
         double dy = y - other.getY();
-        double dtheta = theta - other.getTheta();
+        double dtheta = diffAngle(theta, other.getTheta());
         // Normalize theta to be between -pi and pi.
-        dtheta = normalizeAngle(dtheta);
         return Pose(dx, dy, dtheta);
     }
 
