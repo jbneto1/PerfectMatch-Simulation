@@ -21,6 +21,7 @@
 #include <chrono>
 #include <thread>
 #include "../src/Localization/Localization.h"
+#include <optional>
 
 
 class Visualizer {
@@ -29,9 +30,13 @@ public:
 
     ~Visualizer();
 
-    void update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint, const bool haveLaser);
+    void update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::array<LaserPoint, 720>> &laserPoint);
 
     void render();
+
+    void stop();
+
+    void cleanup();
 
 private:
 
@@ -54,10 +59,13 @@ private:
     GLuint textureId{};  // Texture identifier for the map image
     int texWidth{}, texHeight{};  // Texture size
     bool drawLaser;
+    std::atomic<bool> runRenderLoop;
 
     bool initialize();
 
-    void cleanup();
+
+
+
 
     bool setupTexture();
 
