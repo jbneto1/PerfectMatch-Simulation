@@ -36,30 +36,12 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
 
 void Localization::processData(const std::array<int, 4> &encoders, const Pose &GT,
                                std::array<LaserPoint, 720> &lidarData) {
-    static double runtime = 0;
-    static double runtimePrevious = 0;
-
-    if (firstIter) {
-        EKF.setPose(GT);
-        firstIter = false;
-    }
-
-    runtime += dt;
-    double fq = 1 / (runtime - runtimePrevious);
-    freq = fq;
-
-    Eigen::Vector4d encs = {encoders[0], encoders[1], encoders[2], encoders[3]};
-
-    forward_kinematics(encs);
-    EKF.setPose(odometry());
-    EKF.predict(speedsStates);
+    processData(encoders, GT);
 
 //    if (laserData) {
 //        auto temp = PMMatchingWithLimit(PM, lidarData, 10, std::chrono::milliseconds(2));
 //        EKF.update(temp);
 //    }
-
-    runtimePrevious = runtime;
 }
 
 Pose Localization::PMMatchingWithLimit(PerfectMatch &PM, std::array<LaserPoint, 720> &lidarData, int max_iter,
@@ -106,6 +88,7 @@ Pose Localization::odometry() {
     propagatedPose.setX(EKF.getPose().getX() + (cosTheta * speedsStates[0] - sinTheta * speedsStates[1]) * dt);
     propagatedPose.setY(EKF.getPose().getY() + (sinTheta * speedsStates[0] + cosTheta * speedsStates[1]) * dt);
     propagatedPose.setTheta(EKF.getPose().getTheta() + speedsStates[2] * dt);
+
     return propagatedPose;
 }
 
