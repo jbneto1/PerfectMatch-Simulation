@@ -1,10 +1,9 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer(Localization &localization) : localization(localization), runRenderLoop(true) {
+Visualizer::Visualizer(Localization &localization) : localization(localization), newDataAvailable(false), runRenderLoop(true) {
     if (!initialize()) {
         cleanup();
-        std::cerr << "Initialization failed!" << std::endl;
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("Initialization failed!");
     }
     drawLaser = false;
 }
@@ -127,144 +126,148 @@ Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std
     cv.notify_one();
 }
 
+void Visualizer::handleEvents() {
+    std::unique_lock<std::mutex> lk(cv_m);
+    cv.wait(lk, [this]() { return newDataAvailable; });
+    if (!runRenderLoop) return;  // Early exit if needed
+    glfwMakeContextCurrent(window);
+}
+
+void Visualizer::setupImGuiFrame() {
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Create a new ImGui window
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImVec2(texWidth, texHeight + 310));
+    ImGui::Begin("Robot Localization", nullptr,
+                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
+                 ImGuiWindowFlags_NoTitleBar);
+
+    ImGui::SetWindowFontScale(2); // Change the scale value to what suits you
+    // Set the cursor position
+    ImGui::SetCursorPos(ImVec2(0, 0));
+
+    // Draw the map
+    ImGui::Image((void *) (intptr_t) textureId, ImVec2(texWidth, texHeight));
+}
+
+void Visualizer::drawUIElements() {
+    // Display the pose data
+    ImDrawList *draw_list = ImGui::GetWindowDrawList();
+    ImVec2 p = ImGui::GetCursorScreenPos();
+
+    float size = 14.0f; //adjust size to match your font
+    float halfBase = size / 2.0f;
+
+    // Draw triangles for GroundTruth and EstimatedPose
+    drawTriangle(draw_list, groundTruth, ImColor(255, 0, 0)); // green
+    drawTriangle(draw_list, estimatedPose, ImColor(0, 0, 255)); // blue
+    draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
+    if (drawLaser) drawLidarPoints(draw_list, estimatedPose, laserPoint, IM_COL32(128, 0, 198, 255));
+
+    draw_list->AddTriangleFilled(
+            ImVec2(p.x + halfBase, p.y + 5),               // Top vertex
+            ImVec2(p.x, p.y + size + 5),                   // Bottom left vertex
+            ImVec2(p.x + size, p.y + size + 5),            // Bottom right vertex
+            ImColor(0, 0, 255)
+    );  // Red filled Triangle // Red filled Triangle
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20); // Push cursor to right by 50 units
+    ImGui::Text("Estimated Pose [m]:  x=%.3f, y=%.3f, theta=%.3fº", estimatedPose.getX(), estimatedPose.getY(),
+                estimatedPose.getThetaDeg());
+
+    p = ImGui::GetCursorScreenPos();
+
+    draw_list->AddTriangleFilled(
+            ImVec2(p.x + halfBase, p.y + 5),               // Top vertex
+            ImVec2(p.x, p.y + size + 5),                   // Bottom left vertex
+            ImVec2(p.x + size, p.y + size + 5),            // Bottom right vertex
+            ImColor(255, 0, 0)
+    );  // Red filled Triangle
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20); // Push cursor to right by 50 units
+    ImGui::Text("Ground Truth [m]:  x=%.3f, y=%.3f, theta=%.3fº", groundTruth.getX(), groundTruth.getY(),
+                groundTruth.getThetaDeg());
+
+    Pose temp = estimatedPose - groundTruth;
+
+    ImGui::Text("Error [m]:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
+                temp.getY(), temp.getThetaDeg());
+
+    ImGui::Text("Localization freq [Hz]: %.2f", freq_localization);
+    ImGui::SameLine();
+    ImGui::Text("PM error [m]: %.3f", localization.getPM().getError());
+
+
+    static double k = 0.0f;
+    ImGui::PushItemWidth(160);
+    ImGui::InputDouble("Step scale", &k, 0.0005, 0.0005, "%.4f");
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    if (ImGui::Button("Set step")) {
+        localization.getPM().setStep(k);
+    }
+
+    ImGui::SameLine();
+
+    std::string stepScaleText = "Current step: " + fmt::format("{:.4f}", localization.getPM().getStep());
+    ImGui::Text("%s", stepScaleText.c_str());
+
+    static double x = 0.0f, y = 0.0f, theta_deg = 0.0f;
+    static Pose pose;
+    ImGui::PushItemWidth(80);
+    bool x_changed = ImGui::InputDouble("iX [m]", &x, 0.0, 0.0, "%.3f");
+    bool y_changed = ImGui::InputDouble("iY [m]", &y, 0.0, 0.0, "%.3f");
+    bool theta_changed = ImGui::InputDouble("iTheta [deg]", &theta_deg, 0.0, 0.0, "%.3f");
+    ImGui::PopItemWidth();
+    if (x_changed | y_changed | theta_changed) {
+        double theta_rad = theta_deg * (M_PI / 180);  // Convert from degree to radians
+        pose.setX(x);
+        pose.setY(y);
+        pose.setTheta(theta_rad);
+    }
+
+    if (ImGui::Button("Set Pose")) {
+        localization.setPose(pose);
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("Reset")) {
+        localization.setPose(groundTruth);
+    }
+}
+
+void Visualizer::finishRender() {
+    ImGui::End();
+    ImGui::Render();
+    int display_w, display_h;
+    glfwGetFramebufferSize(window, &display_w, &display_h);
+    glViewport(0, 0, display_w, display_h);
+    glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Render the ImGui content
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    // Swap front and back buffers
+    glfwSwapBuffers(window);
+
+}
+
+void Visualizer::updateDataAvailability() {
+    glfwPollEvents();
+    newDataAvailable = false;
+}
+
 void Visualizer::render() {
-    // Render loop
-
     while (runRenderLoop && (!glfwWindowShouldClose(window))) {
-        // Wait for new data
-        std::unique_lock<std::mutex> lk(cv_m);
-        cv.wait(lk, [this]() { return newDataAvailable; });
-        if (!runRenderLoop) {
-            break;
-        }
-
-        glfwMakeContextCurrent(window);
-
-        // Start the Dear ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        // Create a new ImGui window
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(texWidth, texHeight + 310));
-        ImGui::Begin("Robot Localization", nullptr,
-                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
-                     ImGuiWindowFlags_NoTitleBar);
-
-        ImGui::SetWindowFontScale(2); // Change the scale value to what suits you
-        // Set the cursor position
-        ImGui::SetCursorPos(ImVec2(0, 0));
-
-        // Draw the map
-        ImGui::Image((void *) (intptr_t) textureId, ImVec2(texWidth, texHeight));
-        // Display the pose data
-        ImDrawList *draw_list = ImGui::GetWindowDrawList();
-        ImVec2 p = ImGui::GetCursorScreenPos();
-
-        float size = 14.0f; //adjust size to match your font
-        float halfBase = size / 2.0f;
-
-        // Draw triangles for GroundTruth and EstimatedPose
-        drawTriangle(draw_list, groundTruth, ImColor(255, 0, 0)); // green
-        drawTriangle(draw_list, estimatedPose, ImColor(0, 0, 255)); // blue
-        draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
-        if (drawLaser) drawLidarPoints(draw_list, estimatedPose, laserPoint, IM_COL32(128, 0, 198, 255));
-
-        draw_list->AddTriangleFilled(
-                ImVec2(p.x + halfBase, p.y + 5),               // Top vertex
-                ImVec2(p.x, p.y + size + 5),                   // Bottom left vertex
-                ImVec2(p.x + size, p.y + size + 5),            // Bottom right vertex
-                ImColor(0, 0, 255)
-        );  // Red filled Triangle // Red filled Triangle
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20); // Push cursor to right by 50 units
-        ImGui::Text("Estimated Pose [m]:  x=%.3f, y=%.3f, theta=%.3fº", estimatedPose.getX(), estimatedPose.getY(),
-                    estimatedPose.getThetaDeg());
-
-        p = ImGui::GetCursorScreenPos();
-
-        draw_list->AddTriangleFilled(
-                ImVec2(p.x + halfBase, p.y + 5),               // Top vertex
-                ImVec2(p.x, p.y + size + 5),                   // Bottom left vertex
-                ImVec2(p.x + size, p.y + size + 5),            // Bottom right vertex
-                ImColor(255, 0, 0)
-        );  // Red filled Triangle
-        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20); // Push cursor to right by 50 units
-        ImGui::Text("Ground Truth [m]:  x=%.3f, y=%.3f, theta=%.3fº", groundTruth.getX(), groundTruth.getY(),
-                    groundTruth.getThetaDeg());
-
-        Pose temp = estimatedPose - groundTruth;
-
-        ImGui::Text("Error [m]:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
-                    temp.getY(), temp.getThetaDeg());
-
-        ImGui::Text("Localization freq [Hz]: %.2f", freq_localization);
-        ImGui::SameLine();
-        ImGui::Text("PM error [m]: %.3f", localization.getPM().getError());
-
-
-        static double k = 0.0f;
-        ImGui::PushItemWidth(160);
-        ImGui::InputDouble("Step scale", &k, 0.0005, 0.0005, "%.4f");
-        ImGui::PopItemWidth();
-        ImGui::SameLine();
-
-        if (ImGui::Button("Set step")) {
-            localization.getPM().setStep(k);
-        }
-
-        ImGui::SameLine();
-
-        std::string stepScaleText = "Current step: " + fmt::format("{:.4f}", localization.getPM().getStep());
-        ImGui::Text("%s", stepScaleText.c_str());
-
-        static double x = 0.0f, y = 0.0f, theta_deg = 0.0f;
-        static Pose pose;
-        ImGui::PushItemWidth(80);
-        bool x_changed = ImGui::InputDouble("iX [m]", &x, 0.0, 0.0, "%.3f");
-        bool y_changed = ImGui::InputDouble("iY [m]", &y, 0.0, 0.0, "%.3f");
-        bool theta_changed = ImGui::InputDouble("iTheta [deg]", &theta_deg, 0.0, 0.0, "%.3f");
-        ImGui::PopItemWidth();
-        if (x_changed | y_changed | theta_changed) {
-            double theta_rad = theta_deg * (M_PI / 180);  // Convert from degree to radians
-            pose.setX(x);
-            pose.setY(y);
-            pose.setTheta(theta_rad);
-        }
-
-        if (ImGui::Button("Set Pose")) {
-            localization.setPose(pose);
-        }
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Reset")) {
-            localization.setPose(groundTruth);
-        }
-
-        // Finish the ImGui window
-        ImGui::End();
-
-        // Render ImGui
-        ImGui::Render();
-
-        // Set the viewport and clear the screen
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        glViewport(0, 0, display_w, display_h);
-        glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // Render the ImGui content
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        // Swap front and back buffers
-        glfwSwapBuffers(window);
-
-        // Poll for and process events
-        glfwPollEvents();
-        newDataAvailable = false;
-
+        handleEvents();
+        setupImGuiFrame();
+        drawUIElements();
+        finishRender();
+        updateDataAvailability();
     }
 }
 
