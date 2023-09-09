@@ -51,7 +51,7 @@ private:
 
     std::condition_variable cv;
     std::mutex cv_m;
-    bool newDataAvailable = false;
+    bool newDataAvailable;
     Pose groundTruth;
     Pose estimatedPose;
     std::array<LaserPoint, 720> laserPoint;
@@ -62,6 +62,13 @@ private:
     std::atomic<bool> runRenderLoop;
 
     bool initialize();
+
+    void handleEvents();
+    void setupImGuiFrame();
+    void drawUIElements();
+    void drawVisualization();
+    void finishRender();
+    void updateDataAvailability();
 
 
 

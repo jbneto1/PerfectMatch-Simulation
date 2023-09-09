@@ -106,7 +106,6 @@ Pose Localization::odometry() {
     propagatedPose.setX(EKF.getPose().getX() + (cosTheta * speedsStates[0] - sinTheta * speedsStates[1]) * dt);
     propagatedPose.setY(EKF.getPose().getY() + (sinTheta * speedsStates[0] + cosTheta * speedsStates[1]) * dt);
     propagatedPose.setTheta(EKF.getPose().getTheta() + speedsStates[2] * dt);
-//TODO CHECK EULER INTEGRATION THETA BEFORE OR AFTER
     return propagatedPose;
 }
 
