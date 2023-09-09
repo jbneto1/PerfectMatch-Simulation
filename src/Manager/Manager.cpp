@@ -2,24 +2,60 @@
 
 #include "Manager.h"
 
-std::atomic<bool> Manager::run_loop; // Control variable for the main run loop
+Manager::Manager(Logger &logger)
+        : logger(logger),
+          controller(logger),
+          localization(logger),
+          interface(logger, localization, controller),
+          visualizer(localization),
+          visThread(),
+          signals_(interface.getIoContext(), SIGINT),
+          CtrlCPromise(),
+          encoder_readings({0, 0, 0, 0}),
+          GT_reading(),
+          laserReadings({}) {
 
-Manager::Manager(Logger &logger, const double control_cycle) : logger(logger), dt(control_cycle),
-                                                               visualizer(localization.getPM()) {
-    run_loop = true;  // Initialize loop control variable
-    std::signal(SIGINT, Manager::signalHandler);  // Register SIGINT handler
-    logger.trace("SIGINT signal handler registered.");
+    logger.trace("SIGINT signal handler registered with asio.");
     visThread = std::thread(&Visualizer::render, &visualizer);
+    setupSignalHandler();
 }
 
 Manager::~Manager() {
-    logger.trace("Manager destructor called.");
-    if (visThread.joinable())
+}
+
+void Manager::stop() {
+    signals_.cancel(); // cancel signal set
+
+    if(visThread.joinable()) {
+        visualizer.stop();  // stop the visualization thread
         visThread.join();
-    // Placeholder for any cleanup tasks
+    }
+
+    interface.stopIoContext();
+}
+void Manager::setupSignalHandler() {
+    // Register the signal handler with asio
+    try {
+
+        signals_.async_wait([this](const asio::error_code &error, int signal_number) {
+            if (!error) {
+                if (signal_number == SIGINT) {
+                    this->logger.trace("SIGINT caught.");
+                    this->stop();
+                } else {
+                    this->logger.debug("Unexpected signal: " + std::to_string(signal_number));
+                }
+            } else {
+                this->logger.error("Error in signal handler: " + error.message());
+            }
+        });
+    } catch (const std::exception &e) {
+        this->logger.error("Exception in signal handler: " + std::string(e.what()));
+    }
 }
 
 void Manager::run() {
+
     // Register callback
     interface.registerCallback([&](const std::string &data) {
         onDataReceived(data, interface, localization, controller, logger);
@@ -27,31 +63,28 @@ void Manager::run() {
 
     logger.debug("Waiting for simulator.");
 
-    while (run_loop) {
-        runOptimization();
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
-    };  // Main run loop
+    // auto work = asio::make_work_guard(exec);
+    interface.runIoContext();
+    // Perform cleanup activities...
 
     logger.trace("Terminating program...");
-}
-
-void Manager::signalHandler(int sig) {
-    if (sig == SIGINT) run_loop = false;  // On SIGINT, break the main run loop
-    Logger::getInstance(spdlog::level::info).trace("SIGINT caught.");
 }
 
 // This is the function that will be called when data is received.
 void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface, Localization &localization,
                              AMRController &controller, Logger &logger) {
-    std::lock_guard<std::mutex> lock(dataMutex);
     logger.trace("Data received. Handler callback called.");
-    std::tie(encoder_readings, GT_reading, laserReadings) = interface.getSensorData(data);
-    localization.getPM().ProcessLaserPoints(laserReadings);
-    logger.trace("Processing Perfect Match.");
-}
+    auto [encoder_readings, GT_reading, optLaserReadings] = interface.getSensorData(data);
 
-void Manager::runOptimization() {
-    std::lock_guard<std::mutex> lock(dataMutex);
-    localization.processData(encoder_readings, GT_reading, laserReadings);
-    visualizer.update(localization.getGTPose(), localization.getPose(), laserReadings);
+    if (optLaserReadings.has_value()) {
+        laserReadings = optLaserReadings;
+        localization.getPM().ProcessLaserPoints(laserReadings.value());
+        localization.processData(encoder_readings, GT_reading, laserReadings.value());
+    } else {
+        laserReadings.reset(); // Clear the optional
+        localization.processData(encoder_readings, GT_reading);
+    }
+
+    visualizer.update(GT_reading, localization.getPose(), laserReadings);
+    logger.trace("Processing Perfect Match.");
 }

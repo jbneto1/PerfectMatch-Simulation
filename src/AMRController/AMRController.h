@@ -17,6 +17,8 @@ public:
 
     std::tuple<double, double, double, double> computeWheelSpeeds(Pose estimatedPose);
 
+//    mecanum_wheels_speeds_t inverse_kinematics(const mecanum_speed_states_t vvnw)
+
 private:
     Logger &logger;
 

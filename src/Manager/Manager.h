@@ -9,42 +9,42 @@
 #include <Localization/Localization.h>
 #include <Logger/logger.h>
 #include <AMRController/AMRController.h>
-#include <csignal>
 #include <Visualizer/Visualizer.h>
 #include <thread>
+#include <condition_variable>
+#include <asio/signal_set.hpp>
+#include <optional>
 
 class Manager {
 public:
 
-    Manager(Logger &logger, const double control_cycle);
+    Manager(Logger &logger);
+
     ~Manager();
 
     void run();
 
 private:
-    void runOptimization();
-    const double dt;
-    Logger &logger;
-    AMRController controller = AMRController(logger);
-    Localization localization = Localization(logger, controller, dt, MAX_ITERS);
-    SimTwoInterface interface = SimTwoInterface(logger, localization, controller);
+    Logger& logger;
+    AMRController controller;
+    Localization localization;
+    SimTwoInterface interface;
     Visualizer visualizer;
     std::thread visThread;
+    asio::any_io_executor exec;
+
+    asio::signal_set signals_;
+    std::promise<void> CtrlCPromise;
+
 
     std::array<int, 4> encoder_readings;
     Pose GT_reading;
-    std::array<LaserPoint, 720> laserReadings;
+    std::optional<std::array<LaserPoint, 720>> laserReadings;
 
-    std::mutex dataMutex;
-
-
-
-    static std::atomic<bool> run_loop;
-
-    static void signalHandler(int sig);
+    void setupSignalHandler();
+    void stop();
 
     void onDataReceived(const std::string &data, SimTwoInterface &interface, Localization &localization,
-                       AMRController &controller, Logger &logger);
+                        AMRController &controller, Logger &logger);
 };
-
 #endif //AMR_PROJECT_MANAGER_H

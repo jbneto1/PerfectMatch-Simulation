@@ -8,27 +8,34 @@
 constexpr int MAX_BUFFER_SIZE = 16256;
 constexpr int SIMTWO_RECEIVE_PORT = 9000;
 
-constexpr int ENCODER_RESOLUTION = 1920;
+constexpr int ENCODER_RESOLUTION = 3840;
 constexpr double CONTROL_CYCLE = 0.025;
-constexpr int MAX_ITERS = 10;
+constexpr double STEP_SCALE = 0.04;
 constexpr double LASER_RANGE = 360.0;
 constexpr int LASER_RAYS = 720;
+constexpr double A = 0.25 / 2 - 0.05;
+constexpr double B = 0.155 / 2 + 0.015;
+constexpr double C = A + B;
+constexpr double R = 0.065 / 2;
 
 #include <array>
 #include <stdexcept>
 #include <cmath>
+#include "utils/utils.h"
+#include <Eigen/Dense>
 
 class Pose {
 private:
     double x;
     double y;
     double theta;
-    double err;
 
 public:
-    Pose() : x(0), y(0), theta(0), err(0) {}
+    Pose() : x(0), y(0), theta(0) {}
 
-    Pose(double x, double y, double theta) : x(x), y(y), theta(theta), err(0) {}
+    Pose(double x, double y, double theta) : x(x), y(y), theta(theta) {}
+
+    Pose(const Eigen::Vector3d &vec) : x(vec[0]), y(vec[1]), theta(vec[2]) {}
 
     double getX() const { return x; }
 
@@ -38,69 +45,56 @@ public:
 
     double getThetaDeg() const { return (theta * 180 / M_PI); }
 
-    double getErr() const { return err; }
-
     void setX(double x) { this->x = x; }
 
     void setY(double y) { this->y = y; }
 
-    void setTheta(double theta) { this->theta = theta; }
+    void setTheta(double theta) { this->theta = normalizeAngle(theta); }
 
-    void setErr(double err) { this->err = err; }
+    operator Eigen::Vector3d() const {
+        return Eigen::Vector3d(x, y, theta);
+    }
+
+    Pose operator+(const Eigen::Vector3d &vec) const {
+        return Pose(x + vec[0], y + vec[1], normalizeAngle(theta + vec[2]));
+    }
+
+    Pose operator-(const Eigen::Vector3d &vec) const {
+        return Pose(x - vec[0], y - vec[1], diffAngle(theta, vec[2]));
+    }
+
+    Pose &operator=(const Eigen::Vector3d &vec) {
+        x = vec[0];
+        y = vec[1];
+        theta = vec[2];
+        return *this;
+    }
 
     Pose operator-(const Pose &other) const {
         double dx = x - other.getX();
         double dy = y - other.getY();
-        double dtheta = theta - other.getTheta();
+        double dtheta = diffAngle(theta, other.getTheta());
         // Normalize theta to be between -pi and pi.
-        dtheta = fmod(dtheta, 2 * M_PI);
-        if (dtheta >= M_PI) {
-            dtheta -= 2 * M_PI;
-        } else if (dtheta < -M_PI) {
-            dtheta += 2 * M_PI;
-        }
+        return Pose(dx, dy, dtheta);
+    }
+
+    Pose operator+(const Pose &other) const {
+        double dx = x + other.getX();
+        double dy = y + other.getY();
+        double dtheta = theta + other.getTheta();
+        // Normalize theta to be between -pi and pi.
+        dtheta = normalizeAngle(dtheta);
         return Pose(dx, dy, dtheta);
     }
 
     Pose &operator=(const std::array<double, 3> &arr) {
-        if (arr.size() != 3) {
-            throw std::invalid_argument("Unmatched array size.");
-        }
         x = arr[0];
         y = arr[1];
         theta = arr[2];
         return *this;
     }
-};
 
-class Encoders {
-private:
-    double frontLeft;
-    double frontRight;
-    double backLeft;
-    double backRight;
 
-public:
-    Encoders() : frontLeft(0), frontRight(0), backLeft(0), backRight(0) {}
-
-    Encoders(double frontLeft, double frontRight, double backLeft, double backRight) :
-            frontLeft(frontLeft), frontRight(frontRight), backLeft(backLeft), backRight(backRight) {}
-
-    double getFrontLeft() const { return frontLeft; }
-
-    double getFrontRight() const { return frontRight; }
-
-    double getBackLeft() const { return backLeft; }
-
-    double getBackRight() const { return backRight; }
-
-    void setFrontLeft(double frontLeft) { this->frontLeft = frontLeft; }
-
-    void setFrontRight(double frontRight) { this->frontRight = frontRight; }
-
-    void setBackLeft(double backLeft) { this->backLeft = backLeft; }
-
-    void setBackRight(double backRight) { this->backRight = backRight; }
 };
 
 class LaserPoint {

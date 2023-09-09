@@ -1,13 +1,37 @@
 #include "Localization.h"
 
-Localization::Localization(Logger &logger, AMRController &controller, const double control_cycle, const int maxIters)
+Localization::Localization(Logger &logger)
         : logger(logger),
-          controller(
-                  controller),
-          dt(control_cycle), PM(logger) {
-    // Initialize the localization system
+          dt(CONTROL_CYCLE), PM(logger), a(A), b(B), c(C), r(R),
+          forwardK_model(
+                  (Eigen::Matrix<double, 3, 4>() << 1, 1, 1, 1,
+                          -1, 1, 1, -1,
+                          -1 / c, 1 / c, -1 / c, 1 / c)
+                          .finished()) {
     firstIter = true;
-    logger.debug("Localization system initialized.");
+}
+
+void Localization::processData(const std::array<int, 4> &encoders, const Pose &GT) {
+    static double runtime = 0;
+    static double runtimePrevious = 0;
+
+    if (firstIter) {
+        EKF.setPose(GT);
+        firstIter = false;
+    }
+
+    runtime += dt;
+    double fq = 1 / (runtime - runtimePrevious);
+    freq = fq;
+
+    Eigen::Vector4d encs = {encoders[0], encoders[1], encoders[2], encoders[3]};
+
+    forward_kinematics(encs);
+    EKF.setPose(odometry());
+    EKF.predict(speedsStates);
+
+
+    runtimePrevious = runtime;
 }
 
 void Localization::processData(const std::array<int, 4> &encoders, const Pose &GT,
@@ -15,79 +39,75 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     static double runtime = 0;
     static double runtimePrevious = 0;
 
-    groundTruth = GT;
-
     if (firstIter) {
-        PM.setPose(GT);
+        EKF.setPose(GT);
         firstIter = false;
     }
+
     runtime += dt;
-    double freq = 1 / (runtime - runtimePrevious);
-    logger.fileLog("------------------------------------------");
-    PM.setFreq(freq);
-    Pose matchedPose = PM.match(lidarData); // Note the match result
+    double fq = 1 / (runtime - runtimePrevious);
+    freq = fq;
+
+    Eigen::Vector4d encs = {encoders[0], encoders[1], encoders[2], encoders[3]};
+
+    forward_kinematics(encs);
+    EKF.setPose(odometry());
+    EKF.predict(speedsStates);
+
+//    if (laserData) {
+//        auto temp = PMMatchingWithLimit(PM, lidarData, 10, std::chrono::milliseconds(2));
+//        EKF.update(temp);
+//    }
+
     runtimePrevious = runtime;
-
-    estimatedPose = matchedPose;
-
-    logger.fileLog(fmt::format("gtX [m]: {:.2f}, gtY [m]: {:.2f}, gtTheta [deg]: {:.2f}",
-                            groundTruth.getX(),
-                            groundTruth.getY(),
-                            radToDeg(groundTruth.getTheta()),
-                            freq));
-
-    logger.fileLog(fmt::format("pmX [m]: {:.2f}, pmY [m]: {:.2f}, pmTheta [deg]: {:.2f}",
-                            matchedPose.getX(),
-                            matchedPose.getY(),
-                            radToDeg(matchedPose.getTheta()),
-                            freq));
-
-    logger.fileLog(fmt::format("ex [m]: {:.2f}, ey [m]: {:.2f}, etheta [deg]: {:.2f}, PM-Hz: {:.2f}",
-                            (groundTruth.getX() - matchedPose.getX()),
-                            (groundTruth.getY() - matchedPose.getY()),
-                            radToDeg(diffAngle(groundTruth.getTheta(), matchedPose.getTheta())),
-                            freq));
-
-    logger.fileLog(fmt::format("Freq [Hz]: {:.2f}", freq));
-
-    logger.trace("Data processed for Localization");
 }
 
-Pose Localization::getPose() {
-    return (estimatedPose);
+Pose Localization::PMMatchingWithLimit(PerfectMatch &PM, std::array<LaserPoint, 720> &lidarData, int max_iter,
+                                       std::chrono::milliseconds max_duration) {
+    auto timeout_time = std::chrono::high_resolution_clock::now() + max_duration;
+    Pose result = Pose();
+
+    for (int iter = 0; iter < max_iter; iter++) {
+        result = PM.match(lidarData);
+        if (std::chrono::high_resolution_clock::now() >= timeout_time) {
+            return result;
+        }
+    }
+    return result;
 }
 
 void Localization::setPose(Pose &startPose) {
-    logger.info("Setting pose for Localization to: (" + std::to_string(startPose.getX()) + ", " +
-                std::to_string(startPose.getY()) + ", " + std::to_string(startPose.getTheta()) + ")");
     EKF.setPose(startPose);
-    logger.debug("Pose set for Localization");
 }
 
+void Localization::forward_kinematics(const Eigen::Vector4d encs) {
 
-void Localization::odometry(const std::array<int, 4> &encoders) {
-    std::array<double, 3> estSpeedStates;
-    std::array<double, 3> propagatedPose;
+    wSpeeds_estimation(encs);
 
-//    estSpeedStates = controller.mecanum.getEstimatedSpeedStates(encoders);
+    speedsStates = r / 4 * (forwardK_model * wSpeeds);
+
+}
+
+void Localization::wSpeeds_estimation(const Eigen::Vector4d encs) {
+    double tmp;
+    tmp = 2 * M_PI / (ENCODER_RESOLUTION * dt);
+    wSpeeds = {tmp * encs[0], tmp * encs[1], tmp * encs[2], tmp * encs[3]};
+}
+
+Pose Localization::odometry() {
+    Pose propagatedPose = Pose();
 
     double cosTheta, sinTheta;
 
-    propagatedPose[2] = getPose().getTheta() + estSpeedStates[2] * dt;
 
-    cosTheta = cos(propagatedPose[2]);
-    sinTheta = sin(propagatedPose[2]);
+    cosTheta = cos(EKF.getPose().getTheta());
+    sinTheta = sin(EKF.getPose().getTheta());
 
-    propagatedPose[0] = getPose().getX() +
-                        (cosTheta * estSpeedStates[0] - sinTheta * estSpeedStates[1]) * dt;
-    propagatedPose[1] = getPose().getY() +
-                        (sinTheta * estSpeedStates[0] + cosTheta * estSpeedStates[1]) * dt;
-
-    estimatedPose = propagatedPose;
-}
-
-Pose Localization::getGTPose() {
-    return groundTruth;
+    propagatedPose.setX(EKF.getPose().getX() + (cosTheta * speedsStates[0] - sinTheta * speedsStates[1]) * dt);
+    propagatedPose.setY(EKF.getPose().getY() + (sinTheta * speedsStates[0] + cosTheta * speedsStates[1]) * dt);
+    propagatedPose.setTheta(EKF.getPose().getTheta() + speedsStates[2] * dt);
+//TODO CHECK EULER INTEGRATION THETA BEFORE OR AFTER
+    return propagatedPose;
 }
 
 

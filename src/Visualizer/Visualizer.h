@@ -16,21 +16,27 @@
 #include <condition_variable>
 #include <mutex>  // Added for std::mutex
 #include <third_party/stb/stb_image.h>
-#include <../src/Localization/PerfectMatch/PerfectMatch.h>
+#include "../src/Localization/PerfectMatch/PerfectMatch.h"
 #include <Logger/logger.h>
 #include <chrono>
 #include <thread>
+#include "../src/Localization/Localization.h"
+#include <optional>
 
 
 class Visualizer {
 public:
-    explicit Visualizer(PerfectMatch &perfectMatch);
+    explicit Visualizer(Localization &localization);
 
     ~Visualizer();
 
-    void update(const Pose &groundTruth, const Pose &estimatedPose, const std::array<LaserPoint, 720> &laserPoint);
+    void update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::array<LaserPoint, 720>> &laserPoint);
 
     void render();
+
+    void stop();
+
+    void cleanup();
 
 private:
 
@@ -39,9 +45,9 @@ private:
     float y_scale;
     float x_center;
     float y_center;
-    float freq_PM;
+    float freq_localization;
 
-    PerfectMatch &pm;
+    Localization &localization;
 
     std::condition_variable cv;
     std::mutex cv_m;
@@ -51,11 +57,15 @@ private:
     std::array<LaserPoint, 720> laserPoint;
     GLFWwindow *window{};
     GLuint textureId{};  // Texture identifier for the map image
-    int texWidth{}, texHeight{};  // Texture size variables
+    int texWidth{}, texHeight{};  // Texture size
+    bool drawLaser;
+    std::atomic<bool> runRenderLoop;
 
     bool initialize();
 
-    void cleanup();
+
+
+
 
     bool setupTexture();
 
