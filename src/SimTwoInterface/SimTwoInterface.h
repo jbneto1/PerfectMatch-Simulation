@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <sstream>
 #include <Localization/Localization.h>
+#include "AMRController/AMRController.h"
 #include <chrono>
 #include <optional>
 
@@ -57,8 +58,6 @@ private:
     bool run;
     asio::strand<asio::io_context::executor_type> strand;
     asio::executor_work_guard<asio::io_context::executor_type> guard = asio::make_work_guard(io_context);
-
-
 };
 
 #endif //PERFECTMATCH_SIMULATION_SIMTWOINTERFACE_H

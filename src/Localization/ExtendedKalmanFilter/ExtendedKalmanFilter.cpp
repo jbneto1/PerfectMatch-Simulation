@@ -5,9 +5,9 @@
 #include "ExtendedKalmanFilter.h"
 
 
-ExtendedKalmanFilter::ExtendedKalmanFilter() : Qk((Matrix3d() << 0.1, 0, 0,
-        0, 0.1, 0,
-        0, 0, 0.1).finished()) {
+ExtendedKalmanFilter::ExtendedKalmanFilter() : Qk((Matrix3d() << 1, 0, 0,
+        0, 1, 0,
+        0, 0, 1).finished()) {
 
     mu = Pose();
 
@@ -20,7 +20,7 @@ ExtendedKalmanFilter::ExtendedKalmanFilter() : Qk((Matrix3d() << 0.1, 0, 0,
     //Initialization aruco
     Hk_PM = Matrix3d::Identity(3, 3);
     Rk_PM = Matrix3d::Identity(3, 3);
-    Rk_PM.diagonal() << 3.2, 3.2, 3.2;
+    Rk_PM.diagonal() << 100, 100, 100;
 }
 
 Pose ExtendedKalmanFilter::getPose() {

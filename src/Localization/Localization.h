@@ -1,61 +1,47 @@
-//
-// Created by jabra on 5/16/2023.
-//
-
 #ifndef PERFECTMATCH_SIMULATION_LOCALIZATION_H
 #define PERFECTMATCH_SIMULATION_LOCALIZATION_H
 
-#include <tuple>
-#include <vector>
-#include <Logger/logger.h>
-#include <AMRController/AMRController.h>
-#include "ExtendedKalmanFilter/ExtendedKalmanFilter.h"
-#include "PerfectMatch/PerfectMatch.h"
-#include <config/config.h>
+#include <array>
+#include <chrono>
 #include <Eigen/Dense>
-#include <utils/utils.h>
+#include <Logger/logger.h>
+#include "PerfectMatch/PerfectMatch.h"
+#include "ExtendedKalmanFilter/ExtendedKalmanFilter.h"
 
 class Localization {
 public:
     Localization(Logger &logger);
 
     void processData(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData);
-
     void processData(const std::array<int, 4> &encoders, const Pose &GT);
+    void setPose(const Pose &startPose);
 
     Pose getPose() { return EKF.getPose(); };
-
     PerfectMatch &getPM() { return PM; };
+    const float getFreq() const { return freq; };
 
-    float getFreq() const { return freq; };
-
-    void setPose(Pose &startPose);
-
-    bool firstIter;
 private:
-
-    //Robot methods
-
+    // private methods
     Pose PMMatchingWithLimit(PerfectMatch &PM, std::array<LaserPoint, 720> &lidarData, int max_iter,
                              std::chrono::milliseconds max_duration);
-
     void forward_kinematics(const Eigen::Vector4d encs);
-
     void wSpeeds_estimation(const Eigen::Vector4d encs);
-
+    void operationFrequency(double &runtime, double &runtimePrevious);
     Pose odometry();
 
+    // private members
     Logger &logger;
     ExtendedKalmanFilter EKF;
     PerfectMatch PM;
     const double dt;
     float freq = 0.0f;
+    bool firstIter;
 
-    //Robot attributes
     Eigen::Matrix<double, 3, 1> speedsStates;
     Eigen::Matrix<double, 4, 1> wSpeeds;
-    const double a, b, r;
-    const double c;
+    const double a, b, r; // Distance from the robot's center to the middle of the wheel projected in x and y axes, respectively.
+    // r is radius of the wheel
+    const double c; // a + b
     const Eigen::Matrix<double, 3, 4> forwardK_model;
 };
 
