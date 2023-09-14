@@ -14,7 +14,7 @@
 #include <config/config.h>
 #include <iostream>
 #include <condition_variable>
-#include <mutex>  // Added for std::mutex
+#include <mutex>
 #include <third_party/stb/stb_image.h>
 #include "../src/Localization/PerfectMatch/PerfectMatch.h"
 #include <Logger/logger.h>
@@ -23,10 +23,37 @@
 #include "../src/Localization/Localization.h"
 #include <optional>
 
+struct VisualizationData {
+    Pose groundTruth = {};
+    Pose estimatedPose = {};
+    bool drawLaser = false;
+    float freq_localization = 0;
+
+    std::array<LaserPoint, 720> laserPoint = {};
+};
+
+struct LocalizationUpdateData {
+
+    bool hasStepChanged = false;
+    bool hasQkChanged = false;
+    bool hasPoseChanged = false;
+
+
+    double stepSet = 0.0;
+    double stepGet = 0.0;
+
+    double Qk_covarianceSet = 0.0;
+    double Qk_covarianceGet = 0.0;
+
+    Pose newPose = {};
+
+    double PMError = 0.0;
+};
+
 
 class Visualizer {
 public:
-    explicit Visualizer(Localization &localization);
+    Visualizer(Localization &localization, std::mutex &PM_m);
 
     ~Visualizer();
 
@@ -45,28 +72,24 @@ private:
     float y_scale;
     float x_center;
     float y_center;
-    float freq_localization;
 
     Localization &localization;
 
     std::condition_variable cv;
     std::mutex cv_m;
     bool newDataAvailable;
-    Pose groundTruth;
-    Pose estimatedPose;
-    std::array<LaserPoint, 720> laserPoint;
     GLFWwindow *window{};
     GLuint textureId{};  // Texture identifier for the map image
     int texWidth{}, texHeight{};  // Texture size
-    bool drawLaser;
     std::atomic<bool> runRenderLoop;
+    VisualizationData visDataFront, visDataBack;
+    LocalizationUpdateData localUpdate;
 
     bool initialize();
 
     void handleEvents();
     void setupImGuiFrame();
     void drawUIElements();
-    void drawVisualization();
     void finishRender();
     void updateDataAvailability();
 

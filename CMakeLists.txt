@@ -4,8 +4,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
-
 add_executable(${PROJECT_NAME} src/main.cpp)
+
 
 # Include the STB headers
 target_include_directories(${PROJECT_NAME} PRIVATE

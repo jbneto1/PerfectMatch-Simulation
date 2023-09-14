@@ -31,6 +31,20 @@ void SimTwoInterface::registerCallback(DataCallback callback) {
 
 // Start receiving data
 void SimTwoInterface::startReceive() {
+
+    auto now = std::chrono::steady_clock::now();
+
+    // if this is not the first call, compute the frequency
+    if (lastTime != std::chrono::steady_clock::time_point{}) {
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime); //microseconds precision
+        double freq = 1E6 / double(duration.count()); // freq = 1 / time_interval
+        localization.setFreq(freq);
+        std::cout << "freq: " << freq << std::endl;
+    }
+
+    // save the call time for the next frequency computation
+    lastTime = now;
+
     asio::post(strand, [&] { startReceiveInStrand(); });
 }
 

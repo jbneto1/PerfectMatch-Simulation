@@ -26,9 +26,12 @@ public:
 
     //Getters
     Pose getPose();
+    double getQk() { return Qk.diagonal()[0]; };
 
     //Setters
     void setPose(const Pose startPose);
+    void setQ(const double principalDiagonal);
+
 
 private:
 
@@ -40,9 +43,10 @@ private:
     //EKF members
     Pose mu;
     Matrix3d Pk;
-    const Matrix3d Qk;
+    Matrix3d Qk;
     Matrix3d Sk;
     Matrix3d Fk;
+    double dt;
 
     //PM variables
     Matrix3d Rk_PM;

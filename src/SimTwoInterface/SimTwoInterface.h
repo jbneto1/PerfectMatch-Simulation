@@ -58,6 +58,7 @@ private:
     bool run;
     asio::strand<asio::io_context::executor_type> strand;
     asio::executor_work_guard<asio::io_context::executor_type> guard = asio::make_work_guard(io_context);
+    std::chrono::steady_clock::time_point lastTime;
 };
 
 #endif //PERFECTMATCH_SIMULATION_SIMTWOINTERFACE_H

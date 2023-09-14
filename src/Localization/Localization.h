@@ -12,13 +12,16 @@ class Localization {
 public:
     Localization(Logger &logger);
 
-    void processData(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData);
-    void processData(const std::array<int, 4> &encoders, const Pose &GT);
+    void processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData);
+    void processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT);
     void setPose(const Pose &startPose);
 
     Pose getPose() { return EKF.getPose(); };
     PerfectMatch &getPM() { return PM; };
-    const float getFreq() const { return freq; };
+    ExtendedKalmanFilter &getEKF() { return EKF; };
+    const double getFreq() const { return freq; };
+
+    void setFreq(double frequency) { this->freq = frequency; }
 
 private:
     // private methods
@@ -34,7 +37,7 @@ private:
     ExtendedKalmanFilter EKF;
     PerfectMatch PM;
     const double dt;
-    float freq = 0.0f;
+    double freq = 0.0;
     bool firstIter;
 
     Eigen::Matrix<double, 3, 1> speedsStates;

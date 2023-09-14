@@ -11,11 +11,7 @@ Localization::Localization(Logger &logger)
     firstIter = true;
 }
 
-void Localization::processData(const std::array<int, 4> &encoders, const Pose &GT) {
-    static double runtime = 0;
-    static double runtimePrevious = 0;
-
-    //operationFrequency(runtime, runtimePrevious);
+void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT) {
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -23,6 +19,7 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
         EKF.setPose(GT);
         firstIter = false;
     }
+
     Eigen::Vector4d encs = {static_cast<double>(encoders[0]),
                         static_cast<double>(encoders[1]),
                         static_cast<double>(encoders[2]),
@@ -31,34 +28,24 @@ void Localization::processData(const std::array<int, 4> &encoders, const Pose &G
     forward_kinematics(encs);
     EKF.setPose(odometry());
     EKF.predict(speedsStates);
-
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     logger.info("ProcessData w/o LiDAR [us]: " + std::to_string(duration.count()));
 
 }
 
-void Localization::operationFrequency(double &runtime, double &runtimePrevious) {
-    runtimePrevious = runtime;
-    runtime += dt;
-    double fq = 1 / (runtime - runtimePrevious);
-    freq = static_cast<float>(fq);
-}
-
-void Localization::processData(const std::array<int, 4> &encoders, const Pose &GT,
+void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT,
                                std::array<LaserPoint, 720> &lidarData) {
-    processData(encoders, GT);
+
+    processData_wo_PM(encoders, GT);
+
     auto start = std::chrono::high_resolution_clock::now();
 
-
     auto temp = PMMatchingWithLimit(PM, lidarData, 25, std::chrono::milliseconds(10));
-
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     logger.info("PM [us]: " + std::to_string(duration.count()));
-
-    std::cout << "x: " << temp.getX() << " y: " << temp.getY() << " theta: " << temp.getThetaDeg() << std::endl;
 
     start = std::chrono::high_resolution_clock::now();
 
@@ -74,6 +61,7 @@ Pose Localization::PMMatchingWithLimit(PerfectMatch &PM, std::array<LaserPoint, 
                                        std::chrono::milliseconds max_duration) {
     auto timeout_time = std::chrono::high_resolution_clock::now() + max_duration;
     Pose result = Pose();
+
     PM.setPose(EKF.getPose());
 
     for (int iter = 0; iter < max_iter; iter++) {
@@ -92,7 +80,6 @@ void Localization::setPose(const Pose &startPose) {
 void Localization::forward_kinematics(const Eigen::Vector4d encs) {
 
     wSpeeds_estimation(encs);
-
     speedsStates = r / 4 * (forwardK_model * wSpeeds);
 
 }

@@ -5,10 +5,9 @@
 #include "ExtendedKalmanFilter.h"
 
 
-ExtendedKalmanFilter::ExtendedKalmanFilter() : Qk((Matrix3d() << 1, 0, 0,
-        0, 1, 0,
-        0, 0, 1).finished()) {
-
+ExtendedKalmanFilter::ExtendedKalmanFilter() : Qk((Matrix3d() << 5, 0, 0,
+        0, 5, 0,
+        0, 0, 5).finished()), dt(CONTROL_CYCLE) {
     mu = Pose();
 
     // Initialize the filter
@@ -38,8 +37,8 @@ void ExtendedKalmanFilter::predict(const Eigen::Vector3d twist) {
     double a = cos(mu.getTheta());
     double b = sin(mu.getTheta());
 
-    deriv_fx = (-b * twist[0] - a * twist[1]);
-    deriv_fy = (-b * twist[0] + a * twist[1]);
+    deriv_fx = (-b * twist[0] - a * twist[1]) * dt;
+    deriv_fy = (a * twist[0] - b * twist[1]) * dt;
 
     Fk(0, 2) = deriv_fx;
     Fk(1, 2) = deriv_fy;
@@ -62,4 +61,8 @@ void ExtendedKalmanFilter::update(const Pose Zk) {
     mu.setY(mu.getY() + temp(1));
     mu.setTheta(normalizeAngle(mu.getTheta() + normalizeAngle(temp(2))));
     Pk = (Matrix3d::Identity() - Kg * Hk_PM) * Pk;
+}
+
+void ExtendedKalmanFilter::setQ(const double principalDiagonal) {
+    Qk.diagonal() << principalDiagonal, principalDiagonal, principalDiagonal;
 }

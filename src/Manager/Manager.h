@@ -35,11 +35,9 @@ private:
 
     asio::signal_set signals_;
     std::promise<void> CtrlCPromise;
+    std::mutex PM_m;
 
 
-    std::array<int, 4> encoder_readings;
-    Pose GT_reading;
-    std::optional<std::array<LaserPoint, 720>> laserReadings;
 
     void setupSignalHandler();
     void stop();
