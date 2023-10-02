@@ -11,61 +11,58 @@ Localization::Localization(Logger &logger)
     firstIter = true;
 }
 
-void Localization::processData(const std::array<int, 4> &encoders, const Pose &GT) {
-    static double runtime = 0;
-    static double runtimePrevious = 0;
+void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT) {
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     if (firstIter) {
         EKF.setPose(GT);
         firstIter = false;
     }
 
-    runtime += dt;
-    double fq = 1 / (runtime - runtimePrevious);
-    freq = fq;
-
-    Eigen::Vector4d encs = {encoders[0], encoders[1], encoders[2], encoders[3]};
+    Eigen::Vector4d encs = {static_cast<double>(encoders[0]),
+                        static_cast<double>(encoders[1]),
+                        static_cast<double>(encoders[2]),
+                        static_cast<double>(encoders[3])};
 
     forward_kinematics(encs);
     EKF.setPose(odometry());
     EKF.predict(speedsStates);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    logger.info("ProcessData w/o LiDAR [us]: " + std::to_string(duration.count()));
 
-
-    runtimePrevious = runtime;
 }
 
-void Localization::processData(const std::array<int, 4> &encoders, const Pose &GT,
+void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT,
                                std::array<LaserPoint, 720> &lidarData) {
-    static double runtime = 0;
-    static double runtimePrevious = 0;
 
-    if (firstIter) {
-        EKF.setPose(GT);
-        firstIter = false;
-    }
+    processData_wo_PM(encoders, GT);
 
-    runtime += dt;
-    double fq = 1 / (runtime - runtimePrevious);
-    freq = fq;
+    auto start = std::chrono::high_resolution_clock::now();
 
-    Eigen::Vector4d encs = {encoders[0], encoders[1], encoders[2], encoders[3]};
+    auto temp = PMMatchingWithLimit(PM, lidarData, 25, std::chrono::milliseconds(10));
 
-    forward_kinematics(encs);
-    EKF.setPose(odometry());
-    EKF.predict(speedsStates);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    logger.info("PM [us]: " + std::to_string(duration.count()));
 
-//    if (laserData) {
-//        auto temp = PMMatchingWithLimit(PM, lidarData, 10, std::chrono::milliseconds(2));
-//        EKF.update(temp);
-//    }
+    start = std::chrono::high_resolution_clock::now();
 
-    runtimePrevious = runtime;
+    EKF.update(temp);
+
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    logger.info("EKF update [us]: " + std::to_string(duration.count()));
+
 }
 
 Pose Localization::PMMatchingWithLimit(PerfectMatch &PM, std::array<LaserPoint, 720> &lidarData, int max_iter,
                                        std::chrono::milliseconds max_duration) {
     auto timeout_time = std::chrono::high_resolution_clock::now() + max_duration;
     Pose result = Pose();
+
+    PM.setPose(EKF.getPose());
 
     for (int iter = 0; iter < max_iter; iter++) {
         result = PM.match(lidarData);
@@ -76,14 +73,13 @@ Pose Localization::PMMatchingWithLimit(PerfectMatch &PM, std::array<LaserPoint, 
     return result;
 }
 
-void Localization::setPose(Pose &startPose) {
+void Localization::setPose(const Pose &startPose) {
     EKF.setPose(startPose);
 }
 
 void Localization::forward_kinematics(const Eigen::Vector4d encs) {
 
     wSpeeds_estimation(encs);
-
     speedsStates = r / 4 * (forwardK_model * wSpeeds);
 
 }
@@ -99,13 +95,13 @@ Pose Localization::odometry() {
 
     double cosTheta, sinTheta;
 
-
     cosTheta = cos(EKF.getPose().getTheta());
     sinTheta = sin(EKF.getPose().getTheta());
 
     propagatedPose.setX(EKF.getPose().getX() + (cosTheta * speedsStates[0] - sinTheta * speedsStates[1]) * dt);
     propagatedPose.setY(EKF.getPose().getY() + (sinTheta * speedsStates[0] + cosTheta * speedsStates[1]) * dt);
     propagatedPose.setTheta(EKF.getPose().getTheta() + speedsStates[2] * dt);
+
     return propagatedPose;
 }
 

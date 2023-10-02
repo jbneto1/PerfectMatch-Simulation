@@ -1,11 +1,14 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer(Localization &localization) : localization(localization), newDataAvailable(false), runRenderLoop(true) {
+Visualizer::Visualizer(Localization &localization, std::mutex &PM_m) : localization(localization),
+                                                                       newDataAvailable(false),
+                                                                       runRenderLoop(true) {
     if (!initialize()) {
         cleanup();
         throw std::runtime_error("Initialization failed!");
     }
-    drawLaser = false;
+    localUpdate.stepGet = localization.getPM().getStep();
+    localUpdate.Qk_covarianceGet = localization.getEKF().getQk();
 }
 
 Visualizer::~Visualizer() {
@@ -46,7 +49,7 @@ bool Visualizer::setupGlfwWindow() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    window = glfwCreateWindow(996, 1000, "Robot Localization", nullptr, nullptr); // Change to desired size
+    window = glfwCreateWindow(996, 1040, "Robot Localization", nullptr, nullptr); // Change to desired size
     if (window == nullptr) {
         std::cerr << "Failed to create GLFW window!" << std::endl;
         glfwTerminate();
@@ -112,17 +115,40 @@ bool Visualizer::setupTexture() {
 }
 
 void
-Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::array<LaserPoint, 720>> &laserPoint) {
+Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose,
+                   const std::optional<std::array<LaserPoint, 720>> &laserPoint) {
     std::lock_guard<std::mutex> lock(cv_m);
-    this->groundTruth = groundTruth;
-    this->estimatedPose = estimatedPose;
-    this->drawLaser = laserPoint.has_value();
-    if(this->drawLaser) {
-        this->laserPoint = laserPoint.value();
+    visDataBack.groundTruth = groundTruth;
+    visDataBack.estimatedPose = estimatedPose;
+    visDataBack.drawLaser = laserPoint.has_value();
+    if (visDataBack.drawLaser) {
+        visDataBack.laserPoint = laserPoint.value();
     }
-    this->freq_localization = localization.getFreq();
-    newDataAvailable = true;
 
+    //swap buffers
+    std::swap(visDataFront, visDataBack);
+
+    //local update
+    localUpdate.PMError = localization.getPM().getError();
+
+    if (localUpdate.hasStepChanged) {
+        localization.getPM().setStep(localUpdate.stepSet);
+        localUpdate.stepGet = localization.getPM().getStep();
+        localUpdate.hasStepChanged = false; // Reset the flag
+    }
+
+    if (localUpdate.hasQkChanged) {
+        localization.getEKF().setQ(localUpdate.Qk_covarianceSet);
+        localUpdate.Qk_covarianceGet = localization.getEKF().getQk();
+        localUpdate.hasQkChanged = false; // Reset the flag
+    }
+
+    if (localUpdate.hasPoseChanged) {
+        localization.setPose(localUpdate.newPose);
+        localUpdate.hasPoseChanged = false; // Reset the flag
+    }
+
+    newDataAvailable = true;
     cv.notify_one();
 }
 
@@ -140,7 +166,7 @@ void Visualizer::setupImGuiFrame() {
 
     // Create a new ImGui window
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(texWidth, texHeight + 310));
+    ImGui::SetNextWindowSize(ImVec2(texWidth, texHeight + 350));
     ImGui::Begin("Robot Localization", nullptr,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
                  ImGuiWindowFlags_NoTitleBar);
@@ -154,6 +180,7 @@ void Visualizer::setupImGuiFrame() {
 }
 
 void Visualizer::drawUIElements() {
+
     // Display the pose data
     ImDrawList *draw_list = ImGui::GetWindowDrawList();
     ImVec2 p = ImGui::GetCursorScreenPos();
@@ -162,10 +189,10 @@ void Visualizer::drawUIElements() {
     float halfBase = size / 2.0f;
 
     // Draw triangles for GroundTruth and EstimatedPose
-    drawTriangle(draw_list, groundTruth, ImColor(255, 0, 0)); // green
-    drawTriangle(draw_list, estimatedPose, ImColor(0, 0, 255)); // blue
+    drawTriangle(draw_list, visDataFront.groundTruth, ImColor(255, 0, 0)); // green
+    drawTriangle(draw_list, visDataFront.estimatedPose, ImColor(0, 0, 255)); // blue
     draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
-    if (drawLaser) drawLidarPoints(draw_list, estimatedPose, laserPoint, IM_COL32(128, 0, 198, 255));
+    if (visDataFront.drawLaser) drawLidarPoints(draw_list, visDataFront.estimatedPose, visDataFront.laserPoint, IM_COL32(128, 0, 198, 255));
 
     draw_list->AddTriangleFilled(
             ImVec2(p.x + halfBase, p.y + 5),               // Top vertex
@@ -174,8 +201,8 @@ void Visualizer::drawUIElements() {
             ImColor(0, 0, 255)
     );  // Red filled Triangle // Red filled Triangle
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20); // Push cursor to right by 50 units
-    ImGui::Text("Estimated Pose [m]:  x=%.3f, y=%.3f, theta=%.3fº", estimatedPose.getX(), estimatedPose.getY(),
-                estimatedPose.getThetaDeg());
+    ImGui::Text("Estimated Pose [m]:  x=%.3f, y=%.3f, theta=%.3fº", visDataFront.estimatedPose.getX(), visDataFront.estimatedPose.getY(),
+                visDataFront.estimatedPose.getThetaDeg());
 
     p = ImGui::GetCursorScreenPos();
 
@@ -186,33 +213,54 @@ void Visualizer::drawUIElements() {
             ImColor(255, 0, 0)
     );  // Red filled Triangle
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20); // Push cursor to right by 50 units
-    ImGui::Text("Ground Truth [m]:  x=%.3f, y=%.3f, theta=%.3fº", groundTruth.getX(), groundTruth.getY(),
-                groundTruth.getThetaDeg());
+    ImGui::Text("Ground Truth [m]:  x=%.3f, y=%.3f, theta=%.3fº", visDataFront.groundTruth.getX(), visDataFront.groundTruth.getY(),
+                visDataFront.groundTruth.getThetaDeg());
 
-    Pose temp = estimatedPose - groundTruth;
+    Pose temp = visDataFront.estimatedPose - visDataFront.groundTruth;
 
     ImGui::Text("Error [m]:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
                 temp.getY(), temp.getThetaDeg());
 
-    ImGui::Text("Localization freq [Hz]: %.2f", freq_localization);
+    ImGui::Text("Localization freq [Hz]: %.2f", visDataFront.freq_localization);
     ImGui::SameLine();
-    ImGui::Text("PM error [m]: %.3f", localization.getPM().getError());
+
+    ImGui::Text("PM error [m]: %.3f", localUpdate.PMError);
 
 
     static double k = 0.0f;
     ImGui::PushItemWidth(160);
-    ImGui::InputDouble("Step scale", &k, 0.0005, 0.0005, "%.4f");
+    if (ImGui::InputDouble("Step scale", &k, 0.0005, 0.0005, "%.4f")) {
+        if (k < 0) k = 0;
+    }
     ImGui::PopItemWidth();
     ImGui::SameLine();
 
     if (ImGui::Button("Set step")) {
-        localization.getPM().setStep(k);
+        localUpdate.hasStepChanged = true;
+        localUpdate.stepSet = k;
     }
 
     ImGui::SameLine();
 
-    std::string stepScaleText = "Current step: " + fmt::format("{:.4f}", localization.getPM().getStep());
+    std::string stepScaleText = "Current step: " + fmt::format("{:.4f}", localUpdate.stepGet);
     ImGui::Text("%s", stepScaleText.c_str());
+    static double Qk = 0.0f;
+    ImGui::PushItemWidth(160);
+    if (ImGui::InputDouble("Process Model Cov", &Qk, 0.01, 0.01, "%.2f")) {
+        if (Qk < 0) Qk = 0;
+    }
+    ImGui::PopItemWidth();
+    ImGui::SameLine();
+
+    if (ImGui::Button("Set Qk_covariance")) {
+        localUpdate.hasQkChanged = true;
+        localUpdate.Qk_covarianceSet = Qk;
+    }
+
+    ImGui::SameLine();
+
+    std::string QkText = "Current Qk: " + fmt::format("{:.4f}", localUpdate.Qk_covarianceGet);
+    ImGui::Text("%s", QkText.c_str());
 
     static double x = 0.0f, y = 0.0f, theta_deg = 0.0f;
     static Pose pose;
@@ -229,14 +277,17 @@ void Visualizer::drawUIElements() {
     }
 
     if (ImGui::Button("Set Pose")) {
-        localization.setPose(pose);
+        localUpdate.hasPoseChanged = true;
+        localUpdate.newPose = pose;
     }
 
     ImGui::SameLine();
 
     if (ImGui::Button("Reset")) {
-        localization.setPose(groundTruth);
+        localUpdate.hasPoseChanged = true;
+        localUpdate.newPose = visDataFront.groundTruth;
     }
+
 }
 
 void Visualizer::finishRender() {
@@ -253,7 +304,6 @@ void Visualizer::finishRender() {
 
     // Swap front and back buffers
     glfwSwapBuffers(window);
-
 }
 
 void Visualizer::updateDataAvailability() {

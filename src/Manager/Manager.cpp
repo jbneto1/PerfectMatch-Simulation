@@ -7,13 +7,10 @@ Manager::Manager(Logger &logger)
           controller(logger),
           localization(logger),
           interface(logger, localization, controller),
-          visualizer(localization),
+          visualizer(localization, PM_m),
           visThread(),
           signals_(interface.getIoContext(), SIGINT),
-          CtrlCPromise(),
-          encoder_readings({0, 0, 0, 0}),
-          GT_reading(),
-          laserReadings({}) {
+          CtrlCPromise() {
 
     logger.trace("SIGINT signal handler registered with asio.");
     visThread = std::thread(&Visualizer::render, &visualizer);
@@ -63,9 +60,7 @@ void Manager::run() {
 
     logger.debug("Waiting for simulator.");
 
-    // auto work = asio::make_work_guard(exec);
     interface.runIoContext();
-    // Perform cleanup activities...
 
     logger.trace("Terminating program...");
 }
@@ -73,18 +68,17 @@ void Manager::run() {
 // This is the function that will be called when data is received.
 void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface, Localization &localization,
                              AMRController &controller, Logger &logger) {
+
     logger.trace("Data received. Handler callback called.");
-    auto [encoder_readings, GT_reading, optLaserReadings] = interface.getSensorData(data);
+    auto [encs, GT_pose, optLaserReadings] = interface.getSensorData(data);
 
     if (optLaserReadings.has_value()) {
-        laserReadings = optLaserReadings;
-        localization.getPM().ProcessLaserPoints(laserReadings.value());
-        localization.processData(encoder_readings, GT_reading, laserReadings.value());
+        localization.getPM().ProcessLaserPoints(optLaserReadings.value());
+        localization.processData_w_PM(encs, GT_pose, optLaserReadings.value());
     } else {
-        laserReadings.reset(); // Clear the optional
-        localization.processData(encoder_readings, GT_reading);
+        localization.processData_wo_PM(encs, GT_pose);
     }
 
-    visualizer.update(GT_reading, localization.getPose(), laserReadings);
+    visualizer.update(GT_pose, localization.getPose(), optLaserReadings);
     logger.trace("Processing Perfect Match.");
 }
