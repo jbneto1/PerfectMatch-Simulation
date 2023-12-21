@@ -1,5 +1,5 @@
 // Logger.cpp
-#include "Logger.h"
+#include "logger.h"
 
 
 Logger::Logger(spdlog::level::level_enum level) {
@@ -50,6 +50,7 @@ void Logger::info(const std::string& message) {
     try {
         logger->info(message);
     } catch (const spdlog::spdlog_ex& ex) {
+        
         std::cout << "Log failed: " << ex.what() << std::endl;
     }
 }
