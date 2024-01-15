@@ -13,8 +13,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         ${PROJECT_SOURCE_DIR}/src/
         ${PROJECT_SOURCE_DIR}/include/third_party/)
 
-add_library(UtilsLibrary src/utils/utils.cpp)
-add_library(stbImageInit src/utils/stb_image_init.cpp)
+add_library(UtilsLibrary include/utils/utils.cpp)
+add_library(stbImageInit include/third_party/stb/stb_image_init.cpp)
 
 # Link OpenGL libraries
 target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} Manager SimTwoInterface Localization AMRController Logger
