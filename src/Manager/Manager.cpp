@@ -13,6 +13,7 @@ Manager::Manager(Logger &logger)
           CtrlCPromise() {
 
     logger.trace("SIGINT signal handler registered with asio.");
+    time = 0;
     visThread = std::thread(&Visualizer::render, &visualizer);
     setupSignalHandler();
 }
@@ -71,6 +72,9 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
 
     logger.trace("Data received. Handler callback called.");
     auto [encs, GT_pose, optLaserReadings] = interface.getSensorData(data);
+    
+    //Logging the sensors' data
+    logger.fileLog_bag(encs, GT_pose, optLaserReadings, time); 
 
     if (optLaserReadings.has_value()) {
         localization.getPM().ProcessLaserPoints(optLaserReadings.value());

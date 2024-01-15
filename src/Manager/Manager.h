@@ -33,12 +33,12 @@ private:
     std::thread visThread;
     asio::any_io_executor exec;
 
+    unsigned long int time;
+
     asio::signal_set signals_;
     std::promise<void> CtrlCPromise;
     std::mutex PM_m;
-
-
-
+    
     void setupSignalHandler();
     void stop();
 

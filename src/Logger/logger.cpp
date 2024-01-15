@@ -1,97 +1,211 @@
 // Logger.cpp
 #include "logger.h"
 
-
-Logger::Logger(spdlog::level::level_enum level) {
+Logger::Logger(spdlog::level::level_enum level)
+{
     std::vector<spdlog::sink_ptr> sinks;
-    try {
+    try
+    {
         sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
         logger = std::make_shared<spdlog::logger>("logger", begin(sinks), end(sinks));
+        logger->set_level(level);
+        this->trace("Console colored logger initialized.");
 
-        // Initialize file-only logger
-        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logfile.txt", true);
-        fileLogger = std::make_shared<spdlog::logger>("FileLogger", file_sink);
 
-        spdlog::register_logger(logger);
-        spdlog::register_logger(fileLogger);
-        this->set_level(level);
-        fileLogger->set_level(spdlog::level::off);
-        fileLogger->set_pattern(std::string("%v"));
-    } catch (const spdlog::spdlog_ex& ex) {
+        
+        auto filename_GT = fmt::format("../docs/logs/ground_truth_{}.txt", current_datetime());
+        auto file_sink_GT = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_GT, true);
+        fileLogger_GT = std::make_shared<spdlog::logger>("GroundTruth", file_sink_GT);
+        fileLogger_GT->set_level(spdlog::level::info);
+        fileLogger_GT->set_pattern(std::string("%v"));
+
+        auto filename_encs = fmt::format("../docs/logs/encs_{}.txt", current_datetime());
+        auto file_sink_encs = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_encs, true);
+        fileLogger_encs = std::make_shared<spdlog::logger>("PM_WO_AI", file_sink_encs);
+        fileLogger_encs->set_level(spdlog::level::info);
+        fileLogger_encs->set_pattern(std::string("%v"));
+
+        auto filename_lidar = fmt::format("../docs/logs/lidar_{}.txt", current_datetime());
+        auto file_sink_lidar = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_lidar, true);
+        fileLogger_lidar = std::make_shared<spdlog::logger>("PM_W_AI", file_sink_lidar);
+        fileLogger_lidar->set_level(spdlog::level::info);
+        fileLogger_lidar->set_pattern(std::string("%v"));
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
         std::cout << "Log initialization failed: " << ex.what() << std::endl;
-    } catch (const std::exception& ex) {
+    }
+    catch (const std::exception &ex)
+    {
         std::cout << "General exception: " << ex.what() << std::endl;
     }
 }
 
-
-Logger& Logger::getInstance(spdlog::level::level_enum level) {
+Logger &Logger::getInstance(spdlog::level::level_enum level)
+{
     static Logger instance = Logger(level);
     return instance;
 }
 
-void Logger::trace(const std::string &message) {
-    try {
+std::string Logger::current_datetime()
+{
+    auto now = std::chrono::system_clock::now();
+    auto time = std::chrono::system_clock::to_time_t(now);
+    std::tm tm{};
+#if defined(__unix__)
+    localtime_r(&time, &tm); // POSIX
+#elif defined(_MSC_VER)
+    localtime_s(&tm, &time); // MSVC
+#endif
+    std::stringstream ss;
+    ss << std::put_time(&tm, "%Y-%m-%d_%H-%M-%S");
+    return ss.str();
+}
+
+void Logger::trace(const std::string &message)
+{
+    try
+    {
         logger->trace(message);
-    } catch (const spdlog::spdlog_ex& ex) {
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
         std::cout << "Log failed: " << ex.what() << std::endl;
     }
 }
 
-void Logger::debug(const std::string& message) {
-    try {
+void Logger::debug(const std::string &message)
+{
+    try
+    {
         logger->debug(message);
-    } catch (const spdlog::spdlog_ex& ex) {
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
         std::cout << "Log failed: " << ex.what() << std::endl;
     }
 }
 
-void Logger::info(const std::string& message) {
-    try {
+void Logger::info(const std::string &message)
+{
+    try
+    {
         logger->info(message);
-    } catch (const spdlog::spdlog_ex& ex) {
-        
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
+
         std::cout << "Log failed: " << ex.what() << std::endl;
     }
 }
 
-void Logger::warn(const std::string& message) {
-    try {
+void Logger::warn(const std::string &message)
+{
+    try
+    {
         logger->warn(message);
-    } catch (const spdlog::spdlog_ex& ex) {
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
         std::cout << "Log failed: " << ex.what() << std::endl;
     }
 }
 
-void Logger::error(const std::string& message) {
-    try {
+void Logger::error(const std::string &message)
+{
+    try
+    {
         logger->error(message);
-    } catch (const spdlog::spdlog_ex& ex) {
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
         std::cout << "Log failed: " << ex.what() << std::endl;
     }
 }
 
-void Logger::set_level(const spdlog::level::level_enum log_level) {
+void Logger::set_level(const spdlog::level::level_enum log_level)
+{
     logger->set_level(log_level);
 }
 
-void Logger::setPattern(const std::string &format) {
+void Logger::setPattern(const std::string &format)
+{
     logger->set_pattern(format);
 }
 
-void Logger::fileLog(const std::string& message) {
-    try {
-        fileLogger->info(message);
-    } catch (const spdlog::spdlog_ex& ex) {
+void Logger::fileLog_GT(const std::string &message)
+{
+    try
+    {
+        fileLogger_GT->info(message);
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
+        std::cout << "Log failed: " << ex.what() << std::endl;
+    }
+}
+void Logger::fileLog_encs(const std::string &message)
+{
+    try
+    {
+        fileLogger_encs->info(message);
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
+        std::cout << "Log failed: " << ex.what() << std::endl;
+    }
+}
+void Logger::fileLog_lidar(const std::string &message)
+{
+    try
+    {
+        fileLogger_lidar->info(message);
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
         std::cout << "Log failed: " << ex.what() << std::endl;
     }
 }
 
-void Logger::deactivate_Loggers() {
-
+void Logger::deactivate_Loggers()
+{
     logger->set_level(spdlog::level::off);
-    fileLogger->set_level(spdlog::level::off);
-
+    fileLogger_GT->set_level(spdlog::level::off);
+    fileLogger_encs->set_level(spdlog::level::off);
+    fileLogger_lidar->set_level(spdlog::level::off);
 }
 
+void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, unsigned long int &time)
+{
 
+    time = time + 25;
+
+    std::ostringstream oss;
+
+    oss << GT_pose.getX() << ',' << GT_pose.getY() << ',' << GT_pose.getTheta() << ',' << time;
+
+    this->fileLog_GT(oss.str());
+
+    oss.str("");
+    oss.clear();
+
+    oss << encs[0] << ',' << encs[1] << ',' << encs[2] << ',' << encs[3] << ',' << time;
+
+    this->fileLog_encs(oss.str());
+
+    if (laserReadings.has_value())
+    {
+        oss.str("");
+        oss.clear();
+
+        const auto &readings = laserReadings.value();
+
+        for(const auto &reading : readings) {
+            oss << reading.getD() << ',';
+        }
+
+        oss << time;
+
+        this->fileLog_lidar(oss.str());
+    }
+}

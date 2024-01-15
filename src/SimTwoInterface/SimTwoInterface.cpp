@@ -13,7 +13,6 @@ SimTwoInterface::SimTwoInterface(Logger &logger, Localization &localization, AMR
     logger.info("Listening for UDP datagrams on port: " + std::to_string(SIMTWO_RECEIVE_PORT));
 }
 
-
 // Destructor
 SimTwoInterface::~SimTwoInterface() {
 }
@@ -27,7 +26,6 @@ void SimTwoInterface::registerCallback(DataCallback callback) {
     dataCallback = std::move(callback);
     logger.debug("Data callback registered.");
 }
-
 
 // Start receiving data
 void SimTwoInterface::startReceive() {
