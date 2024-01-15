@@ -17,7 +17,7 @@ set(IMGUI_SRC
 add_library(ImGui ${IMGUI_SRC})
 
 set(GL_SRC
-        ${PROJECT_SOURCE_DIR}/include/GL/gl3w.c)
+        ${PROJECT_SOURCE_DIR}/include/third_party/GL/gl3w.c)
 
 add_library(gl3w ${GL_SRC})
 

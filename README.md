@@ -1,19 +1,22 @@
-# Autonomous Mobile Robot (AMR) Simulator Interface
+# Perfect Match C++ Project
 
-This project provides a C++ interface for controlling an Autonomous Mobile Robot (AMR) in a simulator. It includes components for interfacing with the simulator, performing localization, and controlling the robot's movement.
+## Overview
 
-## Installation
+The Perfect Match project is a C++ simulation system for localizing an autonomous mobile robot (AMR) within a virtual environment. It interfaces with a simulator, receives sensor data and process it, and visualizes the localization process. It also has the feature to log the data.
 
-(Instructions for installing and setting up the project.)
+## Building the Project
 
-## Usage
+### Prerequisites
 
-(Instructions for how to run and use the project.)
+Ensure you have the following installed:
+- CMake version 3.22.1 or higher
 
-## Contributing
+Third-party libraries dependencies: eigen, gl3w, ImGUI, spdlog, standalone_ASIO, stb image loader
 
-(Information about how others can contribute to this project, if applicable.)
+### Compilation Steps
 
-## License
-
-(Information about the project's license.)
+```bash
+mkdir build
+cd build
+cmake ..
+make
