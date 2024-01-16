@@ -17,11 +17,14 @@ public:
     void setPose(const Pose &startPose);
 
     Pose getPose() { return EKF.getPose(); };
+    Pose getPreviousPose() { return previousPose; };
     PerfectMatch &getPM() { return PM; };
     ExtendedKalmanFilter &getEKF() { return EKF; };
     const double getFreq() const { return freq; };
+    const bool getFirstFlag() { return firstIter; };
 
     void setFreq(double frequency) { this->freq = frequency; }
+    void setPreviousPose(const Pose currentPose) { this->previousPose = currentPose; };
 
 private:
     // private methods
@@ -39,6 +42,8 @@ private:
     const double dt;
     double freq = 0.0;
     bool firstIter;
+
+    Pose previousPose;
 
     Eigen::Matrix<double, 3, 1> speedsStates;
     Eigen::Matrix<double, 4, 1> wSpeeds;

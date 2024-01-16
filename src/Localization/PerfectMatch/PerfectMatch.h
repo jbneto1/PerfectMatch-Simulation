@@ -21,6 +21,7 @@ public:
     double getError() const { return this->pmError; }
 
     void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints);
+    void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints, const Pose &previousPose, const Pose &currentPose);
 
     void setStep(const double stepScale) { this->stepScale = stepScale; }
 
@@ -28,6 +29,8 @@ public:
 
 private:
     void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
+
+    Pose interpolatePose(const Pose &previousPose, const Pose &currentPose, const double alpha);
 
     int XTopixel(double x);
 

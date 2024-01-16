@@ -115,3 +115,33 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     logger.info("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
 }
+
+Pose interpolatePose(const Pose &previousPose, const Pose &currentPose, const double alpha) {
+    double x = previousPose.getX() + alpha * (currentPose.getX() - previousPose.getX());
+    double y = previousPose.getY() + alpha * (currentPose.getY() - previousPose.getY());
+    double theta = previousPose.getTheta() + alpha * (currentPose.getTheta() - previousPose.getTheta());
+    return Pose(x, y, theta);
+}
+
+void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints, const Pose& previousPose, const Pose& currentPose) {
+auto start = std::chrono::high_resolution_clock::now();
+
+    for (int i = 0; i < 720; ++i) {
+        double alpha = static_cast<double>(i) / 720.0;
+
+        Pose interpolatedPose = interpolatePose(previousPose, currentPose, alpha);
+
+        // Process each laser point with the interpolated pose
+        double adjustedX, adjustedY;
+        RotateAndTranslate(adjustedX, adjustedY, LaserPoints[i].getX(), LaserPoints[i].getY(), 
+                           interpolatedPose.getX(), interpolatedPose.getY(), 
+                           sin(interpolatedPose.getTheta()), cos(interpolatedPose.getTheta()));
+
+        LaserPoints[i].setX(adjustedX);
+        LaserPoints[i].setY(adjustedY);
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    logger.info("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
+}
