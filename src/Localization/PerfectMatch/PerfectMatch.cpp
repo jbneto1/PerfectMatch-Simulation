@@ -116,7 +116,7 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
     logger.info("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
 }
 
-Pose interpolatePose(const Pose &previousPose, const Pose &currentPose, const double alpha) {
+Pose PerfectMatch::interpolatePose(const Pose &previousPose, const Pose &currentPose, const double alpha) {
     double x = previousPose.getX() + alpha * (currentPose.getX() - previousPose.getX());
     double y = previousPose.getY() + alpha * (currentPose.getY() - previousPose.getY());
     double theta = previousPose.getTheta() + alpha * (currentPose.getTheta() - previousPose.getTheta());
