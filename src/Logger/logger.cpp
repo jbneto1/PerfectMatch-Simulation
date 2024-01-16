@@ -177,19 +177,21 @@ void Logger::deactivate_Loggers()
 
 void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, unsigned long int &time)
 {
+    std::ostringstream oss;
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
 
     time = time + 25;
 
-    std::ostringstream oss;
 
-    oss << GT_pose.getX() << ',' << GT_pose.getY() << ',' << GT_pose.getTheta() << ',' << time;
+    oss << GT_pose.getX() << ',' << GT_pose.getY() << ',' << GT_pose.getTheta() << ',' << time << ',' << now_c;
 
     this->fileLog_GT(oss.str());
 
     oss.str("");
     oss.clear();
 
-    oss << encs[0] << ',' << encs[1] << ',' << encs[2] << ',' << encs[3] << ',' << time;
+    oss << encs[0] << ',' << encs[1] << ',' << encs[2] << ',' << encs[3] << ',' << time << ',' << now_c;
 
     this->fileLog_encs(oss.str());
 
@@ -204,7 +206,7 @@ void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, 
             oss << reading.getD() << ',';
         }
 
-        oss << time;
+        oss << time << ',' << now_c;
 
         this->fileLog_lidar(oss.str());
     }
