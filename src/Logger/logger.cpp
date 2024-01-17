@@ -11,8 +11,6 @@ Logger::Logger(spdlog::level::level_enum level)
         logger->set_level(level);
         this->trace("Console colored logger initialized.");
 
-
-        
         auto filename_GT = fmt::format("../docs/logs/ground_truth_{}.txt", current_datetime());
         auto file_sink_GT = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_GT, true);
         fileLogger_GT = std::make_shared<spdlog::logger>("GroundTruth", file_sink_GT);
@@ -39,6 +37,11 @@ Logger::Logger(spdlog::level::level_enum level)
     {
         std::cout << "General exception: " << ex.what() << std::endl;
     }
+
+    fileLogger_GT->set_level(spdlog::level::off);
+    fileLogger_encs->set_level(spdlog::level::off);
+    fileLogger_lidar->set_level(spdlog::level::off);
+    
 }
 
 Logger &Logger::getInstance(spdlog::level::level_enum level)

@@ -73,6 +73,11 @@ private:
     float x_center;
     float y_center;
 
+
+    //
+    double windowWidth;
+    double windowHeight;
+
     Localization &localization;
 
     std::condition_variable cv;

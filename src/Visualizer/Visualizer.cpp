@@ -3,6 +3,8 @@
 Visualizer::Visualizer(Localization &localization, std::mutex &PM_m) : localization(localization),
                                                                        newDataAvailable(false),
                                                                        runRenderLoop(true) {
+    windowWidth = 1500;
+    windowHeight = 860;
     if (!initialize()) {
         cleanup();
         throw std::runtime_error("Initialization failed!");
@@ -49,7 +51,7 @@ bool Visualizer::setupGlfwWindow() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    window = glfwCreateWindow(996, 1040, "Robot Localization", nullptr, nullptr); // Change to desired size
+    window = glfwCreateWindow(windowWidth, windowHeight, "Robot Localization", nullptr, nullptr); // 1040 Change to desired size
     if (window == nullptr) {
         std::cerr << "Failed to create GLFW window!" << std::endl;
         glfwTerminate();
@@ -121,6 +123,8 @@ Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose,
     visDataBack.groundTruth = groundTruth;
     visDataBack.estimatedPose = estimatedPose;
     visDataBack.drawLaser = laserPoint.has_value();
+    visDataBack.freq_localization = localization.getFreq();
+
     if (visDataBack.drawLaser) {
         visDataBack.laserPoint = laserPoint.value();
     }
@@ -166,7 +170,7 @@ void Visualizer::setupImGuiFrame() {
 
     // Create a new ImGui window
     ImGui::SetNextWindowPos(ImVec2(0, 0));
-    ImGui::SetNextWindowSize(ImVec2(texWidth, texHeight + 350));
+    ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight));
     ImGui::Begin("Robot Localization", nullptr,
                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
                  ImGuiWindowFlags_NoTitleBar);
@@ -201,7 +205,7 @@ void Visualizer::drawUIElements() {
             ImColor(0, 0, 255)
     );  // Red filled Triangle // Red filled Triangle
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20); // Push cursor to right by 50 units
-    ImGui::Text("Estimated Pose [m]:  x=%.3f, y=%.3f, theta=%.3fº", visDataFront.estimatedPose.getX(), visDataFront.estimatedPose.getY(),
+    ImGui::Text("EKF Pose [m]:  x=%.3f, y=%.3f, theta=%.3fº", visDataFront.estimatedPose.getX(), visDataFront.estimatedPose.getY(),
                 visDataFront.estimatedPose.getThetaDeg());
 
     p = ImGui::GetCursorScreenPos();
@@ -218,14 +222,15 @@ void Visualizer::drawUIElements() {
 
     Pose temp = visDataFront.estimatedPose - visDataFront.groundTruth;
 
-    ImGui::Text("Error [m]:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
+    ImGui::Text("Pose error [m]:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
                 temp.getY(), temp.getThetaDeg());
 
     ImGui::Text("Localization freq [Hz]: %.2f", visDataFront.freq_localization);
-    ImGui::SameLine();
 
     ImGui::Text("PM error [m]: %.3f", localUpdate.PMError);
 
+    ImGui::SetCursorPosY(0);
+    ImGui::SetCursorPosX(texWidth);
 
     static double k = 0.0f;
     ImGui::PushItemWidth(160);
@@ -233,7 +238,7 @@ void Visualizer::drawUIElements() {
         if (k < 0) k = 0;
     }
     ImGui::PopItemWidth();
-    ImGui::SameLine();
+    ImGui::SetCursorPosX(texWidth);
 
     if (ImGui::Button("Set step")) {
         localUpdate.hasStepChanged = true;
@@ -244,13 +249,17 @@ void Visualizer::drawUIElements() {
 
     std::string stepScaleText = "Current step: " + fmt::format("{:.4f}", localUpdate.stepGet);
     ImGui::Text("%s", stepScaleText.c_str());
+    ImGui::NewLine();
+
+    ImGui::SetCursorPosX(texWidth);
     static double Qk = 0.0f;
     ImGui::PushItemWidth(160);
     if (ImGui::InputDouble("Process Model Cov", &Qk, 0.01, 0.01, "%.2f")) {
         if (Qk < 0) Qk = 0;
     }
     ImGui::PopItemWidth();
-    ImGui::SameLine();
+
+    ImGui::SetCursorPosX(texWidth);
 
     if (ImGui::Button("Set Qk_covariance")) {
         localUpdate.hasQkChanged = true;
@@ -259,15 +268,28 @@ void Visualizer::drawUIElements() {
 
     ImGui::SameLine();
 
-    std::string QkText = "Current Qk: " + fmt::format("{:.4f}", localUpdate.Qk_covarianceGet);
+    std::string QkText = "Current Qk: " + fmt::format("{:.3f}", localUpdate.Qk_covarianceGet);
     ImGui::Text("%s", QkText.c_str());
+
+    ImGui::SetCursorPosX(texWidth);
+    std::string RkText = "Rk diag: " + fmt::format("100");
+    ImGui::Text("%s", RkText.c_str());
+
+    ImGui::NewLine();
+
+    ImGui::SetCursorPosX(texWidth);
+
+
 
     static double x = 0.0f, y = 0.0f, theta_deg = 0.0f;
     static Pose pose;
     ImGui::PushItemWidth(80);
-    bool x_changed = ImGui::InputDouble("iX [m]", &x, 0.0, 0.0, "%.3f");
-    bool y_changed = ImGui::InputDouble("iY [m]", &y, 0.0, 0.0, "%.3f");
-    bool theta_changed = ImGui::InputDouble("iTheta [deg]", &theta_deg, 0.0, 0.0, "%.3f");
+    bool x_changed = ImGui::InputDouble("input X [m]", &x, 0.0, 0.0, "%.3f");
+    ImGui::SetCursorPosX(texWidth);
+    bool y_changed = ImGui::InputDouble("input Y [m]", &y, 0.0, 0.0, "%.3f");
+    ImGui::SetCursorPosX(texWidth);
+    bool theta_changed = ImGui::InputDouble("input Theta [deg]", &theta_deg, 0.0, 0.0, "%.3f");
+    ImGui::SetCursorPosX(texWidth);
     ImGui::PopItemWidth();
     if (x_changed | y_changed | theta_changed) {
         double theta_rad = theta_deg * (M_PI / 180);  // Convert from degree to radians
@@ -275,6 +297,8 @@ void Visualizer::drawUIElements() {
         pose.setY(y);
         pose.setTheta(theta_rad);
     }
+
+    ImGui::SetCursorPosX(texWidth);
 
     if (ImGui::Button("Set Pose")) {
         localUpdate.hasPoseChanged = true;
