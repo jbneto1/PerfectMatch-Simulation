@@ -1,0 +1,40 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run C++ Program",
+            "type": "shell",
+            "command": "./PM_project",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Run Python Script",
+            "type": "shell",
+            "command": "python3",
+            "args": ["main.py"],
+            "options": {
+                "cwd": "${workspaceFolder}/srcPython/YOLOv8"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Run Both Programs",
+            "dependsOn": ["Run C++ Program", "Run Python Script"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
