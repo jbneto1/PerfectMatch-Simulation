@@ -37,7 +37,7 @@ void SimTwoInterface::startReceive() {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime); //microseconds precision
         double freq = 1E6 / double(duration.count()); // freq = 1 / time_interval
         localization.setFreq(freq);
-        std::cout << "freq: " << freq << std::endl;
+        std::cout << "freq: " << freq << '\n';
     }
 
     // save the call time for the next frequency computation
@@ -133,9 +133,8 @@ SimTwoInterface::getSensorData(const std::string &data) {
 
 
 void SimTwoInterface::stopIoContext() {
+    logger.trace("Stopping I/O context...");  // Start of operation
     run = false;
-
-    std::cout << "stop io context" << std::endl;
 
     io_context.restart();
 
@@ -162,6 +161,7 @@ void SimTwoInterface::stopIoContext() {
             logger.error("Error while closing socket: " + ec.message());
         }
     }
+    logger.trace("I/O context stopped.");  // End of operation
 }
 
 

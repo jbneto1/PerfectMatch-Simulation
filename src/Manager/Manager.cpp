@@ -18,9 +18,11 @@ Manager::Manager(Logger &logger)
 }
 
 Manager::~Manager() {
+    logger.trace("Manager destructor called.");
 }
 
 void Manager::stop() {
+    logger.trace("Initiating stop procedure...");  // Start of stop
     signals_.cancel(); // cancel signal set
 
     if(visThread.joinable()) {
@@ -29,12 +31,14 @@ void Manager::stop() {
     }
 
     interface.stopIoContext();
+    logger.trace("Stop procedure completed.");  // End of stop
 }
 void Manager::setupSignalHandler() {
     // Register the signal handler with asio
     try {
 
         signals_.async_wait([this](const asio::error_code &error, int signal_number) {
+            logger.trace("Signal received: " + std::to_string(signal_number));
             if (!error) {
                 if (signal_number == SIGINT) {
                     this->logger.trace("SIGINT caught.");
