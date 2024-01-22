@@ -38,9 +38,9 @@ Logger::Logger(spdlog::level::level_enum level)
         std::cout << "General exception: " << ex.what() << std::endl;
     }
 
-    fileLogger_GT->set_level(spdlog::level::off);
-    fileLogger_encs->set_level(spdlog::level::off);
-    fileLogger_lidar->set_level(spdlog::level::off);
+    // fileLogger_GT->set_level(spdlog::level::off);
+    // fileLogger_encs->set_level(spdlog::level::off);
+    // fileLogger_lidar->set_level(spdlog::level::off);
     
 }
 
@@ -62,6 +62,18 @@ std::string Logger::current_datetime()
 #endif
     std::stringstream ss;
     ss << std::put_time(&tm, "%Y-%m-%d_%H-%M-%S");
+    return ss.str();
+}
+
+std::string Logger::getHighPrecisionTimestamp() {
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+    auto epoch = now_ms.time_since_epoch();
+    auto value = std::chrono::duration_cast<std::chrono::milliseconds>(epoch);
+    long duration = value.count();
+
+    std::stringstream ss;
+    ss << duration;
     return ss.str();
 }
 
@@ -178,14 +190,12 @@ void Logger::deactivate_Loggers()
     fileLogger_lidar->set_level(spdlog::level::off);
 }
 
-void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, unsigned long int &time)
+void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings)
 {
     std::ostringstream oss;
-    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+    std::string now_c;
 
-    time = time + 25;
-
+    now_c = getHighPrecisionTimestamp();
 
     oss << GT_pose.getX() << ',' << GT_pose.getY() << ',' << GT_pose.getTheta() << ',' << time << ',' << now_c;
 

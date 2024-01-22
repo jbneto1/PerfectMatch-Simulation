@@ -31,7 +31,7 @@ public:
     void fileLog_encs(const std::string &message);
     void fileLog_lidar(const std::string &message);
 
-    void fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, unsigned long int &time);
+    void fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings);
 
     void set_level(const spdlog::level::level_enum log_level);
     void setPattern(const std::string &format);
@@ -44,6 +44,7 @@ private:
     std::shared_ptr<spdlog::logger> fileLogger_encs;
     std::shared_ptr<spdlog::logger> fileLogger_lidar;
     std::string current_datetime();
+    std::string getHighPrecisionTimestamp();
 };
 
 #endif // PERFECTMATCH_SIMULATION_LOGGER_H
