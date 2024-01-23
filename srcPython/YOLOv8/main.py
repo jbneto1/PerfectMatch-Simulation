@@ -1,4 +1,4 @@
-import socket as pysocket  # Import socket module for UDP communication
+import socket as pysocket
 import zmq
 import numpy as np
 import cv2
@@ -11,8 +11,8 @@ import signal
 running = True
 
 # NETWORK DEFINES for SIMTWO comm
-# ip = "192.168.1.183" # WINDOWS IP HOME
-ip = "193.137.108.164" # WINDOWS IP CEDRI
+ip = "192.168.1.183" # WINDOWS IP HOME
+# ip = "193.137.108.164" # WINDOWS IP CEDRI
 ip_wsl2 = "172.20.35.129"
 port_simtwo = "9899"
 
@@ -61,10 +61,9 @@ def send_ready_message():
     sock.sendto(message, (ip_wsl2, port_syncMsg))
     sock.close()
     
-send_ready_message()
-
 try:
     with open(log_file_name, 'a') as log_file:
+        send_ready_message()
         while running:
             try:
                 message = socket.recv()
