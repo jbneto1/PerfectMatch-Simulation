@@ -1,14 +1,12 @@
-// SimTwoInterface.cpp
-
 #include "SimTwoInterface.h"
 
 // Constructor
 SimTwoInterface::SimTwoInterface(Logger &logger, Localization &localization, AMRController &controller)
         : socket(io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), SIMTWO_RECEIVE_PORT)),
           logger(logger), localization(localization), controller(controller),
-          strand(io_context.get_executor()) {
+          strand(io_context.get_executor()), sync_socket(io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), SYNCMSG_RECEIVE_PORT)) {
+    startLogging = false;
     run = true;
-    startReceive();
     logger.info("Simulator Interface created and listening for data.");
     logger.info("Listening for UDP datagrams on port: " + std::to_string(SIMTWO_RECEIVE_PORT));
 }
@@ -18,7 +16,11 @@ SimTwoInterface::~SimTwoInterface() {
 }
 
 void SimTwoInterface::runIoContext() {
-    io_context.run();
+    waitForReadyMessage(); // Wait for ready message before starting
+    while (!startLogging) {
+        io_context.run_one(); // Process one ASIO event (waiting for "ready" message)
+    }
+    io_context.run(); // Continue with the normal operation after receiving the message
 }
 
 // Register a callback function for when data is received
@@ -56,6 +58,31 @@ void SimTwoInterface::startReceiveInStrand() {
             [this](std::error_code ec, std::size_t bytes_received) {
                 handleReceive(ec, bytes_received);
             }
+    );
+}
+
+void SimTwoInterface::waitForReadyMessage() {
+    std::fill(recv_buffer.begin(), recv_buffer.end(), 0);
+    sync_socket.async_receive_from(
+        asio::buffer(recv_buffer),
+        sender_endpoint,
+        [this](std::error_code ec, std::size_t bytes_received) {
+            logger.info("Data received");
+            if (!ec && bytes_received > 0) {
+                std::string message(recv_buffer.data(), bytes_received);
+                logger.info(message);
+                if (message == "ready") {
+                    this->logger.info("Received ready message. Starting logging.");
+                    // Signal to start logging
+                    this->startLogging = true;
+                    startReceive();
+                }
+            }
+            if (!startLogging) {
+                // Continue to wait for the ready message if not received
+                waitForReadyMessage();
+            }
+        }
     );
 }
 
@@ -131,7 +158,6 @@ SimTwoInterface::getSensorData(const std::string &data) {
     return std::make_tuple(encoders, tmp, lidar);
 }
 
-
 void SimTwoInterface::stopIoContext() {
     logger.trace("Stopping I/O context...");  // Start of operation
     run = false;
@@ -163,7 +189,6 @@ void SimTwoInterface::stopIoContext() {
     }
     logger.trace("I/O context stopped.");  // End of operation
 }
-
 
 asio::io_context &SimTwoInterface::getIoContext() {
     return this->io_context;

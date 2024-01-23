@@ -17,8 +17,8 @@
         {
             "label": "Run Python Script",
             "type": "shell",
-            "command": "python3",
-            "args": ["main.py"],
+            // Delay using the sleep command
+            "command": "sleep 5 && python3 main.py",
             "options": {
                 "cwd": "${workspaceFolder}/srcPython/YOLOv8"
             },

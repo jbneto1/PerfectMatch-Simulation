@@ -35,6 +35,7 @@ public:
     void stopIoContext();
     asio::io_context &getIoContext();
     std::promise<void> exit_signal;
+    void waitForReadyMessage();
 
     // Network Communication
     void sendWheelSpeeds(double frontLeftSpeed, double frontRightSpeed, double backLeftSpeed, double backRightSpeed);
@@ -49,9 +50,11 @@ private:
 
     asio::io_context io_context;
     asio::ip::udp::socket socket;
+    asio::ip::udp::socket sync_socket;
     asio::ip::udp::endpoint sender_endpoint;
     std::array<char, MAX_BUFFER_SIZE> recv_buffer;
     DataCallback dataCallback;
+    bool startLogging;
     Logger &logger;
     Localization &localization;
     AMRController &controller;
