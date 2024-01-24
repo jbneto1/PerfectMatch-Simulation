@@ -11,8 +11,8 @@ import signal
 running = True
 
 # NETWORK DEFINES for SIMTWO comm
-ip = "192.168.1.183" # WINDOWS IP HOME
-# ip = "193.137.108.164" # WINDOWS IP CEDRI
+# ip = "192.168.1.183" # WINDOWS IP HOME
+ip = "193.137.108.42" # WINDOWS IP CEDRI
 ip_wsl2 = "172.20.35.129"
 port_simtwo = "9899"
 
@@ -72,33 +72,24 @@ try:
                 decoded = cv2.flip(decoded, 0)
                 decoded = np.delete(decoded, 3, 2)
 
-                frame = cv2.cvtColor(decoded, cv2.COLOR_BGR2RGB)
-
                 # Run YOLO inference
-                results = model([frame])
-
+                results = model([decoded], stream=True, classes=0)
+                
                 # Get the current timestamp
                 now = datetime.datetime.now()
                 timestamp = int(now.timestamp() * 1000)  # Millisecond precision
-
-                # Process results
+                
                 for result in results:
+                    annotated_frame = result.plot()
                     boxes = result.boxes
-
-                    for box in boxes.data:  # Iterate through each box
+                    for box in boxes.data:
                         x1, y1, x2, y2, conf, cls = box[:6].tolist()
                         cls = int(cls)
-                        
-                        if cls == 0:  # Assuming 0 is the class ID for 'person'
-                            log_str = f"{x1},{y1},{x2},{y2},{conf},{cls},{timestamp}"
-                            log_yolo_data(log_str, log_file)
-                            
-                            print(f"BB coordinates: {x1, y1, x2, y2}, Class ID: {cls}, Confidence: {conf:.2f}")
-                            label = f'Person {conf:.2f}'
-                            cv2.rectangle(decoded, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-                            cv2.putText(decoded, label, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
+                        log_str = f"{x1},{y1},{x2},{y2},{conf},{cls},{timestamp}"
+                        log_yolo_data(log_str, log_file)
 
-                cv2.imshow("YOLOv8.1 Videostream", decoded)
+                cv2.imshow("YOLOv8.1 Videostream", annotated_frame)
+                
                 if cv2.waitKey(1) == ord('q'):
                     break
             except zmq.Again:
