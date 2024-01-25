@@ -11,13 +11,14 @@ import signal
 running = True
 
 # NETWORK DEFINES for SIMTWO comm
-# ip = "192.168.1.183" # WINDOWS IP HOME
-ip = "193.137.108.42" # WINDOWS IP CEDRI
+ip = "192.168.1.183" # WINDOWS IP HOME
+# ip = "193.137.108.42" # WINDOWS IP CEDRI
 ip_wsl2 = "172.20.35.129"
 port_simtwo = "9899"
 
 #NETWORK DEFINES FOR READY MSG
 port_syncMsg = 9890
+port_yoloMsg = 9010
 
 def signal_handler(sig, frame):
     global running
@@ -39,6 +40,11 @@ socket = context.socket(zmq.SUB)
 socket.connect(f"tcp://{ip}:{port_simtwo}") #windows's IP CeDRI
 socket.setsockopt_string(zmq.SUBSCRIBE, '')
 socket.setsockopt(zmq.RCVTIMEO, 500)  # Set to non-blocking with a timeout of ms
+
+# Create UDP socket for sending YOLO data to the C++ server
+yolo_sock = pysocket.socket(pysocket.AF_INET, pysocket.SOCK_DGRAM)
+
+
 # Function to log YOLO data
 def log_yolo_data(box_data, file):
     file.write(box_data + '\n')
@@ -61,6 +67,13 @@ def send_ready_message():
     sock.sendto(message, (ip_wsl2, port_syncMsg))
     sock.close()
     
+# Function to send YOLO data to the C++ server
+def send_yolo_data(yolo_data):
+    try:
+        yolo_sock.sendto(yolo_data.encode(), (ip_wsl2, port_yoloMsg))  # Sending to the C++ application
+    except Exception as e:
+        print(f"Error sending YOLO data: {e}")
+    
 try:
     with open(log_file_name, 'a') as log_file:
         send_ready_message()
@@ -82,12 +95,18 @@ try:
                 for result in results:
                     annotated_frame = result.plot()
                     boxes = result.boxes
-                    for box in boxes.data:
-                        x1, y1, x2, y2, conf, cls = box[:6].tolist()
-                        cls = int(cls)
-                        log_str = f"{x1},{y1},{x2},{y2},{conf},{cls},{timestamp}"
-                        log_yolo_data(log_str, log_file)
+                    if (len(boxes.cls) != 0):
+                        log_str = ''
+                        for (iter,box) in enumerate(boxes.data):
+                            x1, y1, x2, y2, conf, cls = box[:6].tolist()
+                            cls = int(cls)
+                            log_str = log_str +  f"b{iter}:{cls},{conf},{x1},{y1},{x2},{y2},"
 
+                        log_str = log_str[:-1]
+                        # log_yolo_data(log_str, log_file)
+                        if log_str:
+                            send_yolo_data(log_str)
+                    
                 cv2.imshow("YOLOv8.1 Videostream", annotated_frame)
                 
                 if cv2.waitKey(1) == ord('q'):
@@ -101,6 +120,7 @@ except Exception as e:
 finally:
     print("Cleaning up resources...")
     socket.close()
+    yolo_sock.close()
     context.term()
     cv2.destroyAllWindows()
     print("Resources released. Program terminated.")

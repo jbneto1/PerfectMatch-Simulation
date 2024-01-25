@@ -32,34 +32,46 @@ public:
 
     // IO Operations
     void runIoContext();
-    void stopIoContext();
+    void stopIosContexts();
     asio::io_context &getIoContext();
     std::promise<void> exit_signal;
     void waitForReadyMessage();
 
+    void startYoloReceive();
+    std::string getLatestYoloData();
+    void runYoloIoContext();
+
     // Network Communication
     void sendWheelSpeeds(double frontLeftSpeed, double frontRightSpeed, double backLeftSpeed, double backRightSpeed);
     void registerCallback(DataCallback callback);
+
 private:
 
     void handleReceive(const asio::error_code &error, std::size_t /*bytes_transferred*/);
-    void startReceive();
-    void startReceiveInStrand();
+    void startSimReceive();
 
     // Class Attributes
 
+    std::string bufferYoloData;
+    std::mutex yoloDataMutex; // For thread-safe access to latestYoloData
+    std::array<char, MAX_BUFFER_SIZE> yoloRecvBuffer;
+    // Separate io_context and threads for YOLO data reception
+    asio::io_context yoloIoContext;
+    std::thread yoloThread;
+    asio::ip::udp::socket yolo_socket;
+
+
     asio::io_context io_context;
-    asio::ip::udp::socket socket;
+    asio::ip::udp::socket sim_socket;
     asio::ip::udp::socket sync_socket;
     asio::ip::udp::endpoint sender_endpoint;
-    std::array<char, MAX_BUFFER_SIZE> recv_buffer;
+    std::array<char, MAX_BUFFER_SIZE> simRecvBuffer;
     DataCallback dataCallback;
     bool startLogging;
     Logger &logger;
     Localization &localization;
     AMRController &controller;
     bool run;
-    asio::strand<asio::io_context::executor_type> strand;
     asio::executor_work_guard<asio::io_context::executor_type> guard = asio::make_work_guard(io_context);
     std::chrono::steady_clock::time_point lastTime;
 };

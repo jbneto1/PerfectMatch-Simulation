@@ -8,7 +8,6 @@
             "program": "${workspaceFolder}/srcPython/YOLOv8/main.py",
             "cwd": "${workspaceFolder}/srcPython/YOLOv8",
             "console": "integratedTerminal",
-            "preLaunchTask": "Run Python Script",
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"

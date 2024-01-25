@@ -27,11 +27,8 @@ public:
     void info(const std::string &message);
     void warn(const std::string &message);
     void error(const std::string &message);
-    void fileLog_GT(const std::string &message);
-    void fileLog_encs(const std::string &message);
-    void fileLog_lidar(const std::string &message);
 
-    void fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings);
+    void fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, const std::string &yoloData);
 
     void set_level(const spdlog::level::level_enum log_level);
     void setPattern(const std::string &format);
@@ -40,9 +37,7 @@ public:
 private:
     explicit Logger(spdlog::level::level_enum level);
     std::shared_ptr<spdlog::logger> logger;
-    std::shared_ptr<spdlog::logger> fileLogger_GT;
-    std::shared_ptr<spdlog::logger> fileLogger_encs;
-    std::shared_ptr<spdlog::logger> fileLogger_lidar;
+    std::shared_ptr<spdlog::logger> fileLogger_data;
     std::string current_datetime();
     std::string getHighPrecisionTimestamp();
 };

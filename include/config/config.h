@@ -8,6 +8,7 @@
 constexpr int MAX_BUFFER_SIZE = 16256;
 constexpr int SIMTWO_RECEIVE_PORT = 9000;
 constexpr int SYNCMSG_RECEIVE_PORT = 9890;
+constexpr int YOLOMSG_RECEIVE_PORT = 9010;
 
 constexpr int ENCODER_RESOLUTION = 3840;
 constexpr double CONTROL_CYCLE = 0.025;

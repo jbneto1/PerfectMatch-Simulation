@@ -15,7 +15,7 @@
             }
         },
         {
-            "label": "Run Python Script",
+            "label": "Run Python Script with sleep",
             "type": "shell",
             // Delay using the sleep command
             "command": "sleep 3 && python3 main.py",
@@ -29,8 +29,21 @@
             }
         },
         {
+            "label": "Run Python Script",
+            "type": "shell",
+            "command": "python3 main.py",
+            "options": {
+                "cwd": "${workspaceFolder}/srcPython/YOLOv8"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
             "label": "Run Both Programs",
-            "dependsOn": ["Run C++ Program", "Run Python Script"],
+            "dependsOn": ["Run C++ Program", "Run Python Script with sleep"],
             "group": {
                 "kind": "build",
                 "isDefault": true
