@@ -48,7 +48,7 @@ void SimTwoInterface::startSimReceive() {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime); //microseconds precision
         double freq = 1E6 / double(duration.count()); // freq = 1 / time_interval
         localization.setFreq(freq);
-        std::cout << "freq: " << freq << '\n';
+        logger.info("Simulator comm frequency: " + std::to_string(freq));
     }
 
     // save the call time for the next frequency computation
@@ -72,7 +72,6 @@ void SimTwoInterface::startYoloReceive() {
         [this](const asio::error_code& ec, std::size_t bytes_received) {
             if (!ec) {
                 std::lock_guard<std::mutex> guard(yoloDataMutex);
-                std::fill(yoloRecvBuffer.begin(), yoloRecvBuffer.end(), 0); // Clear buffer
                 bufferYoloData.assign(yoloRecvBuffer.data(), bytes_received);
             }
             startYoloReceive(); // Continue receiving

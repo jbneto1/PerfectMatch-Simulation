@@ -156,10 +156,13 @@ void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, 
             oss << ',' << reading.getD();
         }
 
-        oss << ',' << yoloData;
-
-        oss << ',' << now_c;
-
-        this->fileLogger_data->trace(oss.str());
     }
+
+    if (!yoloData.empty()) {
+        oss << ',' << yoloData;
+    }
+        
+    oss << ',' << now_c;
+
+    this->fileLogger_data->trace(oss.str());
 }

@@ -44,17 +44,6 @@ socket.setsockopt(zmq.RCVTIMEO, 500)  # Set to non-blocking with a timeout of ms
 # Create UDP socket for sending YOLO data to the C++ server
 yolo_sock = pysocket.socket(pysocket.AF_INET, pysocket.SOCK_DGRAM)
 
-
-# Function to log YOLO data
-def log_yolo_data(box_data, file):
-    file.write(box_data + '\n')
-
-# Function to get formatted current datetime
-def current_datetime():
-    return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-log_file_name = f"../../docs/logs/yolo_{current_datetime()}.txt"
-
 # Create a named window and set its size
 cv2.namedWindow("YOLOv8.1 Videostream", cv2.WINDOW_AUTOSIZE)
 cv2.resizeWindow("YOLOv8.1 Videostream", 800, 600)
@@ -75,44 +64,43 @@ def send_yolo_data(yolo_data):
         print(f"Error sending YOLO data: {e}")
     
 try:
-    with open(log_file_name, 'a') as log_file:
-        send_ready_message()
-        while running:
-            try:
-                message = socket.recv()
-                decoded = np.frombuffer(message, np.uint8)
-                decoded = decoded.reshape((480, 640, 4))
-                decoded = cv2.flip(decoded, 0)
-                decoded = np.delete(decoded, 3, 2)
+    send_ready_message()
+    while running:
+        try:
+            message = socket.recv()
+            decoded = np.frombuffer(message, np.uint8)
+            decoded = decoded.reshape((480, 640, 4))
+            decoded = cv2.flip(decoded, 0)
+            decoded = np.delete(decoded, 3, 2)
 
-                # Run YOLO inference
-                results = model([decoded], stream=True, classes=0)
-                
-                # Get the current timestamp
-                now = datetime.datetime.now()
-                timestamp = int(now.timestamp() * 1000)  # Millisecond precision
-                
-                for result in results:
-                    annotated_frame = result.plot()
-                    boxes = result.boxes
-                    if (len(boxes.cls) != 0):
-                        log_str = ''
-                        for (iter,box) in enumerate(boxes.data):
-                            x1, y1, x2, y2, conf, cls = box[:6].tolist()
-                            cls = int(cls)
-                            log_str = log_str +  f"b{iter}:{cls},{conf},{x1},{y1},{x2},{y2},"
+            # Run YOLO inference
+            results = model([decoded], stream=True, classes=0)
+            
+            # Get the current timestamp
+            now = datetime.datetime.now()
+            timestamp = int(now.timestamp() * 1000)  # Millisecond precision
+            
+            for result in results:
+                annotated_frame = result.plot()
+                boxes = result.boxes
+                if (len(boxes.cls) != 0):
+                    log_str = ''
+                    for (iter,box) in enumerate(boxes.data):
+                        x1, y1, x2, y2, conf, cls = box[:6].tolist()
+                        cls = int(cls)
+                        log_str = log_str +  f"b{iter}:{cls},{conf},{x1},{y1},{x2},{y2},"
 
-                        log_str = log_str[:-1]
-                        # log_yolo_data(log_str, log_file)
-                        if log_str:
-                            send_yolo_data(log_str)
-                    
-                cv2.imshow("YOLOv8.1 Videostream", annotated_frame)
+                    log_str = log_str[:-1]
+                    if log_str:
+                        # print(f"Size in bytes: {len(log_str.encode('utf-8'))}")
+                        send_yolo_data(log_str)
                 
-                if cv2.waitKey(1) == ord('q'):
-                    break
-            except zmq.Again:
-                continue
+            cv2.imshow("YOLOv8.1 Videostream", annotated_frame)
+            
+            if cv2.waitKey(1) == ord('q'):
+                break
+        except zmq.Again:
+            continue
 except KeyboardInterrupt:
     print("Keyboard interrupt detected. Shutting down...")
 except Exception as e:
