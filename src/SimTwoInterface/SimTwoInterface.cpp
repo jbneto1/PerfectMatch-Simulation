@@ -4,7 +4,7 @@
 SimTwoInterface::SimTwoInterface(Logger &logger, Localization &localization, AMRController &controller)
         : sim_socket(io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), SIMTWO_RECEIVE_PORT)),
           logger(logger), localization(localization), controller(controller), sync_socket(io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), SYNCMSG_RECEIVE_PORT)),
-          yolo_socket(io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), YOLOMSG_RECEIVE_PORT)) {
+          yolo_socket(yoloIoContext, asio::ip::udp::endpoint(asio::ip::udp::v4(), YOLOMSG_RECEIVE_PORT)) {
     startLogging = false;
     run = true;
     logger.info("Simulator Interface created and listening for data.");
@@ -234,12 +234,12 @@ void SimTwoInterface::stopIosContexts() {
 
         // Double-check if it's really stopped.
         if (yoloIoContext.stopped()) {
-            logger.debug("io_context has been successfully stopped.");
+            logger.debug("yoloIocontext has been successfully stopped.");
         } else {
-            logger.error("Failed to stop io_context.");
+            logger.error("Failed to stop yoloIocontext.");
         }
     } else {
-        logger.warn("io_context was already stopped.");
+        logger.warn("yoloIocontext was already stopped.");
     }
 
     if (yolo_socket.is_open()) {
