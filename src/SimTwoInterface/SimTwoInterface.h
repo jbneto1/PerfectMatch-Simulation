@@ -17,6 +17,7 @@
 #include "AMRController/AMRController.h"
 #include <chrono>
 #include <optional>
+#include "utils/utils.h"
 
 class SimTwoInterface {
 public:
@@ -75,7 +76,12 @@ private:
     Localization &localization;
     AMRController &controller;
     bool run;
-    std::chrono::steady_clock::time_point lastTime;
+
+
+    void logFrequencySimTwo();
+    void logFrequencyYOLO();
+    std::chrono::steady_clock::time_point lastTime_simtwo;
+    std::chrono::steady_clock::time_point lastTime_yolo;
 };
 
 #endif //PERFECTMATCH_SIMULATION_SIMTWOINTERFACE_H

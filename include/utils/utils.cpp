@@ -35,4 +35,10 @@ double degToRad(double angle) {
     return (angle * M_PI / 180);
 }
 
+std::string formatWithTwoDecimals(double value) {
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(2) << value;
+    return out.str();
+}
+
 

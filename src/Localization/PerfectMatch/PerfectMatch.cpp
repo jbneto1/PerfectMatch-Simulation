@@ -84,7 +84,7 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
     RobotPose.setTheta(adjusted_Theta);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("PerfectMatch [us]: " + std::to_string(duration.count()));
+    logger.trace("Full IterLaser [us]: " + std::to_string(duration.count()));
     if (n > 0) pmError = pmError / n;
 }
 
@@ -113,7 +113,7 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
+    logger.trace("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
 }
 
 Pose PerfectMatch::interpolatePose(const Pose &previousPose, const Pose &currentPose, const double alpha) {

@@ -54,19 +54,7 @@ void SimTwoInterface::registerCallback(DataCallback callback)
 void SimTwoInterface::startSimReceive()
 {
 
-    auto now = std::chrono::steady_clock::now();
-
-    // if this is not the first call, compute the frequency
-    if (lastTime != std::chrono::steady_clock::time_point{})
-    {
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime); // microseconds precision
-        double freq = 1E6 / double(duration.count());                                          // freq = 1 / time_interval
-        localization.setFreq(freq);
-        logger.info("Simulator communication frequency: " + std::to_string(freq));
-    }
-
-    // save the call time for the next frequency computation
-    lastTime = now;
+    logFrequencySimTwo();
 
     std::fill(simRecvBuffer.begin(), simRecvBuffer.end(), 0);
 
@@ -85,6 +73,9 @@ void SimTwoInterface::startSimReceive()
 
 void SimTwoInterface::startYoloReceive()
 {
+
+    logFrequencyYOLO();
+
     yolo_socket.async_receive_from(
         asio::buffer(yoloRecvBuffer),
         sender_endpoint,
@@ -325,4 +316,29 @@ void SimTwoInterface::sendAckMessage()
     const std::string ackMsg = "acknowledged";
     asio::ip::udp::endpoint receiver_endpoint(asio::ip::address::from_string(IP_WSL2), YOLOMSG_SEND_PORT);
     sync_socket.send_to(asio::buffer(ackMsg), receiver_endpoint);
+}
+
+void SimTwoInterface::logFrequencySimTwo() {
+
+    auto now = std::chrono::steady_clock::now();
+
+    if (lastTime_simtwo != std::chrono::steady_clock::time_point{}) {
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime_simtwo);
+        double freq = 1E6 / double(duration.count());
+        localization.setFreq(freq);
+        logger.info("SimTwo Comm[Hz]: " + formatWithTwoDecimals(freq));
+    }
+    lastTime_simtwo = now;
+}
+
+void SimTwoInterface::logFrequencyYOLO() {
+
+    auto now = std::chrono::steady_clock::now();
+
+    if (lastTime_yolo != std::chrono::steady_clock::time_point{}) {
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime_yolo);
+        double freq = 1E6 / double(duration.count());
+        logger.info("YOLO Comm[Hz]: " + formatWithTwoDecimals(freq));
+    }
+    lastTime_yolo = now;
 }
