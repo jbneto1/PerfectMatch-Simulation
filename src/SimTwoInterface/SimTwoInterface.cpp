@@ -2,53 +2,67 @@
 
 // Constructor
 SimTwoInterface::SimTwoInterface(Logger &logger, Localization &localization, AMRController &controller)
-        : sim_socket(io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), SIMTWO_RECEIVE_PORT)),
-          logger(logger), localization(localization), controller(controller), sync_socket(io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), SYNCMSG_RECEIVE_PORT)),
-          yolo_socket(yoloIoContext, asio::ip::udp::endpoint(asio::ip::udp::v4(), YOLOMSG_RECEIVE_PORT)) {
+    : sim_socket(io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), SIMTWO_RECEIVE_PORT)),
+      logger(logger), localization(localization), controller(controller), sync_socket(io_context, asio::ip::udp::endpoint(asio::ip::udp::v4(), SYNCMSG_RECEIVE_PORT)),
+      yolo_socket(yoloIoContext, asio::ip::udp::endpoint(asio::ip::udp::v4(), YOLOMSG_RECEIVE_PORT))
+{
     startLogging = false;
+    earlyStop = false;
     run = true;
     logger.info("Simulator Interface created and listening for data.");
     logger.info("Listening for UDP datagrams on port: " + std::to_string(SIMTWO_RECEIVE_PORT));
 }
 
 // Destructor
-SimTwoInterface::~SimTwoInterface() {
+SimTwoInterface::~SimTwoInterface()
+{
+    // Ensure threads are joined before destruction
     if (yoloThread.joinable()) {
         yoloThread.join();
     }
 }
 
-void SimTwoInterface::runIoContext() {
+void SimTwoInterface::runIoContext()
+{
+    asio::executor_work_guard<asio::io_context::executor_type> guard = asio::make_work_guard(io_context);
     waitForReadyMessage(); // Wait for ready message before starting
-    while (!startLogging) {
+    while (!startLogging && !earlyStop)
+    {
         io_context.run_one(); // Process one ASIO event (waiting for "ready" message)
     }
-    io_context.run(); // Continue with the normal operation after receiving the message
+    if(!earlyStop) {
+        logger.debug("Waiting for the simulator.");
+        io_context.run(); // Continue with the normal operation after receiving the message
+    }
 }
 
-void SimTwoInterface::runYoloIoContext() {
+void SimTwoInterface::runYoloIoContext()
+{
     asio::executor_work_guard<asio::io_context::executor_type> yoloGuard = asio::make_work_guard(yoloIoContext);
     startYoloReceive();
     yoloIoContext.run();
 }
 
 // Register a callback function for when data is received
-void SimTwoInterface::registerCallback(DataCallback callback) {
+void SimTwoInterface::registerCallback(DataCallback callback)
+{
     dataCallback = std::move(callback);
     logger.debug("Data callback registered.");
 }
 
 // Start receiving data
-void SimTwoInterface::startSimReceive() {
+void SimTwoInterface::startSimReceive()
+{
 
     auto now = std::chrono::steady_clock::now();
 
     // if this is not the first call, compute the frequency
-    if (lastTime != std::chrono::steady_clock::time_point{}) {
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime); //microseconds precision
-        double freq = 1E6 / double(duration.count()); // freq = 1 / time_interval
+    if (lastTime != std::chrono::steady_clock::time_point{})
+    {
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime); // microseconds precision
+        double freq = 1E6 / double(duration.count());                                          // freq = 1 / time_interval
         localization.setFreq(freq);
-        logger.info("Simulator comm frequency: " + std::to_string(freq));
+        logger.info("Simulator communication frequency: " + std::to_string(freq));
     }
 
     // save the call time for the next frequency computation
@@ -57,92 +71,116 @@ void SimTwoInterface::startSimReceive() {
     std::fill(simRecvBuffer.begin(), simRecvBuffer.end(), 0);
 
     sim_socket.async_receive_from(
-            asio::buffer(simRecvBuffer),
-            sender_endpoint,
-            [this](std::error_code ec, std::size_t bytes_received) {
-                handleReceive(ec, bytes_received);
+        asio::buffer(simRecvBuffer),
+        sender_endpoint,
+        [this](std::error_code ec, std::size_t bytes_received)
+        {
+            handleReceive(ec, bytes_received);
+            if (run)
+            {
+                this->startSimReceive();
             }
-    );
+        });
 }
 
-void SimTwoInterface::startYoloReceive() {
+void SimTwoInterface::startYoloReceive()
+{
     yolo_socket.async_receive_from(
         asio::buffer(yoloRecvBuffer),
         sender_endpoint,
-        [this](const asio::error_code& ec, std::size_t bytes_received) {
-            if (!ec) {
+        [this](const asio::error_code &ec, std::size_t bytes_received)
+        {
+            if (!ec)
+            {
                 std::lock_guard<std::mutex> guard(yoloDataMutex);
                 bufferYoloData.assign(yoloRecvBuffer.data(), bytes_received);
             }
             startYoloReceive(); // Continue receiving
-        }
-    );
+        });
 }
 
 // Implement getLatestYoloData
-std::string SimTwoInterface::getLatestYoloData() {
+std::string SimTwoInterface::getLatestYoloData()
+{
     std::lock_guard<std::mutex> guard(yoloDataMutex);
     return bufferYoloData;
 }
 
-
-void SimTwoInterface::waitForReadyMessage() {
+void SimTwoInterface::waitForReadyMessage()
+{
     std::array<char, MAX_BUFFER_SIZE> recv_buffer;
 
-    std::fill(recv_buffer.begin(), recv_buffer.end(), 0);
-    sync_socket.async_receive_from(
-        asio::buffer(recv_buffer),
-        sender_endpoint,
-        [this, &recv_buffer](std::error_code ec, std::size_t bytes_received) {
-            logger.info("Data received");
-            if (!ec && bytes_received > 0) {
-                std::string message(recv_buffer.data(), bytes_received);
-                logger.info(message);
-                if (message == "ready") {
-                    this->logger.info("Received ready message. Starting logging.");
-                    this->startLogging = true;
-                    startSimReceive();
-                    yoloThread = std::thread(&SimTwoInterface::runYoloIoContext, this); // Start YOLO thread
-                    if (sync_socket.is_open()) {
-                        asio::error_code ec;
+    // Function to setup receiving the ready message
+    std::function<void()> setup_receive;
+    setup_receive = [this, &recv_buffer, &setup_receive]()
+    {
+        std::fill(recv_buffer.begin(), recv_buffer.end(), 0);
+        sync_socket.async_receive_from(
+            asio::buffer(recv_buffer), sender_endpoint,
+            [this, &recv_buffer, &setup_receive](std::error_code ec, std::size_t bytes_received)
+            {
+                if (!ec && bytes_received > 0)
+                {
+                    std::string message(recv_buffer.data(), bytes_received);
+                    if (message == "ready")
+                    {
+                        this->logger.info("Received ready message. Sending acknowledgment.");
+                        this->sendAckMessage(); // Send acknowledgment
+                        this->startLogging = true;
+                        startSimReceive();
+                        yoloThread = std::thread(&SimTwoInterface::runYoloIoContext, this);
+                        if (sync_socket.is_open())
+                        {
+                            asio::error_code ec;
 
-                        sync_socket.close(ec);
-                        if (ec) {
-                            logger.error("Error while closing socket: " + ec.message());
+                            sync_socket.close(ec);
+                            if (ec)
+                            {
+                                logger.error("Error while closing socket: " + ec.message());
+                            }
                         }
                     }
+                    else
+                    {
+                        this->logger.warn("Unexpected message received: " + message);
+                        setup_receive(); // Re-setup the async receive
+                    }
                 }
-            }
-            if (!startLogging) {
-                // Continue to wait for the ready message if not received
-                waitForReadyMessage();
-            }
-        }
-    );
+                else
+                {
+                    this->logger.error("Error in receiving ready message: " + ec.message());
+                    setup_receive(); // Re-setup the async receive in case of error
+                }
+            });
+    };
+
+    setup_receive(); // Initial setup
 }
 
-void SimTwoInterface::handleReceive(const asio::error_code &error, std::size_t /*bytes_transferred*/) {
-    if (!error) {
+void SimTwoInterface::handleReceive(const asio::error_code &error, std::size_t /*bytes_transferred*/)
+{
+    if (!error)
+    {
         this->logger.trace("Received data without error. Handler called.");
-        if (dataCallback) {
+        if (dataCallback)
+        {
             dataCallback(std::string(simRecvBuffer.data()));
         }
-
-        // Set up to receive more data
-        if (run) {
-            this->startSimReceive();
-        }
-    } else {
+    }
+    else
+    {
         this->logger.error("Error while receiving data: " + error.message());
     }
 }
 
 // Send wheel speeds
 void SimTwoInterface::sendWheelSpeeds(double frontLeftSpeed, double frontRightSpeed, double backLeftSpeed,
-                                      double backRightSpeed) {
+                                      double backRightSpeed)
+{
     // Placeholder implementation, replace with actual logic
     logger.info("Setting wheel speeds: "
-                "Front Left: " + std::to_string(frontLeftSpeed) +
+                "Front Left: " +
+                std::to_string(frontLeftSpeed) +
                 ", Front Right: " + std::to_string(frontRightSpeed) +
                 ", Back Left: " + std::to_string(backLeftSpeed) +
                 ", Back Right: " + std::to_string(backRightSpeed));
@@ -150,7 +188,8 @@ void SimTwoInterface::sendWheelSpeeds(double frontLeftSpeed, double frontRightSp
 
 // Parse received data
 std::tuple<std::array<int, 4>, Pose, std::optional<std::array<LaserPoint, 720>>>
-SimTwoInterface::getSensorData(const std::string &data) {
+SimTwoInterface::getSensorData(const std::string &data)
+{
     std::istringstream iss(data);
     std::string line;
     std::array<int, 4> encoders{}; // encs (1..4) (FL, FR, BL, BR)
@@ -162,17 +201,24 @@ SimTwoInterface::getSensorData(const std::string &data) {
 
     logger.trace("Starting to parse sensor data...");
 
-    while (std::getline(iss, line)) {
-        if (line.find("Enc") != std::string::npos) {
+    while (std::getline(iss, line))
+    {
+        if (line.find("Enc") != std::string::npos)
+        {
             std::getline(iss, line);
             encoders[encoder_index++] = std::stoi(line);
-        } else if (line.find("X") != std::string::npos || line.find("Y") != std::string::npos ||
-                   line.find("THETA") != std::string::npos) {
+        }
+        else if (line.find("X") != std::string::npos || line.find("Y") != std::string::npos ||
+                 line.find("THETA") != std::string::npos)
+        {
             std::getline(iss, line);
             pose[pose_index++] = std::stod(line);
-        } else if (line.find("lidar") != std::string::npos) {
+        }
+        else if (line.find("lidar") != std::string::npos)
+        {
             // Initialize the lidar data if not done before
-            if (!lidar) {
+            if (!lidar)
+            {
                 lidar = std::array<LaserPoint, 720>{};
             }
 
@@ -181,7 +227,8 @@ SimTwoInterface::getSensorData(const std::string &data) {
             std::string val;
 
             int lidar_index = 0;
-            while (std::getline(iss_lidar, val, ',')) {
+            while (std::getline(iss_lidar, val, ','))
+            {
                 lidar.value()[lidar_index++].setD(std::stod(val));
             }
         }
@@ -193,72 +240,89 @@ SimTwoInterface::getSensorData(const std::string &data) {
     return std::make_tuple(encoders, tmp, lidar);
 }
 
-void SimTwoInterface::stopIosContexts() {
-    logger.trace("Stopping I/O context...");  // Start of operation
+void SimTwoInterface::stopIosContexts()
+{
+    logger.trace("Stopping I/O contexts and closing sockets..."); // Start of operation
     run = false;
     startLogging = false;
+    earlyStop = true;
 
     io_context.restart();
 
     // Ensure the io_context isn't already stopped.
-    if (!io_context.stopped()) {
-        // do the real stop
-        guard.reset();
+    if (!io_context.stopped())
+    {
         io_context.stop();
 
         // Double-check if it's really stopped.
-        if (io_context.stopped()) {
+        if (io_context.stopped())
+        {
             logger.debug("io_context has been successfully stopped.");
-        } else {
+        }
+        else
+        {
             logger.error("Failed to stop io_context.");
         }
-    } else {
+    }
+    else
+    {
         logger.warn("io_context was already stopped.");
     }
 
-    if (sim_socket.is_open()) {
+    if (sim_socket.is_open())
+    {
         asio::error_code ec;
 
         sim_socket.close(ec);
-        if (ec) {
+        if (ec)
+        {
             logger.error("Error while closing socket: " + ec.message());
         }
     }
 
     yoloIoContext.restart();
 
-    if (!yoloIoContext.stopped()) {
+    if (!yoloIoContext.stopped())
+    {
         // do the real stop
         yoloIoContext.stop();
 
         // Double-check if it's really stopped.
-        if (yoloIoContext.stopped()) {
+        if (yoloIoContext.stopped())
+        {
             logger.debug("yoloIocontext has been successfully stopped.");
-        } else {
+        }
+        else
+        {
             logger.error("Failed to stop yoloIocontext.");
         }
-    } else {
+    }
+    else
+    {
         logger.warn("yoloIocontext was already stopped.");
     }
 
-    if (yolo_socket.is_open()) {
+    if (yolo_socket.is_open())
+    {
         asio::error_code ec;
 
         yolo_socket.close(ec);
-        if (ec) {
+        if (ec)
+        {
             logger.error("Error while closing socket: " + ec.message());
         }
     }
-
-
-
-
-
-    logger.trace("I/O context stopped.");  // End of operation
+    logger.trace("I/O contexts stopped and sockets closed."); // End of operation
 }
 
-asio::io_context &SimTwoInterface::getIoContext() {
+asio::io_context &SimTwoInterface::getIoContext()
+{
     return this->io_context;
 }
 
-
+void SimTwoInterface::sendAckMessage()
+{
+    const std::string ackMsg = "acknowledged";
+    asio::ip::udp::endpoint receiver_endpoint(asio::ip::address::from_string(IP_WSL2), YOLOMSG_SEND_PORT);
+    sync_socket.send_to(asio::buffer(ackMsg), receiver_endpoint);
+}

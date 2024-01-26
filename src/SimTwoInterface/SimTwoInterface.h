@@ -36,10 +36,12 @@ public:
     asio::io_context &getIoContext();
     std::promise<void> exit_signal;
     void waitForReadyMessage();
+    void sendAckMessage();
 
     void startYoloReceive();
     std::string getLatestYoloData();
     void runYoloIoContext();
+    
 
     // Network Communication
     void sendWheelSpeeds(double frontLeftSpeed, double frontRightSpeed, double backLeftSpeed, double backRightSpeed);
@@ -68,11 +70,11 @@ private:
     std::array<char, MAX_BUFFER_SIZE> simRecvBuffer;
     DataCallback dataCallback;
     bool startLogging;
+    bool earlyStop;
     Logger &logger;
     Localization &localization;
     AMRController &controller;
     bool run;
-    asio::executor_work_guard<asio::io_context::executor_type> guard = asio::make_work_guard(io_context);
     std::chrono::steady_clock::time_point lastTime;
 };
 

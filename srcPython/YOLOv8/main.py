@@ -6,6 +6,7 @@ from ultralytics import YOLO
 import torch
 import datetime
 import signal
+import time
 
 # Flag to control the main loop
 running = True
@@ -13,12 +14,14 @@ running = True
 # NETWORK DEFINES for SIMTWO comm
 ip = "192.168.1.183" # WINDOWS IP HOME
 # ip = "193.137.108.42" # WINDOWS IP CEDRI
-ip_wsl2 = "172.20.35.129"
 port_simtwo = "9899"
 
-#NETWORK DEFINES FOR READY MSG
+#NETWORK DEFINES FOR READY MSG (WSL2 CODES)
+ip_wsl2 = "172.20.35.129"
 port_syncMsg = 9890
 port_yoloMsg = 9010
+port_syncAck = 9009
+
 
 def signal_handler(sig, frame):
     global running
@@ -48,13 +51,31 @@ yolo_sock = pysocket.socket(pysocket.AF_INET, pysocket.SOCK_DGRAM)
 cv2.namedWindow("YOLOv8.1 Videostream", cv2.WINDOW_AUTOSIZE)
 cv2.resizeWindow("YOLOv8.1 Videostream", 800, 600)
 
-# Function to send a ready message to the C++ server
 def send_ready_message():
-    message = b"ready"  # Message to be sent
-    print(f"Sending ready message to {ip}:{port_syncMsg}")
-    sock = pysocket.socket(pysocket.AF_INET, pysocket.SOCK_DGRAM)
-    sock.sendto(message, (ip_wsl2, port_syncMsg))
-    sock.close()
+    message = b"ready"
+    print(f"Sending ready message to {ip_wsl2}:{port_syncMsg}")
+    send_sock = pysocket.socket(pysocket.AF_INET, pysocket.SOCK_DGRAM)
+    recv_sock = pysocket.socket(pysocket.AF_INET, pysocket.SOCK_DGRAM)
+    recv_sock.bind(('', port_syncAck))
+    recv_sock.settimeout(1.5)
+
+    try:
+        send_sock.sendto(message, (ip_wsl2, port_syncMsg))
+        try:
+            ack, _ = recv_sock.recvfrom(1024)
+            if ack == b"acknowledged":
+                print("Acknowledgment received. Starting logging.")
+                return True
+            else:
+                print("Unexpected message received:", ack)
+        except pysocket.timeout:
+            print("Timeout waiting for acknowledgment.")
+    except Exception as e:
+        print(f"Error sending ready message: {e}")
+    finally:
+        send_sock.close()
+        recv_sock.close()
+    return False
     
 # Function to send YOLO data to the C++ server
 def send_yolo_data(yolo_data):
@@ -63,8 +84,17 @@ def send_yolo_data(yolo_data):
     except Exception as e:
         print(f"Error sending YOLO data: {e}")
     
+
+
 try:
-    send_ready_message()
+    message_received = False
+    while(message_received != True and running == True):
+        message_received = send_ready_message()
+        if (message_received == True):
+            break
+        else:    
+            print("Retrying to send ready message...")
+
     while running:
         try:
             message = socket.recv()
