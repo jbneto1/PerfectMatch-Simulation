@@ -12,8 +12,8 @@ import time
 running = True
 
 # NETWORK DEFINES for SIMTWO comm
-ip = "192.168.1.183" # WINDOWS IP HOME
-# ip = "193.137.108.42" # WINDOWS IP CEDRI
+# ip = "192.168.1.183" # WINDOWS IP HOME
+ip = "193.137.108.176" # WINDOWS IP CEDRI
 port_simtwo = "9899"
 
 #NETWORK DEFINES FOR READY MSG (WSL2 CODES)
@@ -84,8 +84,6 @@ def send_yolo_data(yolo_data):
     except Exception as e:
         print(f"Error sending YOLO data: {e}")
     
-
-
 try:
     message_received = False
     while(message_received != True and running == True):
@@ -103,7 +101,10 @@ try:
             decoded = cv2.flip(decoded, 0)
             decoded = np.delete(decoded, 3, 2)
 
-            # Run YOLO inference
+            # Run YOLO inference without summary info
+            # results = model([decoded], stream=True, classes=0, verbose=False)
+            
+            # Run YOLO inference with summary info
             results = model([decoded], stream=True, classes=0)
             
             # Get the current timestamp
