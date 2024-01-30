@@ -53,6 +53,7 @@ void Manager::setupSignalHandler()
             this->setupSignalHandler();
         } });
 }
+
 void Manager::run()
 {
 

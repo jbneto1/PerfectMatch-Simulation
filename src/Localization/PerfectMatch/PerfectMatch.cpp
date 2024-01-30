@@ -17,7 +17,6 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
 
 Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
     // Implement the matching algorithm and return the results
-    logger.trace("Running IterLaser for max iterations...");
 
     IterLaser(data);
 

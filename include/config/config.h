@@ -13,6 +13,8 @@ constexpr int YOLOMSG_SEND_PORT = 9009;
 
 const char* const IP_WSL2 = "172.20.35.129";
 
+constexpr int PM_MAX_ITER = 25; // maximum number of iterations for computation
+constexpr int PM_MAX_PERIOD = 10; //maximum period for computation in milliseconds
 constexpr int ENCODER_RESOLUTION = 3840;
 constexpr double CONTROL_CYCLE = 0.025;
 constexpr double STEP_SCALE = 0.04;

@@ -35,23 +35,23 @@ public:
     void runIoContext();
     void stopIosContexts();
     asio::io_context &getIoContext();
-    std::promise<void> exit_signal;
-    void waitForReadyMessage();
-    void sendAckMessage();
-
-    void startYoloReceive();
-    std::string getLatestYoloData();
-    void runYoloIoContext();
     
-
+    std::string getLatestYoloData();
+    
     // Network Communication
     void sendWheelSpeeds(double frontLeftSpeed, double frontRightSpeed, double backLeftSpeed, double backRightSpeed);
     void registerCallback(DataCallback callback);
 
 private:
 
+    void waitForReadyMessage();
+    void sendAckMessage();
+
     void handleReceive(const asio::error_code &error, std::size_t /*bytes_transferred*/);
     void startSimReceive();
+
+    void runYoloIoContext();
+    void startYoloReceive();
 
     // Class Attributes
 

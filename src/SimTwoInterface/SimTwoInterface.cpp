@@ -9,6 +9,8 @@ SimTwoInterface::SimTwoInterface(Logger &logger, Localization &localization, AMR
     startLogging = false;
     earlyStop = false;
     run = true;
+    std::fill(simRecvBuffer.begin(), simRecvBuffer.end(), 0);
+    std::fill(yoloRecvBuffer.begin(), yoloRecvBuffer.end(), 0);
     logger.info("Simulator Interface created and listening for data.");
     logger.info("Listening for UDP datagrams on port: " + std::to_string(SIMTWO_RECEIVE_PORT));
 }
@@ -56,14 +58,13 @@ void SimTwoInterface::startSimReceive()
 
     logFrequencySimTwo();
 
-    std::fill(simRecvBuffer.begin(), simRecvBuffer.end(), 0);
-
     sim_socket.async_receive_from(
         asio::buffer(simRecvBuffer),
         sender_endpoint,
         [this](std::error_code ec, std::size_t bytes_received)
         {
             handleReceive(ec, bytes_received);
+            memset(simRecvBuffer.data(), 0, bytes_received);
             if (run)
             {
                 this->startSimReceive();
@@ -338,7 +339,7 @@ void SimTwoInterface::logFrequencyYOLO() {
     if (lastTime_yolo != std::chrono::steady_clock::time_point{}) {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime_yolo);
         double freq = 1E6 / double(duration.count());
-        logger.info("YOLO Comm[Hz]: " + formatWithTwoDecimals(freq));
+        logger.debug("YOLO Comm[Hz]: " + formatWithTwoDecimals(freq));
     }
     lastTime_yolo = now;
 }

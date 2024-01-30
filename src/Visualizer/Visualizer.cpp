@@ -11,8 +11,10 @@ Visualizer::Visualizer(Localization &localization, std::mutex &PM_m) : localizat
         cleanup();
         throw std::runtime_error("Initialization failed!");
     }
+
     localUpdate.stepGet = localization.getPM().getStep();
     localUpdate.Qk_covarianceGet = localization.getEKF().getQk();
+
 }
 
 Visualizer::~Visualizer()
@@ -132,18 +134,18 @@ bool Visualizer::setupTexture()
 void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose,
                         const std::optional<std::array<LaserPoint, 720>> &laserPoint)
 {
+    visDataBack.groundTruth = groundTruth;
+    visDataBack.estimatedPose = estimatedPose;
+    visDataBack.drawLaser = laserPoint.has_value();
+    visDataBack.freq_localization = localization.getFreq();
+
+    if (visDataBack.drawLaser)
     {
+        visDataBack.laserPoint = laserPoint.value();
+    }
 
+    {
         std::lock_guard<std::mutex> lock(cv_m);
-        visDataBack.groundTruth = groundTruth;
-        visDataBack.estimatedPose = estimatedPose;
-        visDataBack.drawLaser = laserPoint.has_value();
-        visDataBack.freq_localization = localization.getFreq();
-
-        if (visDataBack.drawLaser)
-        {
-            visDataBack.laserPoint = laserPoint.value();
-        }
 
         // swap buffers
         std::swap(visDataFront, visDataBack);
@@ -171,9 +173,9 @@ void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose,
             localUpdate.hasPoseChanged = false; // Reset the flag
         }
 
-        newDataAvailable = true;
     }
-    
+
+    newDataAvailable.store(true);
     cv.notify_one();
 }
 
@@ -181,8 +183,8 @@ void Visualizer::handleEvents()
 {
     std::unique_lock<std::mutex> lk(cv_m);
     cv.wait(lk, [this]()
-            { return newDataAvailable; });
-    if (!runRenderLoop)
+            { return newDataAvailable.load(); });
+    if (!runRenderLoop.load())
         return; // Early exit if needed
     glfwMakeContextCurrent(window);
 }
@@ -252,7 +254,11 @@ void Visualizer::drawUIElements()
 
     ImGui::Text("Localization freq [Hz]: %.2f", visDataFront.freq_localization);
 
-    ImGui::Text("PM error [m]: %.3f", localUpdate.PMError);
+    
+    {
+        std::lock_guard<std::mutex> lock(cv_m);
+        ImGui::Text("PM error [m]: %.3f", localUpdate.PMError);
+    }
 
     ImGui::SetCursorPosY(0);
     ImGui::SetCursorPosX(texWidth);
@@ -269,13 +275,18 @@ void Visualizer::drawUIElements()
 
     if (ImGui::Button("Set step"))
     {
+        std::lock_guard<std::mutex> lock(cv_m);
         localUpdate.hasStepChanged = true;
         localUpdate.stepSet = k;
     }
 
     ImGui::SameLine();
 
-    std::string stepScaleText = "Current step: " + fmt::format("{:.4f}", localUpdate.stepGet);
+    std::string stepScaleText = "Current step: ";
+    {
+        std::lock_guard<std::mutex> lock(cv_m);
+        stepScaleText.append(fmt::format("{:.4f}", localUpdate.stepGet));
+    }
     ImGui::Text("%s", stepScaleText.c_str());
     ImGui::NewLine();
 
@@ -293,13 +304,17 @@ void Visualizer::drawUIElements()
 
     if (ImGui::Button("Set Qk_covariance"))
     {
+        std::lock_guard<std::mutex> lock(cv_m);
         localUpdate.hasQkChanged = true;
         localUpdate.Qk_covarianceSet = Qk;
     }
 
     ImGui::SameLine();
-
-    std::string QkText = "Current Qk: " + fmt::format("{:.3f}", localUpdate.Qk_covarianceGet);
+    std::string QkText = "Current Qk: ";
+    {
+        std::lock_guard<std::mutex> lock(cv_m);
+        QkText.append(fmt::format("{:.3f}", localUpdate.Qk_covarianceGet));
+    }
     ImGui::Text("%s", QkText.c_str());
 
     ImGui::SetCursorPosX(texWidth);
@@ -332,6 +347,7 @@ void Visualizer::drawUIElements()
 
     if (ImGui::Button("Set Pose"))
     {
+        std::lock_guard<std::mutex> lock(cv_m);
         localUpdate.hasPoseChanged = true;
         localUpdate.newPose = pose;
     }
@@ -340,6 +356,7 @@ void Visualizer::drawUIElements()
 
     if (ImGui::Button("Reset"))
     {
+        std::lock_guard<std::mutex> lock(cv_m);
         localUpdate.hasPoseChanged = true;
         localUpdate.newPose = visDataFront.groundTruth;
     }
@@ -365,12 +382,12 @@ void Visualizer::finishRender()
 void Visualizer::updateDataAvailability()
 {
     glfwPollEvents();
-    newDataAvailable = false;
+    newDataAvailable.store(false);
 }
 
 void Visualizer::render()
 {
-    while (runRenderLoop && (!glfwWindowShouldClose(window)))
+    while (runRenderLoop.load() && (!glfwWindowShouldClose(window)))
     {
         handleEvents();
         setupImGuiFrame();
@@ -520,14 +537,10 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
 
 void Visualizer::stop()
 {
-    runRenderLoop = false;
-
-    {
-        std::lock_guard<std::mutex> lock(cv_m);
-        newDataAvailable = true;
-        cv.notify_all();
-    }
-
+    runRenderLoop.store(false);
+    newDataAvailable.store(true);
+    cv.notify_all();
+   
     if (window)
     {
         glfwSetWindowShouldClose(window, GL_TRUE);

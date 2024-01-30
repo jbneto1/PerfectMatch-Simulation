@@ -82,7 +82,7 @@ private:
 
     std::condition_variable cv;
     std::mutex cv_m;
-    bool newDataAvailable;
+    std::atomic<bool> newDataAvailable;
     GLFWwindow *window{};
     GLuint textureId{};  // Texture identifier for the map image
     int texWidth{}, texHeight{};  // Texture size
