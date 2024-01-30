@@ -33,6 +33,7 @@ public:
 
     // IO Operations
     void runIoContext();
+    void runIoContextReadyMsg();
     void stopIosContexts();
     asio::io_context &getIoContext();
     

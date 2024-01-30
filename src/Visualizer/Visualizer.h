@@ -65,6 +65,10 @@ public:
 
     void cleanup();
 
+    bool isReadyForRendering = false;
+    std::mutex readinessMutex;
+    std::condition_variable readinessCV;
+
 private:
 
     // Setup for drawing rectangles
@@ -87,12 +91,13 @@ private:
     GLuint textureId{};  // Texture identifier for the map image
     int texWidth{}, texHeight{};  // Texture size
     std::atomic<bool> runRenderLoop;
-    VisualizationData visDataFront, visDataBack;
+    VisualizationData visDataFront, visDataBack, visDataSwap;
     LocalizationUpdateData localUpdate;
 
     bool initialize();
 
     void handleEvents();
+    void swapBuffers();
     void setupImGuiFrame();
     void drawUIElements();
     void finishRender();

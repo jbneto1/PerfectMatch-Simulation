@@ -24,7 +24,7 @@ SimTwoInterface::~SimTwoInterface()
     }
 }
 
-void SimTwoInterface::runIoContext()
+void SimTwoInterface::runIoContextReadyMsg()
 {
     asio::executor_work_guard<asio::io_context::executor_type> guard = asio::make_work_guard(io_context);
     waitForReadyMessage(); // Wait for ready message before starting
@@ -32,10 +32,17 @@ void SimTwoInterface::runIoContext()
     {
         io_context.run_one(); // Process one ASIO event (waiting for "ready" message)
     }
-    if(!earlyStop) {
+
+}
+
+void SimTwoInterface::runIoContext()
+{
+
+    if(!earlyStop){
         logger.debug("Waiting for the simulator.");
         io_context.run(); // Continue with the normal operation after receiving the message
     }
+
 }
 
 void SimTwoInterface::runYoloIoContext()

@@ -15,8 +15,14 @@ Manager::Manager(Logger &logger)
 
     logger.trace("SIGINT signal handler registered with asio.");
     // Start the visualization thread
-    visThread = std::thread(&Visualizer::render, &visualizer);
     setupSignalHandler();
+    logger.trace("Thread T2 instantiated.");
+    visThread = std::thread(&Visualizer::render, &visualizer);
+    {
+        std::lock_guard<std::mutex> lock(visualizer.readinessMutex);
+        visualizer.isReadyForRendering = true;
+    }
+    visualizer.readinessCV.notify_one();
 }
 
 Manager::~Manager()
@@ -62,6 +68,8 @@ void Manager::run()
                                { onDataReceived(data, interface, localization, controller, logger); });
 
     logger.debug("Waiting Python Script.");
+
+    interface.runIoContextReadyMsg();
 
     interface.runIoContext();
 

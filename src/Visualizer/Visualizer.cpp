@@ -148,7 +148,7 @@ void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose,
         std::lock_guard<std::mutex> lock(cv_m);
 
         // swap buffers
-        std::swap(visDataFront, visDataBack);
+        std::swap(visDataBack, visDataSwap);
 
         // local update
         localUpdate.PMError = localization.getPM().getError();
@@ -223,7 +223,9 @@ void Visualizer::drawUIElements()
     // Draw triangles for GroundTruth and EstimatedPose
     drawTriangle(draw_list, visDataFront.groundTruth, ImColor(255, 0, 0));   // green
     drawTriangle(draw_list, visDataFront.estimatedPose, ImColor(0, 0, 255)); // blue
+
     draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
+    
     if (visDataFront.drawLaser)
         drawLidarPoints(draw_list, visDataFront.estimatedPose, visDataFront.laserPoint, IM_COL32(128, 0, 198, 255));
 
@@ -385,11 +387,25 @@ void Visualizer::updateDataAvailability()
     newDataAvailable.store(false);
 }
 
+void Visualizer::swapBuffers()
+{
+    std::lock_guard<std::mutex> lock(cv_m);
+    std::swap(visDataSwap, visDataFront);
+}
+
 void Visualizer::render()
 {
+    // Wait for readiness signal
+
+    {
+        std::unique_lock<std::mutex> lock(readinessMutex);
+        readinessCV.wait(lock, [this]{ return isReadyForRendering; });
+    }
+
     while (runRenderLoop.load() && (!glfwWindowShouldClose(window)))
     {
         handleEvents();
+        swapBuffers();
         setupImGuiFrame();
         drawUIElements();
         finishRender();
@@ -400,7 +416,7 @@ void Visualizer::render()
 void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &robot, const ImColor &color) const
 {
 
-    // get the pose information
+    // get the pose i3
     double x = robot.getX();
     double y = robot.getY();
     double theta = robot.getTheta();
