@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Python Script",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/srcPython/YOLOv8/main.py",
+            "cwd": "${workspaceFolder}/srcPython/YOLOv8",
+            "console": "integratedTerminal",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        }
+    ]
+}

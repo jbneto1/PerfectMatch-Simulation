@@ -30,7 +30,7 @@ void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const P
     EKF.predict(speedsStates);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("ProcessData w/o LiDAR [us]: " + std::to_string(duration.count()));
+    logger.info("EKF Predict [us]: " + std::to_string(duration.count()));
 
 }
 
@@ -41,11 +41,12 @@ void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Po
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    auto temp = PMMatchingWithLimit(PM, lidarData, 25, std::chrono::milliseconds(10));
+    auto temp = PMMatchingWithLimit(PM, lidarData, PM_MAX_ITER, std::chrono::milliseconds(PM_MAX_PERIOD));
 
     auto end = std::chrono::high_resolution_clock::now();
+
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("PM [us]: " + std::to_string(duration.count()));
+    logger.info("Perfect Match [us]: " + std::to_string(duration.count()));
 
     start = std::chrono::high_resolution_clock::now();
 

@@ -16,7 +16,7 @@ ExtendedKalmanFilter::ExtendedKalmanFilter() : Qk((Matrix3d() << 5, 0, 0,
     Pk.diagonal() << 1000, 1000, 1000;
     Sk = Matrix3d().Zero(3, 3);
 
-    //Initialization aruco
+    //Initialization Noise covariance
     Hk_PM = Matrix3d::Identity(3, 3);
     Rk_PM = Matrix3d::Identity(3, 3);
     Rk_PM.diagonal() << 100, 100, 100;

@@ -1,6 +1,6 @@
 .idea
 cmake-build-debug
 .xml
-.vscode
+.vscode/settings.json
 cmake-build-release
 build

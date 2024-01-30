@@ -11,25 +11,11 @@ Logger::Logger(spdlog::level::level_enum level)
         logger->set_level(level);
         this->trace("Console colored logger initialized.");
 
-
-        
-        auto filename_GT = fmt::format("../docs/logs/ground_truth_{}.txt", current_datetime());
-        auto file_sink_GT = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_GT, true);
-        fileLogger_GT = std::make_shared<spdlog::logger>("GroundTruth", file_sink_GT);
-        fileLogger_GT->set_level(spdlog::level::info);
-        fileLogger_GT->set_pattern(std::string("%v"));
-
-        auto filename_encs = fmt::format("../docs/logs/encs_{}.txt", current_datetime());
-        auto file_sink_encs = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_encs, true);
-        fileLogger_encs = std::make_shared<spdlog::logger>("PM_WO_AI", file_sink_encs);
-        fileLogger_encs->set_level(spdlog::level::info);
-        fileLogger_encs->set_pattern(std::string("%v"));
-
-        auto filename_lidar = fmt::format("../docs/logs/lidar_{}.txt", current_datetime());
-        auto file_sink_lidar = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_lidar, true);
-        fileLogger_lidar = std::make_shared<spdlog::logger>("PM_W_AI", file_sink_lidar);
-        fileLogger_lidar->set_level(spdlog::level::info);
-        fileLogger_lidar->set_pattern(std::string("%v"));
+        auto filename_data = fmt::format("../docs/logs/sensor_data_{}.txt", current_datetime());
+        auto file_sink_data = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_data, true);
+        fileLogger_data = std::make_shared<spdlog::logger>("GroundTruth", file_sink_data);
+        fileLogger_data->set_level(spdlog::level::trace);
+        fileLogger_data->set_pattern(std::string("%v"));
     }
     catch (const spdlog::spdlog_ex &ex)
     {
@@ -39,6 +25,8 @@ Logger::Logger(spdlog::level::level_enum level)
     {
         std::cout << "General exception: " << ex.what() << std::endl;
     }
+
+    // fileLogger_data->set_level(spdlog::level::off);
 }
 
 Logger &Logger::getInstance(spdlog::level::level_enum level)
@@ -59,6 +47,17 @@ std::string Logger::current_datetime()
 #endif
     std::stringstream ss;
     ss << std::put_time(&tm, "%Y-%m-%d_%H-%M-%S");
+    return ss.str();
+}
+
+std::string Logger::getHighPrecisionTimestamp() {
+    auto now = std::chrono::system_clock::now();
+    auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+    auto epoch = now_ms.time_since_epoch();
+    auto duration = epoch.count();
+
+    std::stringstream ss;
+    ss << duration;
     return ss.str();
 }
 
@@ -133,81 +132,37 @@ void Logger::setPattern(const std::string &format)
     logger->set_pattern(format);
 }
 
-void Logger::fileLog_GT(const std::string &message)
-{
-    try
-    {
-        fileLogger_GT->info(message);
-    }
-    catch (const spdlog::spdlog_ex &ex)
-    {
-        std::cout << "Log failed: " << ex.what() << std::endl;
-    }
-}
-void Logger::fileLog_encs(const std::string &message)
-{
-    try
-    {
-        fileLogger_encs->info(message);
-    }
-    catch (const spdlog::spdlog_ex &ex)
-    {
-        std::cout << "Log failed: " << ex.what() << std::endl;
-    }
-}
-void Logger::fileLog_lidar(const std::string &message)
-{
-    try
-    {
-        fileLogger_lidar->info(message);
-    }
-    catch (const spdlog::spdlog_ex &ex)
-    {
-        std::cout << "Log failed: " << ex.what() << std::endl;
-    }
-}
-
 void Logger::deactivate_Loggers()
 {
     logger->set_level(spdlog::level::off);
-    fileLogger_GT->set_level(spdlog::level::off);
-    fileLogger_encs->set_level(spdlog::level::off);
-    fileLogger_lidar->set_level(spdlog::level::off);
+    fileLogger_data->set_level(spdlog::level::off);
 }
 
-void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, unsigned long int &time)
+void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, const std::string &yoloData)
 {
     std::ostringstream oss;
-    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+    std::string now_c;
 
-    time = time + 25;
+    now_c = getHighPrecisionTimestamp();
 
+    oss << GT_pose.getX() << ',' << GT_pose.getY() << ',' << GT_pose.getTheta() << ',';
 
-    oss << GT_pose.getX() << ',' << GT_pose.getY() << ',' << GT_pose.getTheta() << ',' << time << ',' << now_c;
-
-    this->fileLog_GT(oss.str());
-
-    oss.str("");
-    oss.clear();
-
-    oss << encs[0] << ',' << encs[1] << ',' << encs[2] << ',' << encs[3] << ',' << time << ',' << now_c;
-
-    this->fileLog_encs(oss.str());
+    oss << encs[0] << ',' << encs[1] << ',' << encs[2] << ',' << encs[3];
 
     if (laserReadings.has_value())
     {
-        oss.str("");
-        oss.clear();
 
-        const auto &readings = laserReadings.value();
-
-        for(const auto &reading : readings) {
-            oss << reading.getD() << ',';
+        for(const auto &reading : laserReadings.value()) {
+            oss << ',' << reading.getD();
         }
 
-        oss << time << ',' << now_c;
-
-        this->fileLog_lidar(oss.str());
     }
+
+    if (!yoloData.empty()) {
+        oss << ',' << yoloData;
+    }
+        
+    oss << ',' << now_c;
+
+    this->fileLogger_data->trace(oss.str());
 }

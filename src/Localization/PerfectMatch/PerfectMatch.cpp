@@ -17,7 +17,6 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
 
 Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
     // Implement the matching algorithm and return the results
-    logger.trace("Running IterLaser for max iterations...");
 
     IterLaser(data);
 
@@ -84,7 +83,7 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
     RobotPose.setTheta(adjusted_Theta);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("PerfectMatch [us]: " + std::to_string(duration.count()));
+    logger.trace("Full IterLaser [us]: " + std::to_string(duration.count()));
     if (n > 0) pmError = pmError / n;
 }
 
@@ -111,6 +110,36 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
         point.setY(y);
         point.setStdDev(1.0); // set the std_dev to 1 for now
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    logger.trace("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
+}
+
+Pose PerfectMatch::interpolatePose(const Pose &previousPose, const Pose &currentPose, const double alpha) {
+    double x = previousPose.getX() + alpha * (currentPose.getX() - previousPose.getX());
+    double y = previousPose.getY() + alpha * (currentPose.getY() - previousPose.getY());
+    double theta = previousPose.getTheta() + alpha * (currentPose.getTheta() - previousPose.getTheta());
+    return Pose(x, y, theta);
+}
+
+void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints, const Pose& previousPose, const Pose& currentPose) {
+auto start = std::chrono::high_resolution_clock::now();
+
+    for (int i = 0; i < 720; ++i) {
+        double alpha = static_cast<double>(i) / 720.0;
+
+        Pose interpolatedPose = interpolatePose(previousPose, currentPose, alpha);
+
+        // Process each laser point with the interpolated pose
+        double adjustedX, adjustedY;
+        RotateAndTranslate(adjustedX, adjustedY, LaserPoints[i].getX(), LaserPoints[i].getY(), 
+                           interpolatedPose.getX(), interpolatedPose.getY(), 
+                           sin(interpolatedPose.getTheta()), cos(interpolatedPose.getTheta()));
+
+        LaserPoints[i].setX(adjustedX);
+        LaserPoints[i].setY(adjustedY);
+    }
+
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     logger.info("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
