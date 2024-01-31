@@ -5,22 +5,22 @@
 #ifndef PM_PROJECT_VISUALIZER_H
 #define PM_PROJECT_VISUALIZER_H
 
-#include <GL/gl3w.h>
-#include <third_party/ImGui/imgui.h>
-#include <third_party/ImGui/imgui_impl_glfw.h>
-#include <third_party/ImGui/imgui_impl_opengl3.h>
-#include <GLFW/glfw3.h>
-#include <third_party/eigen-3.4.0/Eigen/Dense>
-#include <config/config.h>
+#include "GL/gl3w.h"
+#include "third_party/ImGui/imgui.h"
+#include "third_party/ImGui/imgui_impl_glfw.h"
+#include "third_party/ImGui/imgui_impl_opengl3.h"
+#include "GLFW/glfw3.h"
+#include <Eigen/Dense>
+#include "config/config.h"
 #include <iostream>
 #include <condition_variable>
 #include <mutex>
-#include <third_party/stb/stb_image.h>
-#include "../src/Localization/PerfectMatch/PerfectMatch.h"
-#include <Logger/logger.h>
+#include "third_party/stb/stb_image.h"
+#include "Localization/PerfectMatch/PerfectMatch.h"
+#include "Logger/logger.h"
 #include <chrono>
 #include <thread>
-#include "../src/Localization/Localization.h"
+#include "Localization/Localization.h"
 #include <optional>
 
 struct VisualizationData {

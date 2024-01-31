@@ -25,5 +25,5 @@ add_library(UtilsLibrary include/utils/utils.cpp)
 add_library(stbImageInit include/third_party/stb/stb_image_init.cpp)
 
 # Link OpenGL libraries
-target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} Manager SimTwoInterface Localization AMRController Logger
+target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES} Manager SimTwoInterface Localization OfflineAnalysis AMRController Logger
         UtilsLibrary Visualizer stbImageInit ImGui glfw gl3w)

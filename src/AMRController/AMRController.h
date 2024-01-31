@@ -6,8 +6,8 @@
 #define PERFECTMATCH_SIMULATION_AMRCONTROLLER_H
 
 #include <tuple>
-#include <Logger/logger.h>
-#include <config/config.h>
+#include "Logger/logger.h"
+#include "config/config.h"
 #include "MecanumKinematics/MecanumKinematics.h"
 
 class AMRController {

@@ -24,6 +24,7 @@ add_library(gl3w ${GL_SRC})
 add_library(Visualizer ${VISUALIZER_SRC})
 
 target_include_directories(Visualizer PRIVATE
-                        ${PROJECT_SOURCE_DIR}/include/)
+                        ${PROJECT_SOURCE_DIR}/include/
+                        ${PROJECT_SOURCE_DIR}/include/src)
 
 target_link_libraries(Visualizer ImGui glfw gl3w Localization Logger)

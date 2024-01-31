@@ -5,15 +5,16 @@
 #ifndef AMR_PROJECT_MANAGER_H
 #define AMR_PROJECT_MANAGER_H
 
-#include <SimTwoInterface/SimTwoInterface.h>
-#include <Localization/Localization.h>
-#include <Logger/logger.h>
-#include <AMRController/AMRController.h>
-#include <Visualizer/Visualizer.h>
+#include "SimTwoInterface/SimTwoInterface.h"
+#include "Localization/Localization.h"
+#include "Logger/logger.h"
+#include "AMRController/AMRController.h"
+#include "Visualizer/Visualizer.h"
 #include <thread>
 #include <condition_variable>
-#include <asio/signal_set.hpp>
+#include "asio/signal_set.hpp"
 #include <optional>
+#include "OfflineAnalysis/OfflineAnalysis.h"
 
 class Manager {
 public:
@@ -23,6 +24,8 @@ public:
     ~Manager();
 
     void run();
+
+    void runOfflineAnalysis(const std::string& logFilePath);
 
 private:
     Logger& logger;
@@ -42,5 +45,10 @@ private:
 
     void onDataReceived(const std::string &data, SimTwoInterface &interface, Localization &localization,
                         AMRController &controller, Logger &logger);
+
+
+    //offline analysis
+    OfflineAnalysis offlineAnalysis; // OfflineAnalysis instance
+    bool isOfflineMode = false; // Flag to indicate if running in offline mode
 };
 #endif //AMR_PROJECT_MANAGER_H

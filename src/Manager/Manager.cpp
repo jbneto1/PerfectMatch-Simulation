@@ -10,7 +10,8 @@ Manager::Manager(Logger &logger)
       visualizer(localization, PM_m),
       visThread(),
       signals_(interface.getIoContext()),
-      CtrlCPromise()
+      CtrlCPromise(),
+      offlineAnalysis(localization, logger)
 {
 
     logger.trace("SIGINT signal handler registered with asio.");
