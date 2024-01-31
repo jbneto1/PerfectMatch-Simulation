@@ -5,6 +5,7 @@
 #include <string>
 #include <fstream>
 #include <array>
+
 #include "Localization/Localization.h"
 #include "Logger/logger.h"
 

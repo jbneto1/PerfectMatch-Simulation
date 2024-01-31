@@ -4,11 +4,12 @@
 #include <vector>
 #include <cmath>
 #include <stdexcept>
+#include <chrono>
+
 #include "Map/Map.h"
 #include "config/config.h"
 #include "Logger/logger.h"
 #include "utils/utils.h"
-#include <chrono>
 
 class PerfectMatch {
 public:

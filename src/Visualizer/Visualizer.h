@@ -5,23 +5,25 @@
 #ifndef PM_PROJECT_VISUALIZER_H
 #define PM_PROJECT_VISUALIZER_H
 
-#include "GL/gl3w.h"
-#include "third_party/ImGui/imgui.h"
-#include "third_party/ImGui/imgui_impl_glfw.h"
-#include "third_party/ImGui/imgui_impl_opengl3.h"
-#include "GLFW/glfw3.h"
-#include <Eigen/Dense>
-#include "config/config.h"
 #include <iostream>
 #include <condition_variable>
 #include <mutex>
-#include "third_party/stb/stb_image.h"
-#include "Localization/PerfectMatch/PerfectMatch.h"
-#include "Logger/logger.h"
 #include <chrono>
 #include <thread>
-#include "Localization/Localization.h"
 #include <optional>
+
+#include "Eigen/Dense"
+#include "GL/gl3w.h"
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_glfw.h"
+#include "ImGui/imgui_impl_opengl3.h"
+#include "GLFW/glfw3.h"
+#include "stb/stb_image.h"
+
+#include "config/config.h"
+#include "Localization/PerfectMatch/PerfectMatch.h"
+#include "Logger/logger.h"
+#include "Localization/Localization.h"
 
 struct VisualizationData {
     Pose groundTruth = {};

@@ -6,10 +6,13 @@
 #define PERFECTMATCH_SIMULATION_EXTENDEDKALMANFILTER_H
 
 #include <vector>
-#include "config/config.h"
 #include <cmath>
-#include <Eigen/Dense>
-#include <Eigen/Core>
+
+#include "Eigen/Dense"
+#include "Eigen/Core"
+
+#include "config/config.h"
+#include "data_structures/data_structures.h"
 
 using Eigen::MatrixXd;
 using Eigen::Matrix3d;

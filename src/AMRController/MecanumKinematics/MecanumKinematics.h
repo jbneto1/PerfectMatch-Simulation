@@ -5,7 +5,8 @@
 #ifndef PERFECTMATCH_SIMULATION_MECANUMKINEMATICS_H
 #define PERFECTMATCH_SIMULATION_MECANUMKINEMATICS_H
 
-#include <Eigen/Dense>
+#include "Eigen/Dense"
+
 #include "config/config.h"
 
 class MecanumKinematics {

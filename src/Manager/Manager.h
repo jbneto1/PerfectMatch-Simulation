@@ -5,15 +5,17 @@
 #ifndef AMR_PROJECT_MANAGER_H
 #define AMR_PROJECT_MANAGER_H
 
+#include <condition_variable>
+#include <thread>
+#include <optional>
+
+#include "asio/signal_set.hpp"
+
 #include "SimTwoInterface/SimTwoInterface.h"
 #include "Localization/Localization.h"
 #include "Logger/logger.h"
 #include "AMRController/AMRController.h"
 #include "Visualizer/Visualizer.h"
-#include <thread>
-#include <condition_variable>
-#include "asio/signal_set.hpp"
-#include <optional>
 #include "OfflineAnalysis/OfflineAnalysis.h"
 
 class Manager {

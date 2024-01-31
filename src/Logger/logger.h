@@ -3,11 +3,6 @@
 #ifndef PERFECTMATCH_SIMULATION_LOGGER_H
 #define PERFECTMATCH_SIMULATION_LOGGER_H
 
-#include "spdlog/spdlog.h"
-#include "spdlog/common.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
-#include "spdlog/sinks/basic_file_sink.h"
-#include "spdlog/fmt/bin_to_hex.h" // Added to enable binary to hex conversion
 #include <memory>
 #include <iostream>
 #include <chrono>
@@ -15,7 +10,15 @@
 #include <sstream>
 #include <iomanip>
 #include <optional>
+
+#include "spdlog/spdlog.h"
+#include "spdlog/common.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/fmt/bin_to_hex.h" // Added to enable binary to hex conversion
+
 #include "config/config.h"
+#include "data_structures/data_structures.h"
 
 class Logger
 {
