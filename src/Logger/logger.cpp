@@ -185,7 +185,8 @@ void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, 
 }
 
 void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, Vector3d> &localization,
-                                     const std::tuple<Pose, Pose, Pose, double, Vector3d> &localization_w_semantics)
+                                     const std::tuple<Pose, Pose, Pose, double, Vector3d> &localization_w_semantics,
+                                     const long long t)
 {
     std::ostringstream oss, oss_semantics;
 
@@ -215,6 +216,8 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
         << "EKFCovY"
         << ","
         << "EKFCovTheta"
+        << ","
+        << "time period"
         << "\n";
 
     {
@@ -244,7 +247,9 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
             << ","
             << EKFCov(1)
             << ","
-            << EKFCov(2);
+            << EKFCov(2)
+            << ","
+            << t;
     }
 
     fileLogger_offline->trace(oss.str());
@@ -274,6 +279,8 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
                   << "EKFCovY"
                   << ","
                   << "EKFCovTheta"
+                  << ","
+                  << "time period"
                   << "\n";
 
     {
@@ -303,7 +310,9 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
                       << ","
                       << EKFCov(1)
                       << ","
-                      << EKFCov(2);
+                      << EKFCov(2)
+                      << ","
+                      << t;
     }
 
     fileLogger_offline_w_semantics->trace(oss_semantics.str());

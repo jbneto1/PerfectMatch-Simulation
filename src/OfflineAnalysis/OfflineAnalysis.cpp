@@ -53,7 +53,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
     auto offlineData_semantics = std::make_tuple(EKF_pose_semantics, PM_pose_semantics, error_EKF_semantics, error_PM_semantics, EKF_cov_semantics);
 
     // Log the data
-    logger.fileLog_offlineAnalysis(offlineData, offlineData_semantics);
+    logger.fileLog_offlineAnalysis(offlineData, offlineData_semantics, timestamp);
 
     // Update the visualizer with the new data if necessary
     // visualizer.update(GT_pose, localization.getPose(), optLaserReadings);
@@ -96,6 +96,12 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
         if (tokens[firstBBoxOrTimestampIndex].rfind("b", 0) != 0)
         {
             long long timestamp = std::stoll(tokens[firstBBoxOrTimestampIndex]);
+            static long long firstTimestamp = -1; // Static variable to hold the first timestamp
+            if (firstTimestamp == -1)             // Check if it's the first timestamp encountered
+            {
+                firstTimestamp = timestamp;
+            }
+            timestamp -= firstTimestamp; // Subtract the first timestamp from the current timestamp
             return std::make_tuple(encoders, pose, lidarPoints, std::make_optional(boundingBoxes), timestamp);
         }
 
@@ -108,6 +114,12 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
 
         // Parse the timestamp, which is the last token
         long long timestamp = std::stoll(tokens.back());
+        static long long firstTimestamp = -1; // Static variable to hold the first timestamp
+        if (firstTimestamp == -1)             // Check if it's the first timestamp encountered
+        {
+            firstTimestamp = timestamp;
+        }
+        timestamp -= firstTimestamp; // Subtract the first timestamp from the current timestamp
 
         return std::make_tuple(encoders, pose, lidarPoints, std::make_optional(boundingBoxes), timestamp);
     }
