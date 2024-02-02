@@ -90,22 +90,8 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
 
     logger.fileLog_bag(encs, GT_pose, optLaserReadings, yoloData);
 
-    if (optLaserReadings.has_value() && localization.getFirstFlag())
-    {
-        localization.getPM().ProcessLaserPoints(optLaserReadings.value());
-        localization.processData_w_PM(encs, GT_pose, optLaserReadings.value());
-    }
-    else if (optLaserReadings.has_value())
-    {
-        localization.getPM().ProcessLaserPoints(optLaserReadings.value());
-        // localization.getPM().ProcessLaserPoints(optLaserReadings.value(), localization.getPreviousPose(), GT_pose);
-        // localization.setPreviousPose(GT_pose);
-        localization.processData_w_PM(encs, GT_pose, optLaserReadings.value());
-    }
-    else
-    {
-        localization.processData_wo_PM(encs, GT_pose);
-    }
+    localization.getPM().ProcessLaserPoints(optLaserReadings.value());
+    localization.processData_w_PM(encs, GT_pose, optLaserReadings.value());
 
     visualizer.update(GT_pose, localization.getPose(), optLaserReadings);
     logger.trace("Processing Perfect Match.");
