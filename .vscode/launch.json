@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "Debug Python Script",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/srcPython/YOLOv8/main.py",
             "cwd": "${workspaceFolder}/srcPython/YOLOv8",

@@ -1,21 +1,40 @@
 #include "PerfectMatch.h"
 
 PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double stepScale) : logger(
-        logger), map(logger),
+                                                                                               logger),
+                                                                                           map(logger),
                                                                                            RobotPose(
-                                                                                                   startPose),
+                                                                                               startPose),
                                                                                            stepScale(
-                                                                                                   stepScale) {
+                                                                                               stepScale),
+                                                                                           t_LC(-0.155 / 2, 0, -0.055),
+                                                                                           Rx(Matrix3d::Identity()),
+                                                                                           Ry((Matrix3d() << 0, 0, -1,
+                                                                                               0, 1, 0,
+                                                                                               1, 0, 0)
+                                                                                                  .finished()),
+                                                                                           Rz((Matrix3d() << 0, -1, 0,
+                                                                                               1, 0, 0,
+                                                                                               0, 0, 1)
+                                                                                                  .finished()),
+                                                                                           TH_LC((Matrix4d() << Rz * Ry * Rx, t_LC,
+                                                                                                  0, 0, 0, 1)
+                                                                                                     .finished()),
+                                                                                           K((Matrix3d() << 10, 0, 320,
+                                                                                              0, 10, 240,
+                                                                                              0, 0, 1)
+                                                                                                 .finished())
+{
     logger.debug(
-            "Parameters: startPose (" + std::to_string(startPose.getX()) + ", " + std::to_string(startPose.getY()) +
-            ", " + std::to_string(startPose.getTheta()) + "), "
-            + ", stepScale: " +
-            std::to_string(stepScale));
+        "Parameters: startPose (" + std::to_string(startPose.getX()) + ", " + std::to_string(startPose.getY()) +
+        ", " + std::to_string(startPose.getTheta()) + "), " + ", stepScale: " +
+        std::to_string(stepScale));
     meterToPixel = map.getWidth() / 1.68;
     pmError = 0;
 }
 
-Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
+Pose PerfectMatch::match(std::array<LaserPoint, 720> &data)
+{
     // Implement the matching algorithm and return the results
 
     IterLaser(data);
@@ -24,22 +43,26 @@ Pose PerfectMatch::match(std::array<LaserPoint, 720> &data) {
 }
 
 void PerfectMatch::RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st,
-                                      double ct) {
+                                      double ct)
+{
     logger.trace("Rotating and translating coordinates...");
     rx = px * ct - py * st + tx;
     ry = px * st + py * ct + ty;
     logger.trace("Coordinates rotated and translated.");
 }
 
-int PerfectMatch::XTopixel(double x) {
+int PerfectMatch::XTopixel(double x)
+{
     return static_cast<int>(std::round(x * meterToPixel) + map.getWidth() / 2);
 }
 
-int PerfectMatch::YTopixel(double y) {
+int PerfectMatch::YTopixel(double y)
+{
     return static_cast<int>(std::round(-y * meterToPixel) + map.getHeight() / 2);
 }
 
-void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
+void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints)
+{
     auto start = std::chrono::high_resolution_clock::now();
     double dx = 0;
     double dy = 0;
@@ -49,7 +72,8 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
     pmError = 0;
     int n = 0;
 
-    for (auto &laserPoint: LaserPoints) {
+    for (auto &laserPoint : LaserPoints)
+    {
         if (laserPoint.getD() < 0.1)
             continue;
 
@@ -59,14 +83,14 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
         int u = XTopixel(rx);
         int v = YTopixel(ry);
 
-        if (u >= 0 && u < map.getWidth() && v >= 0 && v < map.getHeight()) {
+        if (u >= 0 && u < map.getWidth() && v >= 0 && v < map.getHeight())
+        {
             double gradX = map.getGradientX(u, v);
             double gradY = map.getGradientY(u, v);
 
             dx -= gradX / laserPoint.getStdDev();
             dy += gradY / laserPoint.getStdDev();
-            dtheta -= gradX / laserPoint.getStdDev() * (-laserPoint.getX() * st - laserPoint.getY() * ct)
-                      - gradY / laserPoint.getStdDev() * (laserPoint.getX() * ct - laserPoint.getY() * st);
+            dtheta -= gradX / laserPoint.getStdDev() * (-laserPoint.getX() * st - laserPoint.getY() * ct) - gradY / laserPoint.getStdDev() * (laserPoint.getX() * ct - laserPoint.getY() * st);
             laserPoint.setDx(dx);
             laserPoint.setDy(dy);
             laserPoint.setDtheta(dtheta);
@@ -84,13 +108,17 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints) {
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     logger.trace("Full IterLaser [us]: " + std::to_string(duration.count()));
-    if (n > 0) pmError = pmError / n;
+    if (n > 0)
+        pmError = pmError / n;
 }
 
-void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) {
+void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints)
+{
     auto start = std::chrono::high_resolution_clock::now();
-    for (auto &point: LaserPoints) {
-        if (point.getD() <= 0) continue;
+    for (auto &point : LaserPoints)
+    {
+        if (point.getD() <= 0)
+            continue;
         double currentAngleDegrees = degreeStep * (&point - &LaserPoints[0]);
         // convert the angle to radians
         double angleRadians = degToRad(currentAngleDegrees);
@@ -115,25 +143,30 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints) 
     logger.trace("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
 }
 
-Pose PerfectMatch::interpolatePose(const Pose &previousPose, const Pose &currentPose, const double alpha) {
+// ------------------------ DEPRECATED -------------------------------------------------------------------------//
+
+Pose PerfectMatch::interpolatePose(const Pose &previousPose, const Pose &currentPose, const double alpha)
+{
     double x = previousPose.getX() + alpha * (currentPose.getX() - previousPose.getX());
     double y = previousPose.getY() + alpha * (currentPose.getY() - previousPose.getY());
     double theta = previousPose.getTheta() + alpha * (currentPose.getTheta() - previousPose.getTheta());
     return Pose(x, y, theta);
 }
 
-void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints, const Pose& previousPose, const Pose& currentPose) {
-auto start = std::chrono::high_resolution_clock::now();
+void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints, const Pose &previousPose, const Pose &currentPose)
+{
+    auto start = std::chrono::high_resolution_clock::now();
 
-    for (int i = 0; i < 720; ++i) {
+    for (int i = 0; i < 720; ++i)
+    {
         double alpha = static_cast<double>(i) / 720.0;
 
         Pose interpolatedPose = interpolatePose(previousPose, currentPose, alpha);
 
         // Process each laser point with the interpolated pose
         double adjustedX, adjustedY;
-        RotateAndTranslate(adjustedX, adjustedY, LaserPoints[i].getX(), LaserPoints[i].getY(), 
-                           interpolatedPose.getX(), interpolatedPose.getY(), 
+        RotateAndTranslate(adjustedX, adjustedY, LaserPoints[i].getX(), LaserPoints[i].getY(),
+                           interpolatedPose.getX(), interpolatedPose.getY(),
                            sin(interpolatedPose.getTheta()), cos(interpolatedPose.getTheta()));
 
         LaserPoints[i].setX(adjustedX);
@@ -143,4 +176,43 @@ auto start = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     logger.info("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
+}
+
+// --------------------------------------------------------------------------------------------------------------//
+
+void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, std::vector<BoundingBox> &outliers)
+{
+    for (auto &bbox : outliers)
+    {
+        bool insideBoundingBox = false;
+
+        for (auto &point : LaserPoints)
+        {
+            // Transform point from lidar to camera perspective
+            Eigen::Vector4d pointInLidar(point.getX(), point.getY(), 0, 1);
+            Eigen::Vector4d pointInCamera = TH_LC * pointInLidar;
+
+            // Project point onto image plane
+            Eigen::Vector3d pointInImage = K * (pointInCamera / pointInCamera(2)).head<3>();
+
+            // Compute horizontal offset angles for bounding box edges
+            double leftAngle = atan2((bbox.x - bbox.width / 2), K(0, 0));
+            double rightAngle = atan2((bbox.x + bbox.width / 2), K(0, 0));
+
+            // Compute angle of the point in camera perspective
+            double pointAngle = atan2(pointInImage(0), pointInImage(2));
+
+            // Check if point is inside the horizontal span of the bounding box
+            if (pointAngle >= leftAngle && pointAngle <= rightAngle)
+            {
+                insideBoundingBox = true;
+                point.setD(-1); // Rejecting the point
+            }
+            else if (insideBoundingBox)
+            {
+                // If the point was previously inside a bounding box and now it's outside, break the loop
+                break;
+            }
+        }
+    }
 }

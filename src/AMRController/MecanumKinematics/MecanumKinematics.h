@@ -9,7 +9,8 @@
 
 #include "config/config.h"
 
-class MecanumKinematics {
+class MecanumKinematics
+{
 public:
     MecanumKinematics(const double a, const double b, const double r, const double dt);
 
@@ -22,17 +23,16 @@ private:
 
     Eigen::Vector4d estimateWheelSpeeds(const std::array<int, 4> &encoders);
 
-    const double dt; //control cycle
-
-    const Eigen::Matrix<double, 4, 3> inverseKinematicModel;
-    const Eigen::Matrix<double, 3, 4> forwardKinematicModel;
+    const double dt; // control cycle
 
     const double a, b, r;
     const double c = a + b;
+
+    const Eigen::Matrix<double, 4, 3> inverseKinematicModel;
+    const Eigen::Matrix<double, 3, 4> forwardKinematicModel;
 
     Eigen::Vector3d estimatedSpeedStates;
     Eigen::Vector4d referenceWheelSpeeds;
 };
 
-
-#endif //PERFECTMATCH_SIMULATION_MECANUMKINEMATICS_H
+#endif // PERFECTMATCH_SIMULATION_MECANUMKINEMATICS_H

@@ -13,7 +13,7 @@ running = True
 
 # NETWORK DEFINES for SIMTWO comm
 # ip = "192.168.1.183" # WINDOWS IP HOME
-ip = "193.137.108.78" # WINDOWS IP CEDRI
+ip = "193.137.108.93" # WINDOWS IP CEDRI
 port_simtwo = "9899"
 
 #NETWORK DEFINES FOR READY MSG (WSL2 CODES)
@@ -113,15 +113,20 @@ try:
             
             for result in results:
                 annotated_frame = result.plot()
-                boxes = result.boxes
-                if (len(boxes.cls) != 0):
-                    log_str = ''
-                    for (iter,box) in enumerate(boxes.data):
-                        x1, y1, x2, y2, conf, cls = box[:6].tolist()
-                        cls = int(cls)
-                        log_str = log_str +  f"b{iter}:{cls},{conf},{x1},{y1},{x2},{y2},"
+                boxes = result.boxes.xywh  # Assuming this is a tensor of shape [N, 4] where N is the number of boxes
+                classes = result.boxes.cls  # Assuming this is a tensor of shape [N,]
+                confidences = result.boxes.conf  # Assuming this is a tensor of shape [N,]
 
-                    log_str = log_str[:-1]
+                if (len(classes) != 0):
+                    log_str = ''
+                    for i in range(len(classes)):
+                        x1, y1, w, h = boxes[i].tolist()  # Correctly indexing the i-th box
+                        conf = confidences[i].item()  # Correctly indexing the i-th confidence, converting to Python scalar
+                        cls = int(classes[i].item())  # Correctly indexing the i-th class, converting to Python scalar
+                        
+                        log_str += f"b{i}:{cls},{conf:.2f},{x1},{y1},{w},{h},"
+
+                    log_str = log_str[:-1]  # Removing the last comma
                     if log_str:
                         # print(f"Size in bytes: {len(log_str.encode('utf-8'))}")
                         send_yolo_data(log_str)

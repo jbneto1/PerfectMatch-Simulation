@@ -8,6 +8,8 @@
 #include <condition_variable>
 #include <thread>
 #include <optional>
+#include <iostream>
+#include <filesystem>
 
 #include "asio/signal_set.hpp"
 
@@ -18,21 +20,21 @@
 #include "Visualizer/Visualizer.h"
 #include "OfflineAnalysis/OfflineAnalysis.h"
 
-class Manager {
+class Manager
+{
 public:
-
     Manager(Logger &logger);
 
     ~Manager();
 
     void run();
 
-    void runOfflineAnalysis(const std::string& logFilePath);
+    void runOfflineAnalysis(const std::string &logFilePath);
 
 private:
-    Logger& logger;
+    Logger &logger;
     AMRController controller;
-    Localization localization;
+    Localization localization, localization_w_semantics;
     SimTwoInterface interface;
     Visualizer visualizer;
     std::thread visThread;
@@ -41,16 +43,14 @@ private:
     asio::signal_set signals_;
     std::promise<void> CtrlCPromise;
     std::mutex PM_m;
-    
+
     void setupSignalHandler();
     void stop();
 
     void onDataReceived(const std::string &data, SimTwoInterface &interface, Localization &localization,
                         AMRController &controller, Logger &logger);
 
-
-    //offline analysis
+    // offline analysis
     OfflineAnalysis offlineAnalysis; // OfflineAnalysis instance
-    bool isOfflineMode = false; // Flag to indicate if running in offline mode
 };
-#endif //AMR_PROJECT_MANAGER_H
+#endif // AMR_PROJECT_MANAGER_H

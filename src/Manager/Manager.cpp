@@ -6,12 +6,13 @@ Manager::Manager(Logger &logger)
     : logger(logger),
       controller(logger),
       localization(logger),
+      localization_w_semantics(logger),
       interface(logger, localization, controller),
       visualizer(localization, PM_m),
       visThread(),
       signals_(interface.getIoContext()),
       CtrlCPromise(),
-      offlineAnalysis(localization, logger)
+      offlineAnalysis(localization, localization_w_semantics, logger)
 {
 
     logger.trace("SIGINT signal handler registered with asio.");
@@ -108,4 +109,26 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
 
     visualizer.update(GT_pose, localization.getPose(), optLaserReadings);
     logger.trace("Processing Perfect Match.");
+}
+
+void Manager::runOfflineAnalysis(const std::string &logFilePath)
+{
+    // Create offline analysis log files.
+    logger.createOfflineLoggers();
+
+    // Get the current working directory
+    std::filesystem::path cwd = std::filesystem::current_path();
+
+    // Combine the current working directory with the relative file path
+    std::filesystem::path fullPath = cwd / logFilePath;
+
+    // Check if the file exists
+    if (!std::filesystem::exists(fullPath))
+    {
+        logger.error("Failed opening the file. It does not exist.");
+        return;
+    }
+
+    logger.info("Processing log file at: " + std::string(fullPath));
+    offlineAnalysis.processLogFile(fullPath);
 }

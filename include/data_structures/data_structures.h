@@ -9,7 +9,8 @@
 
 #include "utils/utils.h"
 
-class Pose {
+class Pose
+{
 private:
     double x;
     double y;
@@ -36,26 +37,31 @@ public:
 
     void setTheta(double theta) { this->theta = normalizeAngle(theta); }
 
-    operator Eigen::Vector3d() const {
+    operator Eigen::Vector3d() const
+    {
         return Eigen::Vector3d(x, y, theta);
     }
 
-    Pose operator+(const Eigen::Vector3d &vec) const {
+    Pose operator+(const Eigen::Vector3d &vec) const
+    {
         return Pose(x + vec[0], y + vec[1], normalizeAngle(theta + vec[2]));
     }
 
-    Pose operator-(const Eigen::Vector3d &vec) const {
+    Pose operator-(const Eigen::Vector3d &vec) const
+    {
         return Pose(x - vec[0], y - vec[1], diffAngle(theta, vec[2]));
     }
 
-    Pose &operator=(const Eigen::Vector3d &vec) {
+    Pose &operator=(const Eigen::Vector3d &vec)
+    {
         x = vec[0];
         y = vec[1];
         theta = vec[2];
         return *this;
     }
 
-    Pose operator-(const Pose &other) const {
+    Pose operator-(const Pose &other) const
+    {
         double dx = x - other.getX();
         double dy = y - other.getY();
         double dtheta = diffAngle(theta, other.getTheta());
@@ -63,7 +69,8 @@ public:
         return Pose(dx, dy, dtheta);
     }
 
-    Pose operator+(const Pose &other) const {
+    Pose operator+(const Pose &other) const
+    {
         double dx = x + other.getX();
         double dy = y + other.getY();
         double dtheta = theta + other.getTheta();
@@ -72,17 +79,17 @@ public:
         return Pose(dx, dy, dtheta);
     }
 
-    Pose &operator=(const std::array<double, 3> &arr) {
+    Pose &operator=(const std::array<double, 3> &arr)
+    {
         x = arr[0];
         y = arr[1];
         theta = arr[2];
         return *this;
     }
-
-
 };
 
-class LaserPoint {
+class LaserPoint
+{
 private:
     double d;
     double angle;
@@ -131,6 +138,11 @@ public:
     double getDtheta() const { return dtheta; }
 };
 
-
+struct BoundingBox
+{
+    int id;
+    int class_id;
+    double x, y, width, height;
+};
 
 #endif
