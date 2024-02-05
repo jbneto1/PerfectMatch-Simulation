@@ -19,4 +19,4 @@ double degToRad(double angle);
 
 std::string formatWithTwoDecimals(double value);
 
-#endif //PM_PROJECT_UTILS_H
+#endif // PM_PROJECT_UTILS_H

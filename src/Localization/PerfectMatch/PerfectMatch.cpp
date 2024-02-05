@@ -20,10 +20,16 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
                                                                                            TH_LC((Matrix4d() << Rz * Ry * Rx, t_LC,
                                                                                                   0, 0, 0, 1)
                                                                                                      .finished()),
-                                                                                           K((Matrix3d() << 10, 0, 320,
-                                                                                              0, 10, 240,
+                                                                                           K((Matrix3d() << 219.96470465, 0, 319.21197429,
+                                                                                              0, 219.94273694, 241.81387698,
                                                                                               0, 0, 1)
-                                                                                                 .finished())
+                                                                                                 .finished()),
+                                                                                           distCoeffs((VectorXd(5) << -4.24918902e-03,
+                                                                                                       3.99664887e-03,
+                                                                                                       2.37389148e-04,
+                                                                                                       -6.17424434e-05,
+                                                                                                       -1.10922867e-03)
+                                                                                                          .finished())
 {
     logger.debug(
         "Parameters: startPose (" + std::to_string(startPose.getX()) + ", " + std::to_string(startPose.getY()) +
@@ -74,7 +80,7 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints)
 
     for (auto &laserPoint : LaserPoints)
     {
-        if (laserPoint.getD() < 0.1)
+        if ((laserPoint.getD() < 0.1) || (!laserPoint.getBeamValidity()))
             continue;
 
         double rx, ry;
@@ -118,7 +124,10 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints)
     for (auto &point : LaserPoints)
     {
         if (point.getD() <= 0)
+        {
+            point.setBeamValidity(false);
             continue;
+        }
         double currentAngleDegrees = degreeStep * (&point - &LaserPoints[0]);
         // convert the angle to radians
         double angleRadians = degToRad(currentAngleDegrees);
@@ -180,6 +189,40 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints, 
 
 // --------------------------------------------------------------------------------------------------------------//
 
+void PerfectMatch::digitalToClassicOrigin(Vector3d &point)
+{
+    point(0) = point(0) - K(0, 2);
+    point(1) = K(1, 2) - point(1);
+}
+
+// TODO: implement the distortion correction for the pinhole camera model.
+
+// void PerfectMatch::CorrectDistortion(Vector3d &point)
+// {
+//     // Normalize the point using the focal length and principal point
+//     double x = (point(0) - K(0, 2)) / K(0, 0);
+//     double y = (point(1) - K(1, 2)) / K(1, 1);
+
+//     double r2 = x * x + y * y;
+//     double r4 = r2 * r2;
+//     double r6 = r4 * r2;
+
+//     // Assuming distCoeffs is [k1, k2, p1, p2, k3]
+//     double k1 = distCoeffs(0);
+//     double k2 = distCoeffs(1);
+//     double p1 = distCoeffs(2);
+//     double p2 = distCoeffs(3);
+//     double k3 = distCoeffs(4);
+
+//     // Apply distortion correction
+//     double xCorrected = x * (1 + k1 * r2 + k2 * r4 + k3 * r6) + 2 * p1 * x * y + p2 * (r2 + 2 * x * x);
+//     double yCorrected = y * (1 + k1 * r2 + k2 * r4 + k3 * r6) + p1 * (r2 + 2 * y * y) + 2 * p2 * x * y;
+
+//     // Denormalize the corrected point to get pixel coordinates
+//     point(0) = xCorrected * K(0, 0) + K(0, 2);
+//     point(1) = yCorrected * K(1, 1) + K(1, 2);
+// }
+
 void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, std::vector<BoundingBox> &outliers)
 {
     for (auto &bbox : outliers)
@@ -195,18 +238,19 @@ void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, s
             // Project point onto image plane
             Eigen::Vector3d pointInImage = K * (pointInCamera / pointInCamera(2)).head<3>();
 
-            // Compute horizontal offset angles for bounding box edges
-            double leftAngle = atan2((bbox.x - bbox.width / 2), K(0, 0));
-            double rightAngle = atan2((bbox.x + bbox.width / 2), K(0, 0));
+            digitalToClassicOrigin(pointInImage);
 
-            // Compute angle of the point in camera perspective
-            double pointAngle = atan2(pointInImage(0), pointInImage(2));
+            // Correct camera distortions
+            // CorrectDistortion(pointInImage);
 
-            // Check if point is inside the horizontal span of the bounding box
-            if (pointAngle >= leftAngle && pointAngle <= rightAngle)
+            // Check if point falls inside BB
+            if (pointInImage(0) >= (bbox.x - SAFETY_THRESHOLD) && pointInImage(0) <= (bbox.x + bbox.width + SAFETY_THRESHOLD) &&
+                pointInImage(1) >= (bbox.y - SAFETY_THRESHOLD) && pointInImage(1) <= (bbox.y + bbox.height + SAFETY_THRESHOLD))
             {
+                // First beam started falling inside BB
                 insideBoundingBox = true;
-                point.setD(-1); // Rejecting the point
+                // Reject it
+                point.setBeamValidity(false);
             }
             else if (insideBoundingBox)
             {

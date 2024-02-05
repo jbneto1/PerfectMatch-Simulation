@@ -18,19 +18,10 @@ void OfflineAnalysis::parseLine(const std::string &line)
 {
     auto [encoders, GT_pose, optLaserReadings, yoloData, timestamp] = extractDataFromLine(line);
 
-    // Calculate time difference in seconds between the current and previous timestamp
-    static long long lastTimestamp = 0;
-    double deltaTimeSeconds = 0.0;
-    if (lastTimestamp != 0)
-    {
-        deltaTimeSeconds = static_cast<double>(timestamp - lastTimestamp) / 1000.0; // Convert milliseconds to seconds
-    }
-    lastTimestamp = timestamp;
-
     localization.getPM().ProcessLaserPoints(optLaserReadings.value());
 
     // Without semantic interpretation
-    localization.processData_w_PM(encoders, GT_pose, optLaserReadings.value(), deltaTimeSeconds);
+    localization.processData_w_PM(encoders, GT_pose, optLaserReadings.value());
     EKF_pose = localization.getPose();
     PM_pose = localization.getPM().getPose();
     error_EKF = EKF_pose - GT_pose;
@@ -43,7 +34,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
     localization_w_semantics.getPM().ProcessBBOutliers(optLaserReadings.value(), yoloData.value());
 
     // With semantic interpretation
-    localization_w_semantics.processData_w_PM(encoders, GT_pose, optLaserReadings.value(), deltaTimeSeconds);
+    localization_w_semantics.processData_w_PM(encoders, GT_pose, optLaserReadings.value());
     EKF_pose_semantics = localization_w_semantics.getPose();
     PM_pose_semantics = localization_w_semantics.getPM().getPose();
     error_EKF_semantics = EKF_pose_semantics - GT_pose;
@@ -53,7 +44,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
     auto offlineData_semantics = std::make_tuple(EKF_pose_semantics, PM_pose_semantics, error_EKF_semantics, error_PM_semantics, EKF_cov_semantics);
 
     // Log the data
-    logger.fileLog_offlineAnalysis(offlineData, offlineData_semantics, timestamp);
+    logger.fileLog_offlineAnalysis(offlineData, offlineData_semantics);
 
     // Update the visualizer with the new data if necessary
     // visualizer.update(GT_pose, localization.getPose(), optLaserReadings);

@@ -36,8 +36,7 @@ public:
 
     void fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, const std::string &yoloData);
     void fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, Vector3d> &localization,
-                                 const std::tuple<Pose, Pose, Pose, double, Vector3d> &localization_w_semantics,
-                                 const long long t);
+                                 const std::tuple<Pose, Pose, Pose, double, Vector3d> &localization_w_semantics);
     void createOfflineLoggers();
 
     void set_level(const spdlog::level::level_enum log_level);

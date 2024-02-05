@@ -96,6 +96,7 @@ private:
     double x;
     double y;
     double std_dev;
+    bool valid;
 
     double dx, dy, dtheta;
 
@@ -115,6 +116,10 @@ public:
 
     double getStdDev() const { return std_dev; }
 
+    bool getBeamValidity() const { return valid; };
+
+    void setBeamValidity(bool valid) { this->valid = valid; };
+
     void setD(double d) { this->d = d; }
 
     void setAngle(double angle) { this->angle = angle; }
@@ -125,11 +130,11 @@ public:
 
     void setStdDev(double std_dev) { this->std_dev = std_dev; }
 
-    void setDx(const double dx) { this->dx = dx; }
+    void setDx(double dx) { this->dx = dx; }
 
-    void setDy(const double dy) { this->dy = dy; }
+    void setDy(double dy) { this->dy = dy; }
 
-    void setDtheta(const double dtheta) { this->dtheta = dtheta; }
+    void setDtheta(double dtheta) { this->dtheta = dtheta; }
 
     double getDx() const { return dx; }
 

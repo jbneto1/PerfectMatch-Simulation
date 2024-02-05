@@ -19,7 +19,8 @@ SimTwoInterface::SimTwoInterface(Logger &logger, Localization &localization, AMR
 SimTwoInterface::~SimTwoInterface()
 {
     // Ensure threads are joined before destruction
-    if (yoloThread.joinable()) {
+    if (yoloThread.joinable())
+    {
         yoloThread.join();
     }
 }
@@ -32,17 +33,16 @@ void SimTwoInterface::runIoContextReadyMsg()
     {
         io_context.run_one(); // Process one ASIO event (waiting for "ready" message)
     }
-
 }
 
 void SimTwoInterface::runIoContext()
 {
 
-    if(!earlyStop){
+    if (!earlyStop)
+    {
         logger.debug("Waiting for the simulator.");
         io_context.run(); // Continue with the normal operation after receiving the message
     }
-
 }
 
 void SimTwoInterface::runYoloIoContext()
@@ -326,11 +326,13 @@ void SimTwoInterface::sendAckMessage()
     sync_socket.send_to(asio::buffer(ackMsg), receiver_endpoint);
 }
 
-void SimTwoInterface::logFrequencySimTwo() {
+void SimTwoInterface::logFrequencySimTwo()
+{
 
     auto now = std::chrono::steady_clock::now();
 
-    if (lastTime_simtwo != std::chrono::steady_clock::time_point{}) {
+    if (lastTime_simtwo != std::chrono::steady_clock::time_point{})
+    {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime_simtwo);
         double freq = 1E6 / double(duration.count());
         localization.setFreq(freq);
@@ -339,11 +341,13 @@ void SimTwoInterface::logFrequencySimTwo() {
     lastTime_simtwo = now;
 }
 
-void SimTwoInterface::logFrequencyYOLO() {
+void SimTwoInterface::logFrequencyYOLO()
+{
 
     auto now = std::chrono::steady_clock::now();
 
-    if (lastTime_yolo != std::chrono::steady_clock::time_point{}) {
+    if (lastTime_yolo != std::chrono::steady_clock::time_point{})
+    {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime_yolo);
         double freq = 1E6 / double(duration.count());
         logger.debug("YOLO Comm[Hz]: " + formatWithTwoDecimals(freq));

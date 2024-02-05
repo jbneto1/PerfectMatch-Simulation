@@ -14,7 +14,6 @@ Visualizer::Visualizer(Localization &localization, std::mutex &PM_m) : localizat
 
     localUpdate.stepGet = localization.getPM().getStep();
     localUpdate.Qk_covarianceGet = localization.getEKF().getQk();
-
 }
 
 Visualizer::~Visualizer()
@@ -172,7 +171,6 @@ void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose,
             localization.setPose(localUpdate.newPose);
             localUpdate.hasPoseChanged = false; // Reset the flag
         }
-
     }
 
     newDataAvailable.store(true);
@@ -225,7 +223,7 @@ void Visualizer::drawUIElements()
     drawTriangle(draw_list, visDataFront.estimatedPose, ImColor(0, 0, 255)); // blue
 
     draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
-    
+
     if (visDataFront.drawLaser)
         drawLidarPoints(draw_list, visDataFront.estimatedPose, visDataFront.laserPoint, IM_COL32(128, 0, 198, 255));
 
@@ -256,7 +254,6 @@ void Visualizer::drawUIElements()
 
     ImGui::Text("Localization freq [Hz]: %.2f", visDataFront.freq_localization);
 
-    
     {
         std::lock_guard<std::mutex> lock(cv_m);
         ImGui::Text("PM error [m]: %.3f", localUpdate.PMError);
@@ -399,7 +396,8 @@ void Visualizer::render()
 
     {
         std::unique_lock<std::mutex> lock(readinessMutex);
-        readinessCV.wait(lock, [this]{ return isReadyForRendering; });
+        readinessCV.wait(lock, [this]
+                         { return isReadyForRendering; });
     }
 
     while (runRenderLoop.load() && (!glfwWindowShouldClose(window)))
@@ -502,7 +500,7 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
     {
         const auto &point = laserP[i];
 
-        if (point.getD() <= 0)
+        if ((point.getD() <= 0) && (!point.getBeamValidity()))
             continue;
 
         // Transform from robot's frame to global frame
@@ -556,7 +554,7 @@ void Visualizer::stop()
     runRenderLoop.store(false);
     newDataAvailable.store(true);
     cv.notify_all();
-   
+
     if (window)
     {
         glfwSetWindowShouldClose(window, GL_TRUE);

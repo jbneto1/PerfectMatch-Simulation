@@ -16,6 +16,7 @@
 using Eigen::Matrix3d;
 using Eigen::Matrix4d;
 using Eigen::Vector3d;
+using Eigen::VectorXd;
 
 class PerfectMatch
 {
@@ -50,6 +51,10 @@ private:
 
     void IterLaser(std::array<LaserPoint, 720> &LaserPoints);
 
+    void digitalToClassicOrigin(Vector3d &point);
+
+    // void CorrectDistortion(Vector3d &point);
+
     Map map;
     double meterToPixel;
     Pose RobotPose;
@@ -63,7 +68,11 @@ private:
     const Vector3d t_LC;
     const Matrix3d Rx, Ry, Rz;
     const Matrix4d TH_LC;
+    /*K = [fx, skew, px
+            0, fy, py,
+            0, 0, 1]*/
     const Matrix3d K;
+    const VectorXd distCoeffs;
 };
 
 #endif // PERFECTMATCH_H

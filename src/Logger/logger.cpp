@@ -185,9 +185,11 @@ void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, 
 }
 
 void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, Vector3d> &localization,
-                                     const std::tuple<Pose, Pose, Pose, double, Vector3d> &localization_w_semantics,
-                                     const long long t)
+                                     const std::tuple<Pose, Pose, Pose, double, Vector3d> &localization_w_semantics)
 {
+    /* It is assumed that although the windows scheduler makes the reception of datagrams of simtwo not constant at 40Hz, the internal clock
+    of simtwo guarantees a constant 40 Hz simulation period. Thus, the measurements happens at their due frequencies. Therefore,
+    The timestamp of the graphs will be assuming 25ms each data log line.*/
     std::ostringstream oss, oss_semantics;
 
     // Header
@@ -215,10 +217,7 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
         << ","
         << "EKFCovY"
         << ","
-        << "EKFCovTheta"
-        << ","
-        << "time period"
-        << "\n";
+        << "EKFCovTheta";
 
     {
         auto [EKFPose, PMPose, EKFerror, PMError, EKFCov] = localization;
@@ -247,9 +246,7 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
             << ","
             << EKFCov(1)
             << ","
-            << EKFCov(2)
-            << ","
-            << t;
+            << EKFCov(2);
     }
 
     fileLogger_offline->trace(oss.str());
@@ -278,10 +275,7 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
                   << ","
                   << "EKFCovY"
                   << ","
-                  << "EKFCovTheta"
-                  << ","
-                  << "time period"
-                  << "\n";
+                  << "EKFCovTheta";
 
     {
         auto [EKFPose, PMPose, EKFerror, PMError, EKFCov] = localization_w_semantics;
@@ -310,9 +304,7 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
                       << ","
                       << EKFCov(1)
                       << ","
-                      << EKFCov(2)
-                      << ","
-                      << t;
+                      << EKFCov(2);
     }
 
     fileLogger_offline_w_semantics->trace(oss_semantics.str());

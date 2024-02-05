@@ -14,7 +14,6 @@ Manager::Manager(Logger &logger)
       CtrlCPromise(),
       offlineAnalysis(localization, localization_w_semantics, logger)
 {
-
     logger.trace("SIGINT signal handler registered with asio.");
     // Start the visualization thread
     setupSignalHandler();
