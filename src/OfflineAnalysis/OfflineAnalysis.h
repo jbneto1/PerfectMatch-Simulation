@@ -35,13 +35,13 @@ private:
     double error_PM;
     Pose error_EKF;
     Pose PM_pose;
-    Vector3d EKF_cov;
+    Matrix3d EKF_cov;
 
     Pose EKF_pose_semantics;
     double error_PM_semantics;
     Pose error_EKF_semantics;
     Pose PM_pose_semantics;
-    Vector3d EKF_cov_semantics;
+    Matrix3d EKF_cov_semantics;
 
     double time;
 };

@@ -8,10 +8,14 @@ void OfflineAnalysis::processLogFile(const std::string &filePath)
     std::ifstream logFile(filePath);
     std::string line;
 
+    logger.info("Processing data log.");
+
     while (std::getline(logFile, line))
     {
         parseLine(line);
     }
+
+    logger.info("Data log process finished.");
 }
 
 void OfflineAnalysis::parseLine(const std::string &line)

@@ -63,6 +63,7 @@ void Manager::setupSignalHandler()
 
 void Manager::run()
 {
+    logger.createOnlineLoggers();
 
     // Register callback
     interface.registerCallback([this](const std::string &data)
@@ -101,19 +102,16 @@ void Manager::runOfflineAnalysis(const std::string &logFilePath)
     // Create offline analysis log files.
     logger.createOfflineLoggers();
 
-    // Get the current working directory
-    std::filesystem::path cwd = std::filesystem::current_path();
-
-    // Combine the current working directory with the relative file path
-    std::filesystem::path fullPath = cwd / logFilePath;
+    std::string relativePath = "../";
+    relativePath.append(logFilePath);
 
     // Check if the file exists
-    if (!std::filesystem::exists(fullPath))
+    if (!std::filesystem::exists(relativePath))
     {
-        logger.error("Failed opening the file. It does not exist.");
+        logger.error("Failed opening the file. It does not exist: " + std::string(relativePath));
         return;
     }
 
-    logger.info("Processing log file at: " + std::string(fullPath));
-    offlineAnalysis.processLogFile(fullPath);
+    logger.info("Processing log file at: " + std::string(relativePath));
+    offlineAnalysis.processLogFile(relativePath);
 }

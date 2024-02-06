@@ -500,7 +500,7 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
     {
         const auto &point = laserP[i];
 
-        if ((point.getD() <= 0) && (!point.getBeamValidity()))
+        if ((point.getD() <= 0) && (!point.getIsBeamValid()))
             continue;
 
         // Transform from robot's frame to global frame

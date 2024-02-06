@@ -80,7 +80,7 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints)
 
     for (auto &laserPoint : LaserPoints)
     {
-        if ((laserPoint.getD() < 0.1) || (!laserPoint.getBeamValidity()))
+        if ((laserPoint.getD() < 0.1) || (!laserPoint.getIsBeamValid()))
             continue;
 
         double rx, ry;
@@ -123,11 +123,14 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints)
     auto start = std::chrono::high_resolution_clock::now();
     for (auto &point : LaserPoints)
     {
+
         if (point.getD() <= 0)
         {
-            point.setBeamValidity(false);
+            point.setIsBeamValid(false);
             continue;
         }
+        point.setIsBeamValid(true);
+
         double currentAngleDegrees = degreeStep * (&point - &LaserPoints[0]);
         // convert the angle to radians
         double angleRadians = degToRad(currentAngleDegrees);
@@ -250,7 +253,7 @@ void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, s
                 // First beam started falling inside BB
                 insideBoundingBox = true;
                 // Reject it
-                point.setBeamValidity(false);
+                point.setIsBeamValid(false);
             }
             else if (insideBoundingBox)
             {

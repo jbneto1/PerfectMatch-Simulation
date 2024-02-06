@@ -116,9 +116,9 @@ public:
 
     double getStdDev() const { return std_dev; }
 
-    bool getBeamValidity() const { return valid; };
+    bool getIsBeamValid() const { return valid; };
 
-    void setBeamValidity(bool valid) { this->valid = valid; };
+    void setIsBeamValid(bool valid) { this->valid = valid; };
 
     void setD(double d) { this->d = d; }
 

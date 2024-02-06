@@ -10,7 +10,21 @@ Logger::Logger(spdlog::level::level_enum level)
         logger = std::make_shared<spdlog::logger>("logger", begin(sinks), end(sinks));
         logger->set_level(level);
         this->trace("Console colored logger initialized.");
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
+        std::cerr << "Console Logger initialization failed: " << ex.what() << '\n';
+    }
+    catch (const std::exception &ex)
+    {
+        std::cerr << "Console Logger initialization failed. General exception: " << ex.what() << '\n';
+    }
+}
 
+void Logger::createOnlineLoggers()
+{
+    try
+    {
         auto filename_data = fmt::format("../docs/logs/sensor_data_{}.txt", current_datetime());
         auto file_sink_data = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_data, true);
         fileLogger_data = std::make_shared<spdlog::logger>("SensorData", file_sink_data);
@@ -19,29 +33,67 @@ Logger::Logger(spdlog::level::level_enum level)
     }
     catch (const spdlog::spdlog_ex &ex)
     {
-        std::cout << "Log initialization failed: " << ex.what() << '\n';
+        logger->error("Online logger initialization failed: " + std::string(ex.what()));
     }
     catch (const std::exception &ex)
     {
-        std::cout << "General exception: " << ex.what() << '\n';
+        logger->error("Online logger initialization failed. General Exception: " + std::string(ex.what()));
     }
-
-    // fileLogger_data->set_level(spdlog::level::off);
 }
 
 void Logger::createOfflineLoggers()
 {
-    auto filename_data = fmt::format("../docs/logs/logs_offlineAnalysis/offlineAnalysis_{}.txt", current_datetime());
-    auto file_sink_data = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_data, true);
-    fileLogger_offline = std::make_shared<spdlog::logger>("OfflineAnalysis", file_sink_data);
-    fileLogger_offline->set_level(spdlog::level::trace);
-    fileLogger_offline->set_pattern(std::string("%v"));
+    std::ostringstream oss;
+    oss << "EKF_x"
+        << ","
+        << "EKF_y"
+        << ","
+        << "EKF_theta"
+        << ","
+        << "PM_x"
+        << ","
+        << "PM_y"
+        << ","
+        << "PM_theta"
+        << ","
+        << "errorEKF_x"
+        << ","
+        << "errorEKF_y"
+        << ","
+        << "errorEKF_theta"
+        << ","
+        << "errorPM"
+        << ","
+        << "EKFCovX"
+        << ","
+        << "EKFCovY"
+        << ","
+        << "EKFCovTheta";
 
-    auto filename_data_semantics = fmt::format("../docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics{}.txt", current_datetime());
-    auto file_sink_data_semantics = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_data_semantics, true);
-    fileLogger_offline_w_semantics = std::make_shared<spdlog::logger>("OfflineAnalysis_w_semantics", file_sink_data_semantics);
-    fileLogger_offline_w_semantics->set_level(spdlog::level::trace);
-    fileLogger_offline_w_semantics->set_pattern(std::string("%v"));
+    try
+    {
+        auto filename_data = fmt::format("../docs/logs/logs_offlineAnalysis/offlineAnalysis_{}.txt", current_datetime());
+        auto file_sink_data = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_data, true);
+        fileLogger_offline = std::make_shared<spdlog::logger>("OfflineAnalysis", file_sink_data);
+        fileLogger_offline->set_level(spdlog::level::trace);
+        fileLogger_offline->set_pattern(std::string("%v"));
+        fileLogger_offline->trace(oss.str());
+
+        auto filename_data_semantics = fmt::format("../docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics{}.txt", current_datetime());
+        auto file_sink_data_semantics = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_data_semantics, true);
+        fileLogger_offline_w_semantics = std::make_shared<spdlog::logger>("OfflineAnalysis_w_semantics", file_sink_data_semantics);
+        fileLogger_offline_w_semantics->set_level(spdlog::level::trace);
+        fileLogger_offline_w_semantics->set_pattern(std::string("%v"));
+        fileLogger_offline_w_semantics->trace(oss.str());
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
+        logger->error("Offline Loggers initialization failed: " + std::string(ex.what()));
+    }
+    catch (const std::exception &ex)
+    {
+        logger->error("Offline Loggers initialization failed. General Exception: " + std::string(ex.what()));
+    }
 }
 
 Logger &Logger::getInstance(spdlog::level::level_enum level)
@@ -184,40 +236,13 @@ void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, 
     this->fileLogger_data->trace(oss.str());
 }
 
-void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, Vector3d> &localization,
-                                     const std::tuple<Pose, Pose, Pose, double, Vector3d> &localization_w_semantics)
+void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, Matrix3d> &localization,
+                                     const std::tuple<Pose, Pose, Pose, double, Matrix3d> &localization_w_semantics)
 {
     /* It is assumed that although the windows scheduler makes the reception of datagrams of simtwo not constant at 40Hz, the internal clock
     of simtwo guarantees a constant 40 Hz simulation period. Thus, the measurements happens at their due frequencies. Therefore,
     The timestamp of the graphs will be assuming 25ms each data log line.*/
     std::ostringstream oss, oss_semantics;
-
-    // Header
-    oss << "EKF_x"
-        << ","
-        << "EKF_y"
-        << ","
-        << "EKF_theta"
-        << ","
-        << "PM_x"
-        << ","
-        << "PM_y"
-        << ","
-        << "PM_theta"
-        << ","
-        << "errorEKF_x"
-        << ","
-        << "errorEKF_y"
-        << ","
-        << "errorEKF_theta"
-        << ","
-        << "errorPM"
-        << ","
-        << "EKFCovX"
-        << ","
-        << "EKFCovY"
-        << ","
-        << "EKFCovTheta";
 
     {
         auto [EKFPose, PMPose, EKFerror, PMError, EKFCov] = localization;
@@ -242,40 +267,26 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
             << ","
             << PMError
             << ","
-            << EKFCov(0)
+            << EKFCov(0, 0)
             << ","
-            << EKFCov(1)
+            << EKFCov(0, 1)
             << ","
-            << EKFCov(2);
+            << EKFCov(0, 2)
+            << ","
+            << EKFCov(1, 0)
+            << ","
+            << EKFCov(1, 1)
+            << ","
+            << EKFCov(1, 2)
+            << ","
+            << EKFCov(2, 0)
+            << ","
+            << EKFCov(2, 1)
+            << ","
+            << EKFCov(2, 2);
     }
 
     fileLogger_offline->trace(oss.str());
-
-    oss_semantics << "EKF_x"
-                  << ","
-                  << "EKF_y"
-                  << ","
-                  << "EKF_theta"
-                  << ","
-                  << "PM_x"
-                  << ","
-                  << "PM_y"
-                  << ","
-                  << "PM_theta"
-                  << ","
-                  << "errorEKF_x"
-                  << ","
-                  << "errorEKF_y"
-                  << ","
-                  << "errorEKF_theta"
-                  << ","
-                  << "errorPM"
-                  << ","
-                  << "EKFCovX"
-                  << ","
-                  << "EKFCovY"
-                  << ","
-                  << "EKFCovTheta";
 
     {
         auto [EKFPose, PMPose, EKFerror, PMError, EKFCov] = localization_w_semantics;
@@ -300,11 +311,23 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
                       << ","
                       << PMError
                       << ","
-                      << EKFCov(0)
+                      << EKFCov(0, 0)
                       << ","
-                      << EKFCov(1)
+                      << EKFCov(0, 1)
                       << ","
-                      << EKFCov(2);
+                      << EKFCov(0, 2)
+                      << ","
+                      << EKFCov(1, 0)
+                      << ","
+                      << EKFCov(1, 1)
+                      << ","
+                      << EKFCov(1, 2)
+                      << ","
+                      << EKFCov(2, 0)
+                      << ","
+                      << EKFCov(2, 1)
+                      << ","
+                      << EKFCov(2, 2);
     }
 
     fileLogger_offline_w_semantics->trace(oss_semantics.str());

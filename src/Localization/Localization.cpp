@@ -33,7 +33,7 @@ void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const P
     EKF.predict(speedsStates);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("EKF Predict [us]: " + std::to_string(duration.count()));
+    logger.trace("EKF Predict [us]: " + std::to_string(duration.count()));
 }
 
 void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT,
@@ -49,7 +49,7 @@ void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Po
     auto end = std::chrono::high_resolution_clock::now();
 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("Perfect Match [us]: " + std::to_string(duration.count()));
+    logger.trace("Perfect Match [us]: " + std::to_string(duration.count()));
 
     start = std::chrono::high_resolution_clock::now();
 
@@ -57,7 +57,7 @@ void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Po
 
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("EKF update [us]: " + std::to_string(duration.count()));
+    logger.trace("EKF update [us]: " + std::to_string(duration.count()));
 }
 
 void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT)
@@ -81,7 +81,7 @@ void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const P
     EKF.predict(speedsStates);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("EKF Predict [us]: " + std::to_string(duration.count()));
+    logger.trace("EKF Predict [us]: " + std::to_string(duration.count()));
 }
 
 void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT,
@@ -97,7 +97,7 @@ void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Po
     auto end = std::chrono::high_resolution_clock::now();
 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("Perfect Match [us]: " + std::to_string(duration.count()));
+    logger.trace("Perfect Match [us]: " + std::to_string(duration.count()));
 
     start = std::chrono::high_resolution_clock::now();
 
@@ -105,7 +105,7 @@ void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Po
 
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("EKF update [us]: " + std::to_string(duration.count()));
+    logger.trace("EKF update [us]: " + std::to_string(duration.count()));
 }
 
 Pose Localization::PMMatchingWithLimit(PerfectMatch &PM, std::array<LaserPoint, 720> &lidarData, int max_iter,

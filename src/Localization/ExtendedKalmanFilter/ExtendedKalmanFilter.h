@@ -30,7 +30,7 @@ public:
     // Getters
     Pose getPose();
     double getQk() { return Qk.diagonal()[0]; };
-    Vector3d getPk() { return Pk.diagonal(); };
+    Matrix3d getPk() { return Pk; };
 
     // Setters
     void setPose(const Pose startPose);
