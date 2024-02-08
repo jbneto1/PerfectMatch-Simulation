@@ -101,10 +101,10 @@ private:
     double dx, dy, dtheta;
 
 public:
-    LaserPoint() : d(0), angle(0), x(0), y(0), std_dev(1) {}
+    LaserPoint() : d(0), angle(0), x(0), y(0), std_dev(1), valid(true), dx(0), dy(0), dtheta(0) {}
 
-    LaserPoint(double d, double angle, double x, double y, double std_dev = 1) : d(d), angle(angle), x(x), y(y),
-                                                                                 std_dev(std_dev) {}
+    LaserPoint(double d, double angle, double x, double y, double std_dev = 1, bool beamValid = true) : d(d), angle(angle), x(x), y(y),
+                                                                                                        std_dev(std_dev), valid(beamValid), dx(0), dy(0), dtheta(0) {}
 
     double getD() const { return d; }
 
@@ -145,9 +145,8 @@ public:
 
 struct BoundingBox
 {
-    int id;
     int class_id;
-    double x, y, width, height;
+    double conf, x, y, width, height;
 };
 
 #endif

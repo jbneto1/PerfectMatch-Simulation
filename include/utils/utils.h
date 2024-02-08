@@ -19,4 +19,6 @@ double degToRad(double angle);
 
 std::string formatWithTwoDecimals(double value);
 
+bool stringToBool(const std::string &str);
+
 #endif // PM_PROJECT_UTILS_H

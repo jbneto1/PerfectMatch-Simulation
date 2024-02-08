@@ -206,7 +206,8 @@ void Logger::deactivate_Loggers()
     fileLogger_data->set_level(spdlog::level::off);
 }
 
-void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, const std::string &yoloData)
+void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose,
+                         const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, const std::string &yoloData)
 {
     std::ostringstream oss;
     std::string now_c;

@@ -13,7 +13,7 @@ running = True
 
 # NETWORK DEFINES for SIMTWO comm
 # ip = "192.168.1.183" # WINDOWS IP HOME
-ip = "193.137.108.33" # WINDOWS IP CEDRI
+ip = "193.137.108.124" # WINDOWS IP CEDRI
 port_simtwo = "9899"
 
 #NETWORK DEFINES FOR READY MSG (WSL2 CODES)
@@ -118,13 +118,13 @@ try:
                 confidences = result.boxes.conf  # Assuming this is a tensor of shape [N,]
 
                 if (len(classes) != 0):
-                    log_str = ''
+                    log_str = 'N,' + str(len(classes)) + ','
                     for i in range(len(classes)):
                         x1, y1, w, h = boxes[i].tolist()  # Correctly indexing the i-th box
                         conf = confidences[i].item()  # Correctly indexing the i-th confidence, converting to Python scalar
                         cls = int(classes[i].item())  # Correctly indexing the i-th class, converting to Python scalar
                         
-                        log_str += f"b{i}:{cls},{conf:.2f},{x1},{y1},{w},{h},"
+                        log_str += f"b{cls},{conf:.2f},{x1},{y1},{w},{h},"
 
                     log_str = log_str[:-1]  # Removing the last comma
                     if log_str:

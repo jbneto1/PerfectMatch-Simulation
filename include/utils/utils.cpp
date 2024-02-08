@@ -49,3 +49,24 @@ std::string formatWithTwoDecimals(double value)
     out << std::fixed << std::setprecision(2) << value;
     return out.str();
 }
+
+bool stringToBool(const std::string &str)
+{
+    std::string lowerStr = str;
+    std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(),
+                   [](unsigned char c)
+                   { return std::tolower(c); });
+
+    if (lowerStr == "true")
+    {
+        return true;
+    }
+    else if (lowerStr == "false")
+    {
+        return false;
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid string for boolean conversion.");
+    }
+}

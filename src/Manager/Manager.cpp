@@ -12,6 +12,7 @@ Manager::Manager(Logger &logger)
       visThread(),
       signals_(interface.getIoContext()),
       CtrlCPromise(),
+      logData(false),
       offlineAnalysis(localization, localization_w_semantics, logger)
 {
     logger.trace("SIGINT signal handler registered with asio.");
@@ -61,9 +62,13 @@ void Manager::setupSignalHandler()
         } });
 }
 
-void Manager::run()
+void Manager::run(const bool logData)
 {
-    logger.createOnlineLoggers();
+    if (logData)
+    {
+        this->logData = logData;
+        logger.createOnlineLoggers();
+    }
 
     // Register callback
     interface.registerCallback([this](const std::string &data)
@@ -88,7 +93,8 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
     std::string yoloData = interface.getLatestYoloData();
     // Logging the sensors' data
 
-    logger.fileLog_bag(encs, GT_pose, optLaserReadings, yoloData);
+    if (logData)
+        logger.fileLog_bag(encs, GT_pose, optLaserReadings, yoloData);
 
     localization.getPM().ProcessLaserPoints(optLaserReadings.value());
     localization.processData_w_PM(encs, GT_pose, optLaserReadings.value());

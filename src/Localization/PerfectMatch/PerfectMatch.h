@@ -7,6 +7,7 @@
 #include <chrono>
 
 #include "Eigen/Dense"
+#include "Eigen/Sparse"
 #include "Map/Map.h"
 #include "config/config.h"
 #include "Logger/logger.h"
@@ -16,6 +17,7 @@
 using Eigen::Matrix3d;
 using Eigen::Matrix4d;
 using Eigen::Vector3d;
+using Eigen::Vector4d;
 using Eigen::VectorXd;
 
 class PerfectMatch
@@ -66,7 +68,10 @@ private:
 
     // Constant members that represent the spatial-relationship between LiDAR Scanner and Camera in the robot
     const Vector3d t_LC;
-    const Matrix3d Rx, Ry, Rz;
+    const double yaw = -M_PI_2;
+    const double pitch = M_PI_2;
+    const double roll = 0;
+    const Eigen::AngleAxisd Rx, Ry, Rz;
     const Matrix4d TH_LC;
     /*K = [fx, skew, px
             0, fy, py,

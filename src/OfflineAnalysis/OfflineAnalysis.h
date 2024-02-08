@@ -28,7 +28,6 @@ private:
 
     void parseLine(const std::string &line);
     std::tuple<std::array<int, 4>, Pose, std::optional<std::array<LaserPoint, 720>>, std::optional<std::vector<BoundingBox>>, long long> extractDataFromLine(const std::string &line);
-    BoundingBox parseBoundingBox(const std::string &bbox_string);
 
     // Analysis members
     Pose EKF_pose;

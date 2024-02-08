@@ -2,9 +2,29 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Run C++ Program with Logging",
+            "type": "shell",
+            "command": "./PM_project",
+            "args": [
+                "true"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Run C++ Program",
             "type": "shell",
             "command": "./PM_project",
+            "args": [
+                "false"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}/build"
             },
@@ -29,7 +49,21 @@
         },
         {
             "label": "Run Both Programs",
-            "dependsOn": ["Run C++ Program", "Run Python Script"],
+            "dependsOn": [
+                "Run C++ Program",
+                "Run Python Script"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run Both Programs with Logging",
+            "dependsOn": [
+                "Run C++ Program with Logging",
+                "Run Python Script"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true

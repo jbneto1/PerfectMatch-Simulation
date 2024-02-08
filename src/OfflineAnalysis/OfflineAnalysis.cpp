@@ -22,6 +22,16 @@ void OfflineAnalysis::parseLine(const std::string &line)
 {
     auto [encoders, GT_pose, optLaserReadings, yoloData, timestamp] = extractDataFromLine(line);
 
+    std::optional<std::array<LaserPoint, 720UL>> optLaserReadings_semantics;
+
+    std::array<int, 4UL> encoders_semantics;
+
+    encoders_semantics = encoders;
+
+    Pose GT_pose_semantics = GT_pose;
+
+    optLaserReadings_semantics = *optLaserReadings;
+
     localization.getPM().ProcessLaserPoints(optLaserReadings.value());
 
     // Without semantic interpretation
@@ -35,13 +45,14 @@ void OfflineAnalysis::parseLine(const std::string &line)
     auto offlineData = std::make_tuple(EKF_pose, PM_pose, error_EKF, error_PM, EKF_cov);
 
     // Process semantic interpretation
-    localization_w_semantics.getPM().ProcessBBOutliers(optLaserReadings.value(), yoloData.value());
+    localization_w_semantics.getPM().ProcessLaserPoints(optLaserReadings_semantics.value());
+    localization_w_semantics.getPM().ProcessBBOutliers(optLaserReadings_semantics.value(), yoloData.value());
 
     // With semantic interpretation
-    localization_w_semantics.processData_w_PM(encoders, GT_pose, optLaserReadings.value());
+    localization_w_semantics.processData_w_PM(encoders_semantics, GT_pose_semantics, optLaserReadings_semantics.value());
     EKF_pose_semantics = localization_w_semantics.getPose();
     PM_pose_semantics = localization_w_semantics.getPM().getPose();
-    error_EKF_semantics = EKF_pose_semantics - GT_pose;
+    error_EKF_semantics = EKF_pose_semantics - GT_pose_semantics;
     error_PM_semantics = localization_w_semantics.getPM().getError();
     EKF_cov_semantics = localization_w_semantics.getEKF().getPk();
 
@@ -74,7 +85,7 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
 
     try
     {
-        Pose pose{std::stod(tokens[0]), std::stod(tokens[1]), std::stod(tokens[2])};
+        Pose pose(std::stod(tokens[0]), std::stod(tokens[1]), std::stod(tokens[2]));
         std::array<int, 4> encoders = {std::stoi(tokens[3]), std::stoi(tokens[4]), std::stoi(tokens[5]), std::stoi(tokens[6])};
         std::array<LaserPoint, 720> lidarPoints;
 
@@ -83,65 +94,54 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
             lidarPoints[i].setD(std::stod(tokens[7 + i]));
         }
 
-        // Attempt to find the first bounding box or the timestamp if no bounding boxes are present
-        size_t firstBBoxOrTimestampIndex = 727; // Start index for bounding boxes or timestamp
+        size_t currentIndex = 727; // Directly after lidar points
         std::vector<BoundingBox> boundingBoxes;
 
-        // If the first token after lidar data does not start with 'b', no bounding boxes are present
-        if (tokens[firstBBoxOrTimestampIndex].rfind("b", 0) != 0)
+        try
         {
-            long long timestamp = std::stoll(tokens[firstBBoxOrTimestampIndex]);
-            static long long firstTimestamp = -1; // Static variable to hold the first timestamp
-            if (firstTimestamp == -1)             // Check if it's the first timestamp encountered
+            // bool isTokenN = (tokens[currentIndex] == "N");
+            if ((currentIndex < tokens.size()) && (tokens[currentIndex] == "N"))
+            {
+                size_t bboxCount = std::stoi(tokens[++currentIndex]);
+                currentIndex++; // Move past the bounding box count
+
+                for (size_t i = 0; i < bboxCount; ++i)
+                {
+                    if (currentIndex + 5 > tokens.size())
+                    {
+                        throw std::runtime_error("Not enough tokens for bounding box data.");
+                    }
+
+                    // Parse bounding box data
+                    int class_id = std::stoi(tokens[currentIndex++].substr(1));
+                    double conf = std::stod(tokens[currentIndex++]);
+                    double x = std::stod(tokens[currentIndex++]);
+                    double y = std::stod(tokens[currentIndex++]);
+                    double width = std::stod(tokens[currentIndex++]);
+                    double height = std::stod(tokens[currentIndex++]);
+
+                    boundingBoxes.push_back(BoundingBox{class_id, conf, x, y, width, height});
+                }
+            }
+            long long timestamp = std::stoll(tokens.back());
+            static long long firstTimestamp = -1; // To normalize timestamps
+            if (firstTimestamp == -1)
             {
                 firstTimestamp = timestamp;
             }
-            timestamp -= firstTimestamp; // Subtract the first timestamp from the current timestamp
-            return std::make_tuple(encoders, pose, lidarPoints, std::make_optional(boundingBoxes), timestamp);
-        }
+            timestamp -= firstTimestamp;
 
-        // Parse bounding boxes
-        for (size_t i = firstBBoxOrTimestampIndex; i < tokens.size() - 1; ++i)
+            return std::make_tuple(encoders, pose, std::make_optional(lidarPoints), std::make_optional(boundingBoxes), timestamp);
+        }
+        catch (const std::exception &e)
         {
-            BoundingBox box = parseBoundingBox(tokens[i]);
-            boundingBoxes.push_back(box);
+            logger.error("General BB parsing error of the data log line. Exception: " + std::string(e.what()));
+            return std::make_tuple(std::array<int, 4>{}, Pose{}, std::nullopt, std::nullopt, 0);
         }
-
-        // Parse the timestamp, which is the last token
-        long long timestamp = std::stoll(tokens.back());
-        static long long firstTimestamp = -1; // Static variable to hold the first timestamp
-        if (firstTimestamp == -1)             // Check if it's the first timestamp encountered
-        {
-            firstTimestamp = timestamp;
-        }
-        timestamp -= firstTimestamp; // Subtract the first timestamp from the current timestamp
-
-        return std::make_tuple(encoders, pose, lidarPoints, std::make_optional(boundingBoxes), timestamp);
     }
     catch (const std::exception &e)
     {
-        logger.error("Parsing error of the data log line. Exception: " + std::string(e.what()));
+        logger.error("General proprioceptive data parsing error of the data log line. Exception: " + std::string(e.what()));
         return std::make_tuple(std::array<int, 4>{}, Pose{}, std::nullopt, std::nullopt, 0);
     }
-}
-
-BoundingBox OfflineAnalysis::parseBoundingBox(const std::string &bbox_string)
-{
-    std::istringstream stream(bbox_string);
-    char discard;
-    int id, class_id;
-    double x, y, width, height;
-
-    try
-    {
-        stream >> discard >> id >> discard >> class_id >> discard >> x >> discard >> y >> discard >> width >> discard >> height;
-    }
-    catch (const std::exception &e)
-    {
-        logger.error("Error parsing the bounding box string stream. Exception: " + std::string(e.what()));
-        return BoundingBox{std::numeric_limits<int>::quiet_NaN(), std::numeric_limits<int>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(),
-                           std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
-    }
-
-    return BoundingBox{id, class_id, x, y, width, height};
 }

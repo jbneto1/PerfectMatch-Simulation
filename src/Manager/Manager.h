@@ -27,7 +27,7 @@ public:
 
     ~Manager();
 
-    void run();
+    void run(const bool logData);
 
     void runOfflineAnalysis(const std::string &logFilePath);
 
@@ -43,6 +43,8 @@ private:
     asio::signal_set signals_;
     std::promise<void> CtrlCPromise;
     std::mutex PM_m;
+
+    bool logData;
 
     void setupSignalHandler();
     void stop();

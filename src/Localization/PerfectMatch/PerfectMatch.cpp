@@ -3,21 +3,16 @@
 PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double stepScale) : logger(
                                                                                                logger),
                                                                                            map(logger),
+
                                                                                            RobotPose(
                                                                                                startPose),
                                                                                            stepScale(
                                                                                                stepScale),
-                                                                                           t_LC(-0.155 / 2, 0, -0.055),
-                                                                                           Rx(Matrix3d::Identity()),
-                                                                                           Ry((Matrix3d() << 0, 0, -1,
-                                                                                               0, 1, 0,
-                                                                                               1, 0, 0)
-                                                                                                  .finished()),
-                                                                                           Rz((Matrix3d() << 0, -1, 0,
-                                                                                               1, 0, 0,
-                                                                                               0, 0, 1)
-                                                                                                  .finished()),
-                                                                                           TH_LC((Matrix4d() << Rz * Ry * Rx, t_LC,
+                                                                                           t_LC(0, -0.055, -0.155 / 2),
+                                                                                           Rx(Eigen::AngleAxisd(roll, Vector3d::UnitX())),
+                                                                                           Ry(Eigen::AngleAxisd(pitch, Vector3d::UnitY())),
+                                                                                           Rz(Eigen::AngleAxisd(yaw, Vector3d::UnitZ())),
+                                                                                           TH_LC((Matrix4d() << ((Rz.toRotationMatrix() * Ry.toRotationMatrix()) * Rx.toRotationMatrix()), t_LC,
                                                                                                   0, 0, 0, 1)
                                                                                                      .finished()),
                                                                                            K((Matrix3d() << 219.96470465, 0, 319.21197429,
@@ -31,6 +26,7 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
                                                                                                        -1.10922867e-03)
                                                                                                           .finished())
 {
+    // TH_LC rotation convention is z-y'-x'' therefore Rz*Ry*Rx.
     logger.debug(
         "Parameters: startPose (" + std::to_string(startPose.getX()) + ", " + std::to_string(startPose.getY()) +
         ", " + std::to_string(startPose.getTheta()) + "), " + ", stepScale: " +
@@ -129,7 +125,6 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints)
             point.setIsBeamValid(false);
             continue;
         }
-        point.setIsBeamValid(true);
 
         double currentAngleDegrees = degreeStep * (&point - &LaserPoints[0]);
         // convert the angle to radians
@@ -235,23 +230,31 @@ void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, s
         for (auto &point : LaserPoints)
         {
             // Transform point from lidar to camera perspective
-            Eigen::Vector4d pointInLidar(point.getX(), point.getY(), 0, 1);
-            Eigen::Vector4d pointInCamera = TH_LC * pointInLidar;
+            Vector4d pointInLidar(point.getX(), point.getY(), 0, 1);
+            Vector4d pointInCamera = TH_LC * pointInLidar;
+
+            if (pointInCamera(2) <= 0)
+                continue;
 
             // Project point onto image plane
             Eigen::Vector3d pointInImage = K * (pointInCamera / pointInCamera(2)).head<3>();
 
-            digitalToClassicOrigin(pointInImage);
+            Vector3d translatedBBox = {bbox.x, bbox.y, 0};
+
+            digitalToClassicOrigin(translatedBBox);
 
             // Correct camera distortions
             // CorrectDistortion(pointInImage);
 
             // Check if point falls inside BB
-            if (pointInImage(0) >= (bbox.x - SAFETY_THRESHOLD) && pointInImage(0) <= (bbox.x + bbox.width + SAFETY_THRESHOLD) &&
-                pointInImage(1) >= (bbox.y - SAFETY_THRESHOLD) && pointInImage(1) <= (bbox.y + bbox.height + SAFETY_THRESHOLD))
+            if (pointInImage(0) >= (translatedBBox(0) - SAFETY_THRESHOLD) &&
+                pointInImage(0) <= (translatedBBox(0) + bbox.width + SAFETY_THRESHOLD) &&
+                pointInImage(1) <= (translatedBBox(1) + SAFETY_THRESHOLD) &&             // Y increases upwards, so + SAFETY_THRESHOLD is towards the top
+                pointInImage(1) >= (translatedBBox(1) - bbox.height - SAFETY_THRESHOLD)) // Adjust for inverted Y-axis: down is now negative
+
             {
                 // First beam started falling inside BB
-                insideBoundingBox = true;
+                // insideBoundingBox = true;
                 // Reject it
                 point.setIsBeamValid(false);
             }
