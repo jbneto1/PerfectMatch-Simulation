@@ -25,6 +25,12 @@ constexpr double B = 0.155 / 2 + 0.015;
 constexpr double C = A + B;
 constexpr double R = 0.065 / 2;
 
-constexpr int SAFETY_THRESHOLD = 0;
+constexpr int SAFETY_THRESHOLD = 25;
+
+enum class OperationalMode
+{
+    Online,
+    Offline
+};
 
 #endif // AMR_PROJECT_CONFIG_H

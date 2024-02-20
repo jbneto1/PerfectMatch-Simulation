@@ -64,11 +64,23 @@ void Logger::createOfflineLoggers()
         << ","
         << "errorPM"
         << ","
-        << "EKFCovX"
+        << "EKFCovXX"
         << ","
-        << "EKFCovY"
+        << "EKFCovXY"
         << ","
-        << "EKFCovTheta";
+        << "EKFCovXTheta"
+        << ","
+        << "EKFCovYX"
+        << ","
+        << "EKFCovYY"
+        << ","
+        << "EKFCovYTheta"
+        << ","
+        << "EKFCovThetaX"
+        << ","
+        << "EKFCovThetaY"
+        << ","
+        << "EKFCovThetaTheta";
 
     try
     {
@@ -78,6 +90,9 @@ void Logger::createOfflineLoggers()
         fileLogger_offline->set_level(spdlog::level::trace);
         fileLogger_offline->set_pattern(std::string("%v"));
         fileLogger_offline->trace(oss.str());
+
+        oss << ","
+            << "counter";
 
         auto filename_data_semantics = fmt::format("../docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics{}.txt", current_datetime());
         auto file_sink_data_semantics = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename_data_semantics, true);
@@ -238,7 +253,7 @@ void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose,
 }
 
 void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, Matrix3d> &localization,
-                                     const std::tuple<Pose, Pose, Pose, double, Matrix3d> &localization_w_semantics)
+                                     const std::tuple<Pose, Pose, Pose, double, Matrix3d, u_int> &localization_w_semantics)
 {
     /* It is assumed that although the windows scheduler makes the reception of datagrams of simtwo not constant at 40Hz, the internal clock
     of simtwo guarantees a constant 40 Hz simulation period. Thus, the measurements happens at their due frequencies. Therefore,
@@ -290,7 +305,7 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
     fileLogger_offline->trace(oss.str());
 
     {
-        auto [EKFPose, PMPose, EKFerror, PMError, EKFCov] = localization_w_semantics;
+        auto [EKFPose, PMPose, EKFerror, PMError, EKFCov, counter] = localization_w_semantics;
 
         oss_semantics << EKFPose.getX()
                       << ","
@@ -328,7 +343,9 @@ void Logger::fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, 
                       << ","
                       << EKFCov(2, 1)
                       << ","
-                      << EKFCov(2, 2);
+                      << EKFCov(2, 2)
+                      << ","
+                      << counter;
     }
 
     fileLogger_offline_w_semantics->trace(oss_semantics.str());

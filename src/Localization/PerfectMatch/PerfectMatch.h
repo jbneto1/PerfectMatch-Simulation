@@ -2,9 +2,11 @@
 #define PERFECTMATCH_H
 
 #include <vector>
+#include <array>
 #include <cmath>
 #include <stdexcept>
 #include <chrono>
+#include <opencv4/opencv2/opencv.hpp>
 
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
@@ -16,6 +18,8 @@
 
 using Eigen::Matrix3d;
 using Eigen::Matrix4d;
+using Eigen::MatrixXd;
+using Eigen::Vector2d;
 using Eigen::Vector3d;
 using Eigen::Vector4d;
 using Eigen::VectorXd;
@@ -36,7 +40,7 @@ public:
     void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints);
     void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints, const Pose &previousPose, const Pose &currentPose);
 
-    void ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, std::vector<BoundingBox> &outliers);
+    void ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
 
     void setStep(const double stepScale) { this->stepScale = stepScale; }
 
@@ -53,7 +57,10 @@ private:
 
     void IterLaser(std::array<LaserPoint, 720> &LaserPoints);
 
-    void digitalToClassicOrigin(Vector3d &point);
+    void DrawBoundingBox(BoundingBox &box, cv::Mat &image);
+    void DrawLidarPointWithAnnotation(const Vector2d &pImgPx, cv::Mat &image, u_int index, int annotateEveryN, bool isInsideBoundingBox);
+    void DrawCenterAndCorners(cv::Mat &image);
+    bool isPointInsideBB(const Vector2d &point, const BoundingBox &box);
 
     // void CorrectDistortion(Vector3d &point);
 
@@ -68,8 +75,8 @@ private:
 
     // Constant members that represent the spatial-relationship between LiDAR Scanner and Camera in the robot
     const Vector3d t_LC;
-    const double yaw = -M_PI_2;
-    const double pitch = M_PI_2;
+    const double yaw = M_PI_2;
+    const double pitch = -M_PI_2;
     const double roll = 0;
     const Eigen::AngleAxisd Rx, Ry, Rz;
     const Matrix4d TH_LC;

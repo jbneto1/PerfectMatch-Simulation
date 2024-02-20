@@ -20,7 +20,8 @@
 #include "Localization/Localization.h"
 #include "AMRController/AMRController.h"
 
-class SimTwoInterface {
+class SimTwoInterface
+{
 public:
     using DataCallback = std::function<void(const std::string &)>;
 
@@ -32,20 +33,21 @@ public:
     std::tuple<std::array<int, 4>, Pose, std::optional<std::array<LaserPoint, 720>>>
     getSensorData(const std::string &data);
 
+    std::vector<BoundingBox> getOutliers(const std::string &yoloBuffer);
+
     // IO Operations
     void runIoContext();
     void runIoContextReadyMsg();
     void stopIosContexts();
     asio::io_context &getIoContext();
-    
+
     std::string getLatestYoloData();
-    
+
     // Network Communication
     void sendWheelSpeeds(double frontLeftSpeed, double frontRightSpeed, double backLeftSpeed, double backRightSpeed);
     void registerCallback(DataCallback callback);
 
 private:
-
     void waitForReadyMessage();
     void sendAckMessage();
 
@@ -65,7 +67,6 @@ private:
     std::thread yoloThread;
     asio::ip::udp::socket yolo_socket;
 
-
     asio::io_context io_context;
     asio::ip::udp::socket sim_socket;
     asio::ip::udp::socket sync_socket;
@@ -79,11 +80,10 @@ private:
     AMRController &controller;
     bool run;
 
-
     void logFrequencySimTwo();
     void logFrequencyYOLO();
     std::chrono::steady_clock::time_point lastTime_simtwo;
     std::chrono::steady_clock::time_point lastTime_yolo;
 };
 
-#endif //PERFECTMATCH_SIMULATION_SIMTWOINTERFACE_H
+#endif // PERFECTMATCH_SIMULATION_SIMTWOINTERFACE_H

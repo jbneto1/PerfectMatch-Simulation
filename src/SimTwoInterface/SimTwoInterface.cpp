@@ -63,6 +63,8 @@ void SimTwoInterface::registerCallback(DataCallback callback)
 void SimTwoInterface::startSimReceive()
 {
 
+    logger.warn("start sim received called");
+
     logFrequencySimTwo();
 
     sim_socket.async_receive_from(
@@ -70,6 +72,7 @@ void SimTwoInterface::startSimReceive()
         sender_endpoint,
         [this](std::error_code ec, std::size_t bytes_received)
         {
+            logger.warn("message RECEIVED");
             handleReceive(ec, bytes_received);
             memset(simRecvBuffer.data(), 0, bytes_received);
             if (run)
@@ -98,7 +101,59 @@ void SimTwoInterface::startYoloReceive()
         });
 }
 
-// Implement getLatestYoloData
+std::vector<BoundingBox> SimTwoInterface::getOutliers(const std::string &yoloBuffer)
+{
+    std::vector<BoundingBox> boundingBoxes;
+    std::istringstream iss(yoloBuffer);
+    std::string token;
+    std::vector<std::string> tokens;
+
+    // Tokenize the yoloBuffer string
+    while (std::getline(iss, token, ','))
+    {
+        tokens.push_back(token);
+    }
+
+    try
+    {
+        size_t currentIndex = 0; // Start from the beginning of the tokens
+
+        // Check if there is an 'N' token indicating the start of bounding box data
+        if ((currentIndex < tokens.size()) && (tokens[currentIndex] == "N"))
+        {
+            size_t bboxCount = std::stoi(tokens[++currentIndex]);
+            currentIndex++; // Move past the bounding box count
+
+            for (size_t i = 0; i < bboxCount; ++i)
+            {
+                if (currentIndex + 5 > tokens.size())
+                {
+                    throw std::runtime_error("Not enough tokens for bounding box data.");
+                }
+
+                // Parse bounding box data
+                int class_id = std::stoi(tokens[currentIndex++].substr(1));
+                double conf = std::stod(tokens[currentIndex++]);
+                double x = std::stod(tokens[currentIndex++]);
+                double y = std::stod(tokens[currentIndex++]);
+                double width = std::stod(tokens[currentIndex++]);
+                double height = std::stod(tokens[currentIndex++]);
+
+                boundingBoxes.push_back(BoundingBox{class_id, conf, x, y, width, height});
+            }
+        }
+
+        return boundingBoxes; // Return the parsed bounding boxes
+    }
+    catch (const std::exception &e)
+    {
+        logger.error("BB parsing error from yoloBuffer. Exception: " + std::string(e.what()));
+        return {}; // Return an empty vector if there is a parsing error
+    }
+}
+
+// DEPRECATED
+//  Implement getLatestYoloData
 std::string SimTwoInterface::getLatestYoloData()
 {
     std::lock_guard<std::mutex> guard(yoloDataMutex);
@@ -163,6 +218,7 @@ void SimTwoInterface::handleReceive(const asio::error_code &error, std::size_t /
         this->logger.trace("Received data without error. Handler called.");
         if (dataCallback)
         {
+            logger.warn(simRecvBuffer.data());
             dataCallback(std::string(simRecvBuffer.data()));
         }
     }
@@ -336,7 +392,7 @@ void SimTwoInterface::logFrequencySimTwo()
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime_simtwo);
         double freq = 1E6 / double(duration.count());
         localization.setFreq(freq);
-        logger.info("SimTwo Comm[Hz]: " + formatWithTwoDecimals(freq));
+        logger.debug("SimTwo Comm[Hz]: " + formatWithTwoDecimals(freq));
     }
     lastTime_simtwo = now;
 }
@@ -350,7 +406,7 @@ void SimTwoInterface::logFrequencyYOLO()
     {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime_yolo);
         double freq = 1E6 / double(duration.count());
-        logger.debug("YOLO Comm[Hz]: " + formatWithTwoDecimals(freq));
+        logger.trace("YOLO Comm[Hz]: " + formatWithTwoDecimals(freq));
     }
     lastTime_yolo = now;
 }

@@ -12,8 +12,8 @@ import time
 running = True
 
 # NETWORK DEFINES for SIMTWO comm
-# ip = "192.168.1.183" # WINDOWS IP HOME
-ip = "193.137.108.124" # WINDOWS IP CEDRI
+# ip = "172.20.10.4" # WINDOWS IP HOME
+ip = "193.137.108.129" # WINDOWS IP CEDRI
 port_simtwo = "9899"
 
 #NETWORK DEFINES FOR READY MSG (WSL2 CODES)
@@ -40,7 +40,7 @@ model = YOLO('yolov8n.pt').to(device)
 # ZMQ setup
 context = zmq.Context()
 socket = context.socket(zmq.SUB)
-socket.connect(f"tcp://{ip}:{port_simtwo}") #windows's IP CeDRI
+socket.connect(f"tcp://{ip}:{port_simtwo}")
 socket.setsockopt_string(zmq.SUBSCRIBE, '')
 socket.setsockopt(zmq.RCVTIMEO, 500)  # Set to non-blocking with a timeout of ms
 
@@ -105,7 +105,7 @@ try:
             # results = model([decoded], stream=True, classes=0, verbose=False)
             
             # Run YOLO inference with summary info
-            results = model([decoded], stream=True, classes=0)
+            results = model([decoded], stream=True, classes=0, verbose=False)
             
             # Get the current timestamp
             now = datetime.datetime.now()

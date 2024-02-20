@@ -23,13 +23,12 @@ void OfflineAnalysis::parseLine(const std::string &line)
     auto [encoders, GT_pose, optLaserReadings, yoloData, timestamp] = extractDataFromLine(line);
 
     std::optional<std::array<LaserPoint, 720UL>> optLaserReadings_semantics;
-
     std::array<int, 4UL> encoders_semantics;
+    Pose GT_pose_semantics;
+    u_int counter = 0;
 
     encoders_semantics = encoders;
-
-    Pose GT_pose_semantics = GT_pose;
-
+    GT_pose_semantics = GT_pose;
     optLaserReadings_semantics = *optLaserReadings;
 
     localization.getPM().ProcessLaserPoints(optLaserReadings.value());
@@ -46,7 +45,15 @@ void OfflineAnalysis::parseLine(const std::string &line)
 
     // Process semantic interpretation
     localization_w_semantics.getPM().ProcessLaserPoints(optLaserReadings_semantics.value());
-    localization_w_semantics.getPM().ProcessBBOutliers(optLaserReadings_semantics.value(), yoloData.value());
+
+    try
+    {
+        localization_w_semantics.getPM().ProcessBBOutliers(optLaserReadings_semantics.value(), yoloData.value(), counter);
+    }
+    catch (std::exception &e)
+    {
+        logger.warn("Exception caught processing outliers: " + std::string(e.what()));
+    }
 
     // With semantic interpretation
     localization_w_semantics.processData_w_PM(encoders_semantics, GT_pose_semantics, optLaserReadings_semantics.value());
@@ -56,7 +63,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
     error_PM_semantics = localization_w_semantics.getPM().getError();
     EKF_cov_semantics = localization_w_semantics.getEKF().getPk();
 
-    auto offlineData_semantics = std::make_tuple(EKF_pose_semantics, PM_pose_semantics, error_EKF_semantics, error_PM_semantics, EKF_cov_semantics);
+    auto offlineData_semantics = std::make_tuple(EKF_pose_semantics, PM_pose_semantics, error_EKF_semantics, error_PM_semantics, EKF_cov_semantics, counter);
 
     // Log the data
     logger.fileLog_offlineAnalysis(offlineData, offlineData_semantics);

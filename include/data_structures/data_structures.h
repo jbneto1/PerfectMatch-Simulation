@@ -97,14 +97,15 @@ private:
     double y;
     double std_dev;
     bool valid;
+    u_int index;
 
     double dx, dy, dtheta;
 
 public:
-    LaserPoint() : d(0), angle(0), x(0), y(0), std_dev(1), valid(true), dx(0), dy(0), dtheta(0) {}
+    LaserPoint() : d(0), angle(0), x(0), y(0), std_dev(1), valid(true), index(-1), dx(0), dy(0), dtheta(0) {}
 
-    LaserPoint(double d, double angle, double x, double y, double std_dev = 1, bool beamValid = true) : d(d), angle(angle), x(x), y(y),
-                                                                                                        std_dev(std_dev), valid(beamValid), dx(0), dy(0), dtheta(0) {}
+    LaserPoint(double d, double angle, double x, double y, u_int idx, double std_dev = 1, bool beamValid = true) : d(d), angle(angle), x(x), y(y),
+                                                                                                                   std_dev(std_dev), valid(beamValid), index(idx), dx(0), dy(0), dtheta(0) {}
 
     double getD() const { return d; }
 
@@ -117,6 +118,10 @@ public:
     double getStdDev() const { return std_dev; }
 
     bool getIsBeamValid() const { return valid; };
+
+    u_int getBeamIndex() const { return index; };
+
+    void setBeamIndex(u_int idx) { this->index = idx; };
 
     void setIsBeamValid(bool valid) { this->valid = valid; };
 

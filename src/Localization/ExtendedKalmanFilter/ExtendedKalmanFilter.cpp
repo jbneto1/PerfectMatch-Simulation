@@ -4,9 +4,9 @@
 
 #include "ExtendedKalmanFilter.h"
 
-ExtendedKalmanFilter::ExtendedKalmanFilter(const double dtEKF) : Qk((Matrix3d() << 5, 0, 0,
-                                                                     0, 5, 0,
-                                                                     0, 0, 5)
+ExtendedKalmanFilter::ExtendedKalmanFilter(const double dtEKF) : Qk((Matrix3d() << 0.00005, 0, 0,
+                                                                     0, 0.00005, 0,
+                                                                     0, 0, 0.00005)
                                                                         .finished()),
                                                                  dt(dtEKF)
 {
@@ -21,7 +21,7 @@ ExtendedKalmanFilter::ExtendedKalmanFilter(const double dtEKF) : Qk((Matrix3d() 
     // Initialization Noise covariance
     Hk_PM = Matrix3d::Identity(3, 3);
     Rk_PM = Matrix3d::Identity(3, 3);
-    Rk_PM.diagonal() << 100, 100, 100;
+    Rk_PM.diagonal() << 0.001, 0.001, 0.001;
 }
 
 Pose ExtendedKalmanFilter::getPose()

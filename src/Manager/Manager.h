@@ -19,11 +19,12 @@
 #include "AMRController/AMRController.h"
 #include "Visualizer/Visualizer.h"
 #include "OfflineAnalysis/OfflineAnalysis.h"
+#include "config/config.h"
 
 class Manager
 {
 public:
-    Manager(Logger &logger);
+    Manager(Logger &logger, OperationalMode mode);
 
     ~Manager();
 
@@ -32,11 +33,12 @@ public:
     void runOfflineAnalysis(const std::string &logFilePath);
 
 private:
+    OperationalMode mode;
     Logger &logger;
     AMRController controller;
     Localization localization, localization_w_semantics;
     SimTwoInterface interface;
-    Visualizer visualizer;
+    std::unique_ptr<Visualizer> visualizer;
     std::thread visThread;
     asio::any_io_executor exec;
 
@@ -47,6 +49,7 @@ private:
     bool logData;
 
     void setupSignalHandler();
+    void setupVisualizationThread();
     void stop();
 
     void onDataReceived(const std::string &data, SimTwoInterface &interface, Localization &localization,

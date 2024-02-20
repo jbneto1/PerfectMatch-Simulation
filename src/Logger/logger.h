@@ -37,7 +37,7 @@ public:
 
     void fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, const std::string &yoloData);
     void fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, Matrix3d> &localization,
-                                 const std::tuple<Pose, Pose, Pose, double, Matrix3d> &localization_w_semantics);
+                                 const std::tuple<Pose, Pose, Pose, double, Matrix3d, u_int> &localization_w_semantics);
     void createOfflineLoggers();
 
     void createOnlineLoggers();

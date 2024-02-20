@@ -2,13 +2,14 @@
 
 #include "Manager.h"
 
-Manager::Manager(Logger &logger)
+Manager::Manager(Logger &logger, OperationalMode mode)
     : logger(logger),
+      mode(mode),
       controller(logger),
       localization(logger),
       localization_w_semantics(logger),
       interface(logger, localization, controller),
-      visualizer(localization, PM_m),
+      visualizer(nullptr),
       visThread(),
       signals_(interface.getIoContext()),
       CtrlCPromise(),
@@ -18,13 +19,11 @@ Manager::Manager(Logger &logger)
     logger.trace("SIGINT signal handler registered with asio.");
     // Start the visualization thread
     setupSignalHandler();
-    logger.trace("Thread T2 instantiated.");
-    visThread = std::thread(&Visualizer::render, &visualizer);
+    if (mode == OperationalMode::Online)
     {
-        std::lock_guard<std::mutex> lock(visualizer.readinessMutex);
-        visualizer.isReadyForRendering = true;
+        visualizer = std::make_unique<Visualizer>(localization, PM_m);
+        setupVisualizationThread();
     }
-    visualizer.readinessCV.notify_one();
 }
 
 Manager::~Manager()
@@ -32,8 +31,22 @@ Manager::~Manager()
     logger.trace("Manager destructor called.");
     if (visThread.joinable())
     {
-        visualizer.stop(); // stop the visualization thread
+        visualizer->stop(); // stop the visualization thread
         visThread.join();
+    }
+}
+
+void Manager::setupVisualizationThread()
+{
+    if (visualizer)
+    {
+        logger.trace("Thread T2 instantiated.");
+        visThread = std::thread(&Visualizer::render, visualizer.get());
+        {
+            std::lock_guard<std::mutex> lock(visualizer->readinessMutex);
+            visualizer->isReadyForRendering = true;
+        }
+        visualizer->readinessCV.notify_one();
     }
 }
 
@@ -91,32 +104,33 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
     logger.trace("Data received. Handler callback called.");
     auto [encs, GT_pose, optLaserReadings] = interface.getSensorData(data);
     std::string yoloData = interface.getLatestYoloData();
+    std::vector<BoundingBox> outliers = interface.getOutliers(yoloData);
+    u_int counter = 0;
     // Logging the sensors' data
 
     if (logData)
         logger.fileLog_bag(encs, GT_pose, optLaserReadings, yoloData);
 
     localization.getPM().ProcessLaserPoints(optLaserReadings.value());
+    localization.getPM().ProcessBBOutliers(optLaserReadings.value(), outliers, counter);
     localization.processData_w_PM(encs, GT_pose, optLaserReadings.value());
 
-    visualizer.update(GT_pose, localization.getPose(), optLaserReadings);
+    visualizer->update(GT_pose, localization.getPose(), optLaserReadings);
     logger.trace("Processing Perfect Match.");
 }
 
 void Manager::runOfflineAnalysis(const std::string &logFilePath)
 {
     // Create offline analysis log files.
-    logger.createOfflineLoggers();
-
     std::string relativePath = "../";
     relativePath.append(logFilePath);
-
     // Check if the file exists
     if (!std::filesystem::exists(relativePath))
     {
         logger.error("Failed opening the file. It does not exist: " + std::string(relativePath));
         return;
     }
+    logger.createOfflineLoggers();
 
     logger.info("Processing log file at: " + std::string(relativePath));
     offlineAnalysis.processLogFile(relativePath);
