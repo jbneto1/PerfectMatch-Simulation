@@ -20,56 +20,61 @@ void OfflineAnalysis::processLogFile(const std::string &filePath)
 
 void OfflineAnalysis::parseLine(const std::string &line)
 {
-    auto [encoders, GT_pose, optLaserReadings, yoloData, timestamp] = extractDataFromLine(line);
-
-    std::optional<std::array<LaserPoint, 720UL>> optLaserReadings_semantics;
-    std::array<int, 4UL> encoders_semantics;
-    Pose GT_pose_semantics;
-    u_int counter = 0;
-
-    encoders_semantics = encoders;
-    GT_pose_semantics = GT_pose;
-    optLaserReadings_semantics = *optLaserReadings;
-
-    localization.getPM().ProcessLaserPoints(optLaserReadings.value());
-
-    // Without semantic interpretation
-    localization.processData_w_PM(encoders, GT_pose, optLaserReadings.value());
-    EKF_pose = localization.getPose();
-    PM_pose = localization.getPM().getPose();
-    error_EKF = EKF_pose - GT_pose;
-    error_PM = localization.getPM().getError();
-    EKF_cov = localization.getEKF().getPk();
-
-    auto offlineData = std::make_tuple(EKF_pose, PM_pose, error_EKF, error_PM, EKF_cov);
-
-    // Process semantic interpretation
-    localization_w_semantics.getPM().ProcessLaserPoints(optLaserReadings_semantics.value());
-
     try
     {
-        localization_w_semantics.getPM().ProcessBBOutliers(optLaserReadings_semantics.value(), yoloData.value(), counter);
+        auto [encoders, GT_pose, optLaserReadings, yoloData, timestamp] = extractDataFromLine(line);
+
+        std::optional<std::array<LaserPoint, 720UL>> optLaserReadings_semantics;
+        std::array<int, 4UL> encoders_semantics;
+        Pose GT_pose_semantics;
+        u_int counter = 0;
+
+        encoders_semantics = encoders;
+        GT_pose_semantics = GT_pose;
+        optLaserReadings_semantics = *optLaserReadings;
+
+        localization.getPM().ProcessLaserPoints(optLaserReadings.value());
+
+        // Without semantic interpretation
+        localization.processData_w_PM(encoders, GT_pose, optLaserReadings.value());
+        EKF_pose = localization.getPose();
+        PM_pose = localization.getPM().getPose();
+        error_EKF = EKF_pose - GT_pose;
+        error_PM = localization.getPM().getError();
+        EKF_cov = localization.getEKF().getPk();
+
+        auto offlineData = std::make_tuple(EKF_pose, PM_pose, error_EKF, error_PM, EKF_cov);
+
+        // Process semantic interpretation
+        localization_w_semantics.getPM().ProcessLaserPoints(optLaserReadings_semantics.value());
+
+        try
+        {
+            localization_w_semantics.getPM().ProcessBBOutliers(optLaserReadings_semantics.value(), yoloData.value(), counter);
+        }
+        catch (std::exception &e)
+        {
+            logger.warn("Exception caught processing outliers: " + std::string(e.what()));
+        }
+
+        // With semantic interpretation
+        localization_w_semantics.processData_w_PM(encoders_semantics, GT_pose_semantics, optLaserReadings_semantics.value());
+        EKF_pose_semantics = localization_w_semantics.getPose();
+        PM_pose_semantics = localization_w_semantics.getPM().getPose();
+        error_EKF_semantics = EKF_pose_semantics - GT_pose_semantics;
+        error_PM_semantics = localization_w_semantics.getPM().getError();
+        EKF_cov_semantics = localization_w_semantics.getEKF().getPk();
+
+        auto offlineData_semantics = std::make_tuple(EKF_pose_semantics, PM_pose_semantics, error_EKF_semantics, error_PM_semantics, EKF_cov_semantics, counter);
+
+        // Log the data
+        logger.fileLog_offlineAnalysis(offlineData, offlineData_semantics);
     }
     catch (std::exception &e)
     {
-        logger.warn("Exception caught processing outliers: " + std::string(e.what()));
+        logger.error("Exception caught in parseLine method: " + std::string(e.what()));
+        return;
     }
-
-    // With semantic interpretation
-    localization_w_semantics.processData_w_PM(encoders_semantics, GT_pose_semantics, optLaserReadings_semantics.value());
-    EKF_pose_semantics = localization_w_semantics.getPose();
-    PM_pose_semantics = localization_w_semantics.getPM().getPose();
-    error_EKF_semantics = EKF_pose_semantics - GT_pose_semantics;
-    error_PM_semantics = localization_w_semantics.getPM().getError();
-    EKF_cov_semantics = localization_w_semantics.getEKF().getPk();
-
-    auto offlineData_semantics = std::make_tuple(EKF_pose_semantics, PM_pose_semantics, error_EKF_semantics, error_PM_semantics, EKF_cov_semantics, counter);
-
-    // Log the data
-    logger.fileLog_offlineAnalysis(offlineData, offlineData_semantics);
-
-    // Update the visualizer with the new data if necessary
-    // visualizer.update(GT_pose, localization.getPose(), optLaserReadings);
 }
 
 std::tuple<std::array<int, 4>, Pose, std::optional<std::array<LaserPoint, 720>>, std::optional<std::vector<BoundingBox>>, long long>

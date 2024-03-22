@@ -21,7 +21,7 @@ Manager::Manager(Logger &logger, OperationalMode mode)
     setupSignalHandler();
     if (mode == OperationalMode::Online)
     {
-        visualizer = std::make_unique<Visualizer>(localization, PM_m);
+        visualizer = std::make_unique<Visualizer>(localization, localization_w_semantics, PM_m, logger);
         setupVisualizationThread();
     }
 }
@@ -38,9 +38,10 @@ Manager::~Manager()
 
 void Manager::setupVisualizationThread()
 {
+    logger.info("Setup Vis Thread called.");
     if (visualizer)
     {
-        logger.trace("Thread T2 instantiated.");
+        logger.info("Thread T2 instantiated.");
         visThread = std::thread(&Visualizer::render, visualizer.get());
         {
             std::lock_guard<std::mutex> lock(visualizer->readinessMutex);
@@ -100,23 +101,53 @@ void Manager::run(const bool logData)
 void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface, Localization &localization,
                              AMRController &controller, Logger &logger)
 {
-
     logger.trace("Data received. Handler callback called.");
-    auto [encs, GT_pose, optLaserReadings] = interface.getSensorData(data);
-    std::string yoloData = interface.getLatestYoloData();
-    std::vector<BoundingBox> outliers = interface.getOutliers(yoloData);
-    u_int counter = 0;
-    // Logging the sensors' data
+    try
+    {
+        // Attempt to parse sensor data from the incoming data string
+        auto [encs, GT_pose, optLaserReadings] = interface.getSensorData(data);
 
-    if (logData)
-        logger.fileLog_bag(encs, GT_pose, optLaserReadings, yoloData);
+        auto optLaserReadings_semantics = optLaserReadings;
 
-    localization.getPM().ProcessLaserPoints(optLaserReadings.value());
-    localization.getPM().ProcessBBOutliers(optLaserReadings.value(), outliers, counter);
-    localization.processData_w_PM(encs, GT_pose, optLaserReadings.value());
+        // Handle optional laser readings safely
+        if (optLaserReadings)
+        {
+            // Only proceed with processing if laser readings are available
+            std::string yoloData = interface.getLatestYoloData();
+            std::vector<BoundingBox> outliers = interface.getOutliers(yoloData);
+            unsigned int counter = 0; // Use standard type
 
-    visualizer->update(GT_pose, localization.getPose(), optLaserReadings);
-    logger.trace("Processing Perfect Match.");
+            // Logging the sensors' data, check if logData is declared and true
+            if (logData) // Assuming logData is declared somewhere accessible
+            {
+                logger.fileLog_bag(encs, GT_pose, optLaserReadings, yoloData);
+            }
+
+            localization.getPM().ProcessLaserPoints(optLaserReadings.value());
+            localization.processData_w_PM(encs, GT_pose, optLaserReadings.value());
+
+            localization_w_semantics.getPM().ProcessLaserPoints(optLaserReadings_semantics.value()); // TODO: if there is no new lidar data, maintain the projected lidar pose points from the previous robot pose
+            localization_w_semantics.getPM().ProcessBBOutliers(optLaserReadings_semantics.value(), outliers, counter);
+            localization_w_semantics.processData_w_PM(encs, GT_pose, optLaserReadings_semantics.value());
+
+            if (visualizer) // Ensure visualizer is not nullptr before dereferencing
+            {
+                visualizer->update(GT_pose, localization.getPose(), optLaserReadings, localization_w_semantics.getPose(),
+                                   optLaserReadings_semantics, counter); // TODO: draw counter in visaualizer component
+            }
+            logger.trace("Processing Perfect Match.");
+        }
+        else
+        {
+            logger.error("No laser readings available in the received data.");
+        }
+    }
+    catch (const std::exception &e)
+    {
+        // Handle any exceptions thrown during processing
+        logger.error("Exception caught: " + std::string(e.what()));
+        return;
+    }
 }
 
 void Manager::runOfflineAnalysis(const std::string &logFilePath)

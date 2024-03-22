@@ -84,6 +84,8 @@ private:
     void logFrequencyYOLO();
     std::chrono::steady_clock::time_point lastTime_simtwo;
     std::chrono::steady_clock::time_point lastTime_yolo;
+
+    std::map<int, std::vector<std::string>> packetBuffer; // Key: Packet Set ID, Value: Vector of packet data
 };
 
 #endif // PERFECTMATCH_SIMULATION_SIMTWOINTERFACE_H

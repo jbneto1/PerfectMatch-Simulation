@@ -25,7 +25,7 @@ constexpr double B = 0.155 / 2 + 0.015;
 constexpr double C = A + B;
 constexpr double R = 0.065 / 2;
 
-constexpr int SAFETY_THRESHOLD = 25;
+constexpr int SAFETY_THRESHOLD = 5;
 
 enum class OperationalMode
 {

@@ -8,11 +8,11 @@
 int main(int argc, char *argv[])
 {
     OperationalMode mode = OperationalMode::Online;
-    std::string logPath = "docs/logs/sensor_data_2024-02-13_15-04-04.txt";
+    std::string logPath = "docs/logs/sensor_data_2024-02-29_12-18-46.txt";
 
     try
     {
-        Logger &logger = Logger::getInstance(spdlog::level::debug);
+        Logger &logger = Logger::getInstance(spdlog::level::warn);
         logger.setPattern(std::string("[%^%l%$] %v"));       // Set logging pattern
         logger.trace("Logger instantiated and pattern set"); // Add logging
         Manager manager = Manager(logger, mode);             // Create manager with specified control cycle and logger
@@ -20,11 +20,12 @@ int main(int argc, char *argv[])
 
         if (mode == OperationalMode::Online)
         {
-            logger.warn("online");
+            logger.info("Running in online mode.");
             manager.run(stringToBool(argv[1]));
         }
         else if (mode == OperationalMode::Offline)
         {
+            logger.info("Running in offline mode.");
             manager.runOfflineAnalysis(logPath);
         }
     }

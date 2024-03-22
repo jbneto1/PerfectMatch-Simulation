@@ -46,6 +46,10 @@ public:
 
     double getStep() const { return this->stepScale; }
 
+    void setSafetyThreshold(const int factor) { this->safety_threshold = factor; }
+
+    int getSafetyThreshold() const { return this->safety_threshold; }
+
 private:
     void RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st, double ct);
 
@@ -85,6 +89,7 @@ private:
             0, 0, 1]*/
     const Matrix3d K;
     const VectorXd distCoeffs;
+    int safety_threshold;
 };
 
 #endif // PERFECTMATCH_H

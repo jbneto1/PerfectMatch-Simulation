@@ -24,7 +24,8 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
                                                                                                        2.37389148e-04,
                                                                                                        -6.17424434e-05,
                                                                                                        -1.10922867e-03)
-                                                                                                          .finished())
+                                                                                                          .finished()),
+                                                                                           safety_threshold(SAFETY_THRESHOLD)
 {
     // TH_LC rotation convention is z-y'-x'' therefore Rz*Ry*Rx.
     logger.debug(
@@ -90,13 +91,14 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints)
             double gradX = map.getGradientX(u, v);
             double gradY = map.getGradientY(u, v);
 
+            // FIXME: the units of the gradients are in pixels / mm, but the pose is in meters. is that okay?
             dx -= gradX / laserPoint.getStdDev();
             dy += gradY / laserPoint.getStdDev();
             dtheta -= gradX / laserPoint.getStdDev() * (-laserPoint.getX() * st - laserPoint.getY() * ct) - gradY / laserPoint.getStdDev() * (laserPoint.getX() * ct - laserPoint.getY() * st);
             laserPoint.setDx(dx);
             laserPoint.setDy(dy);
             laserPoint.setDtheta(dtheta);
-            pmError += map.getDistance(u, v);
+            pmError += map.getDistance(u, v); // FIXME: this is in pixels, but can be interpreted also as mm
             ++n;
         }
     }
@@ -125,8 +127,9 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints)
 
         if (point.getD() <= 0)
         {
-            idx++;
             point.setIsBeamValid(false);
+            point.setBeamIndex(idx);
+            idx++;
             continue;
         }
         // CCW rotation
@@ -267,21 +270,21 @@ void PerfectMatch::DrawBoundingBox(BoundingBox &box, cv::Mat &image)
     // Draw the actual bounding box in red
     cv::rectangle(image, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(0, 0, 255), 2);
 
-    // Calculate and draw the expanded bounding box due to SAFETY_THRESHOLD in blue
-    int safety_x1 = std::max(0, x1 - SAFETY_THRESHOLD);
-    int safety_y1 = std::max(0, y1 - SAFETY_THRESHOLD);
-    int safety_x2 = std::min(image.cols - 1, x2 + SAFETY_THRESHOLD);
-    int safety_y2 = std::min(image.rows - 1, y2 + SAFETY_THRESHOLD);
+    // Calculate and draw the expanded bounding box due to safety_threshold in blue
+    int safety_x1 = std::max(0, x1 - safety_threshold);
+    int safety_y1 = std::max(0, y1 - safety_threshold);
+    int safety_x2 = std::min(image.cols - 1, x2 + safety_threshold);
+    int safety_y2 = std::min(image.rows - 1, y2 + safety_threshold);
 
     cv::rectangle(image, cv::Point(safety_x1, safety_y1), cv::Point(safety_x2, safety_y2), cv::Scalar(255, 0, 0), 1);
 }
 
 bool PerfectMatch::isPointInsideBB(const Vector2d &point, const BoundingBox &box)
 {
-    if (point(0) >= (box.x - box.width / 2 - SAFETY_THRESHOLD) &&
-        point(0) <= (box.x + box.width / 2 + SAFETY_THRESHOLD) &&
-        point(1) >= (box.y - box.height / 2 - SAFETY_THRESHOLD) &&
-        point(1) <= (box.y + box.height / 2 + SAFETY_THRESHOLD))
+    if (point(0) >= (box.x - box.width / 2 - safety_threshold) &&
+        point(0) <= (box.x + box.width / 2 + safety_threshold) &&
+        point(1) >= (box.y - box.height / 2 - safety_threshold) &&
+        point(1) <= (box.y + box.height / 2 + safety_threshold))
     {
         return true;
     }
@@ -330,17 +333,19 @@ void PerfectMatch::DrawLidarPointWithAnnotation(const Vector2d &pImgPx, cv::Mat 
 
 void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
 {
-    counter = 0;
-    int annotateEveryN = 5;
-
     cv::Mat image(480, 640, CV_8UC3);       // 480 rows x 640 columns 8 bits (0-255) 3 channels (RGB)
     image.setTo(cv::Scalar(255, 255, 255)); // Set the image to white
     DrawCenterAndCorners(image);
+    counter = 0;
+    int annotateEveryN = 5;
 
     // Draw all bounding boxes on the image
-    for (auto &box : outliers)
+    if (!outliers.empty())
     {
-        DrawBoundingBox(box, image);
+        for (auto &box : outliers)
+        {
+            DrawBoundingBox(box, image);
+        }
     }
 
     for (auto &point : LaserPoints)
@@ -360,11 +365,15 @@ void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, s
         Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
 
         // Check if the point falls inside any bounding box
-        bool insideAnyBoundingBox = std::any_of(outliers.begin(), outliers.end(),
-                                                [&pImgPx, this](const BoundingBox &box)
-                                                {
-                                                    return isPointInsideBB(pImgPx, box);
-                                                });
+        bool insideAnyBoundingBox = false;
+        if (!outliers.empty())
+        {
+            insideAnyBoundingBox = std::any_of(outliers.begin(), outliers.end(),
+                                               [&pImgPx, this](const BoundingBox &box)
+                                               {
+                                                   return isPointInsideBB(pImgPx, box);
+                                               });
+        }
 
         if (insideAnyBoundingBox)
         {
@@ -375,7 +384,7 @@ void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, s
         DrawLidarPointWithAnnotation(pImgPx, image, point.getBeamIndex(), annotateEveryN, insideAnyBoundingBox);
     }
     cv::imshow("Bounding Boxes and Lidar Points", image);
-    int key = cv::waitKey(5) & 0xFF;
+    int key = cv::waitKey(1) & 0xFF;
     if (key == 27)
     { // Adjusted for observed codes
         exit(0);

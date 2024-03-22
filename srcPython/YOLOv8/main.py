@@ -12,8 +12,8 @@ import time
 running = True
 
 # NETWORK DEFINES for SIMTWO comm
-# ip = "172.20.10.4" # WINDOWS IP HOME
-ip = "193.137.108.129" # WINDOWS IP CEDRI
+ip = "192.168.1.79" # WINDOWS IP HOME
+# ip = "193.137.108.252" # WINDOWS IP CEDRI
 port_simtwo = "9899"
 
 #NETWORK DEFINES FOR READY MSG (WSL2 CODES)
@@ -100,12 +100,16 @@ try:
             decoded = decoded.reshape((480, 640, 4))
             decoded = cv2.flip(decoded, 0)
             decoded = np.delete(decoded, 3, 2)
+            # print(decoded.shape)
+            # decoded = cv2.cvtColor(decoded, cv2.COLOR_RGB2GRAY)
+            # decoded = cv2.cvtColor(decoded, cv2.COLOR_GRAY2RGB)
+            # print(decoded.shape)
 
             # Run YOLO inference without summary info
             # results = model([decoded], stream=True, classes=0, verbose=False)
             
             # Run YOLO inference with summary info
-            results = model([decoded], stream=True, classes=0, verbose=False)
+            results = model([decoded], stream=True, classes=0)
             
             # Get the current timestamp
             now = datetime.datetime.now()
@@ -130,6 +134,9 @@ try:
                     if log_str:
                         # print(f"Size in bytes: {len(log_str.encode('utf-8'))}")
                         send_yolo_data(log_str)
+                else:
+                    log_str = 'NoDetections'
+                    send_yolo_data(log_str)
                 
             cv2.imshow("YOLOv8.1 Videostream", annotated_frame)
             

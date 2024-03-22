@@ -12,6 +12,10 @@ if(SANITIZE_THREAD)
     link_libraries(-fsanitize=thread)
 endif()
 
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    add_definitions(-DDEBUG)
+endif()
+
 # Add the subdirectories that contain the CMakeLists.txt for each component
 add_subdirectory(${PROJECT_SOURCE_DIR}/include/utils)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/SimTwoInterface)
@@ -21,7 +25,6 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/Logger)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/Manager)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/Visualizer)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/OfflineAnalysis)
-add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
 
 # Create the main executable
 add_executable(${PROJECT_NAME} src/main.cpp)

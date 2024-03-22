@@ -2,7 +2,7 @@
 
 # These packages are required by the Visualizer component
 find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
+find_package(glfw3 3.3.9 REQUIRED)
 
 # List of source files for the Visualizer library
 set(VISUALIZER_SRC
