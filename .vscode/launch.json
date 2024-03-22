@@ -2,8 +2,8 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Python Script",
-            "type": "python",
+            "name": "Debug YOLO Script",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/srcPython/YOLOv8/main.py",
             "cwd": "${workspaceFolder}/srcPython/YOLOv8",
@@ -12,6 +12,39 @@
                 "reveal": "always",
                 "panel": "shared"
             }
-        }
+        },
+        {
+            "name": "Debug Plots Script",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/srcPython/dataAnalysisOffline/plots.py",
+            "cwd": "${workspaceFolder}/",
+            "console": "integratedTerminal",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "name": "C++ Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/PM_project",
+            "args": ["false"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "",
+            "miDebuggerPath": "/usr/bin/gdb"
+        }        
     ]
 }

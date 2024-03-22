@@ -5,21 +5,23 @@
 
 #include <tuple>
 #include <array>
-#include <asio.hpp>
 #include <thread>
-#include <Logger/logger.h>
-#include <config/config.h>
 #include <iostream>
 #include <iterator>
 #include <algorithm>
 #include <sstream>
-#include <Localization/Localization.h>
-#include "AMRController/AMRController.h"
 #include <chrono>
 #include <optional>
-#include "utils/utils.h"
 
-class SimTwoInterface {
+#include "standalone_asio/asio.hpp"
+
+#include "Logger/logger.h"
+#include "config/config.h"
+#include "Localization/Localization.h"
+#include "AMRController/AMRController.h"
+
+class SimTwoInterface
+{
 public:
     using DataCallback = std::function<void(const std::string &)>;
 
@@ -31,19 +33,21 @@ public:
     std::tuple<std::array<int, 4>, Pose, std::optional<std::array<LaserPoint, 720>>>
     getSensorData(const std::string &data);
 
+    std::vector<BoundingBox> getOutliers(const std::string &yoloBuffer);
+
     // IO Operations
     void runIoContext();
+    void runIoContextReadyMsg();
     void stopIosContexts();
     asio::io_context &getIoContext();
-    
+
     std::string getLatestYoloData();
-    
+
     // Network Communication
     void sendWheelSpeeds(double frontLeftSpeed, double frontRightSpeed, double backLeftSpeed, double backRightSpeed);
     void registerCallback(DataCallback callback);
 
 private:
-
     void waitForReadyMessage();
     void sendAckMessage();
 
@@ -63,7 +67,6 @@ private:
     std::thread yoloThread;
     asio::ip::udp::socket yolo_socket;
 
-
     asio::io_context io_context;
     asio::ip::udp::socket sim_socket;
     asio::ip::udp::socket sync_socket;
@@ -77,11 +80,12 @@ private:
     AMRController &controller;
     bool run;
 
-
     void logFrequencySimTwo();
     void logFrequencyYOLO();
     std::chrono::steady_clock::time_point lastTime_simtwo;
     std::chrono::steady_clock::time_point lastTime_yolo;
+
+    std::map<int, std::vector<std::string>> packetBuffer; // Key: Packet Set ID, Value: Vector of packet data
 };
 
-#endif //PERFECTMATCH_SIMULATION_SIMTWOINTERFACE_H
+#endif // PERFECTMATCH_SIMULATION_SIMTWOINTERFACE_H

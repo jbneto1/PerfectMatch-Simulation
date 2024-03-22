@@ -1,11 +1,13 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer(Localization &localization, std::mutex &PM_m) : localization(localization),
-                                                                       newDataAvailable(false),
-                                                                       runRenderLoop(true)
+Visualizer::Visualizer(Localization &localization, Localization &localization_outliers, std::mutex &PM_m, Logger &logger) : localization(localization),
+                                                                                                                            localization_semantics(localization_outliers),
+                                                                                                                            newDataAvailable(false),
+                                                                                                                            runRenderLoop(true),
+                                                                                                                            logger(logger)
 {
     windowWidth = 1500;
-    windowHeight = 860;
+    windowHeight = 950;
     if (!initialize())
     {
         cleanup();
@@ -14,7 +16,6 @@ Visualizer::Visualizer(Localization &localization, std::mutex &PM_m) : localizat
 
     localUpdate.stepGet = localization.getPM().getStep();
     localUpdate.Qk_covarianceGet = localization.getEKF().getQk();
-
 }
 
 Visualizer::~Visualizer()
@@ -39,10 +40,14 @@ void Visualizer::cleanup()
 
 bool Visualizer::initialize()
 {
+    int major, minor, revision;
+    glfwGetVersion(&major, &minor, &revision);
+    logger.info("GLFW version: " + std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(revision));
+
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
     {
-        std::cerr << "Failed to initialize GLFW!" << std::endl;
+        logger.error("Failed to initialize GLFW!");
         return false;
     }
 
@@ -51,6 +56,9 @@ bool Visualizer::initialize()
         return false;
     }
 
+    checkGlError();
+    logger.info("Visualizer initialized.");
+    glfwMakeContextCurrent(nullptr);
     return true;
 }
 
@@ -62,9 +70,10 @@ bool Visualizer::setupGlfwWindow()
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     window = glfwCreateWindow(windowWidth, windowHeight, "Robot Localization", nullptr, nullptr); // 1040 Change to desired size
-    if (window == nullptr)
+    glfwShowWindow(window);
+    if (!window)
     {
-        std::cerr << "Failed to create GLFW window!" << std::endl;
+        logger.error("Failed to create GLFW window!");
         glfwTerminate();
         return false;
     }
@@ -78,10 +87,11 @@ bool Visualizer::setupGLLoaderAndImGui()
 {
     if (gl3wInit() != 0)
     {
-        std::cerr << "Failed to initialize OpenGL loader!" << std::endl;
+        logger.error("Failed to initialize OpenGL loader!");
         glfwTerminate();
         return false;
     }
+    checkGlError();
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -89,8 +99,9 @@ bool Visualizer::setupGLLoaderAndImGui()
     ImGui::StyleColorsDark();
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    const char *glsl_version = "#version 420";
+    const char *glsl_version = "#version 410 core";
     ImGui_ImplOpenGL3_Init(glsl_version);
+    checkGlError();
 
     return true;
 }
@@ -98,12 +109,13 @@ bool Visualizer::setupGLLoaderAndImGui()
 bool Visualizer::setupTexture()
 {
     int texChannels;
+    logger.info("CWD: " + std::filesystem::current_path().string());
     unsigned char *pixels = stbi_load("../srcPython/map/matrix.png", &texWidth, &texHeight, &texChannels,
                                       STBI_rgb_alpha);
     if (!pixels)
     {
-        std::cerr << "Failed to load texture image!" << std::endl;
-        std::cerr << "STBI Error: " << stbi_failure_reason() << std::endl;
+        logger.error("Failed to load texture image!");
+        logger.error(std::string("STBI Error: ") + stbi_failure_reason());
         return false;
     }
 
@@ -113,7 +125,9 @@ bool Visualizer::setupTexture()
     y_scale = texHeight / 1.18f;
 
     glGenTextures(1, &textureId);
+    checkGlError();
     glBindTexture(GL_TEXTURE_2D, textureId);
+    checkGlError();
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -128,34 +142,45 @@ bool Visualizer::setupTexture()
 
     stbi_image_free(pixels);
 
+    checkGlError();
     return true;
 }
 
-void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose,
-                        const std::optional<std::array<LaserPoint, 720>> &laserPoint)
+void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::array<LaserPoint, 720>> &laserPoint,
+                        const Pose &ePoseOutliers, const std::optional<std::array<LaserPoint, 720>> &laserPointOutliers, const int laserRejectI)
 {
     visDataBack.groundTruth = groundTruth;
     visDataBack.estimatedPose = estimatedPose;
     visDataBack.drawLaser = laserPoint.has_value();
     visDataBack.freq_localization = localization.getFreq();
 
+    visDataBack.estimatedPoseOutliers = ePoseOutliers;
+    visDataBack.drawLaserOutliers = laserPointOutliers.has_value();
+
     if (visDataBack.drawLaser)
     {
         visDataBack.laserPoint = laserPoint.value();
+    }
+
+    if (visDataBack.drawLaserOutliers)
+    {
+        visDataBack.laserPointOutliers = laserPointOutliers.value();
     }
 
     {
         std::lock_guard<std::mutex> lock(cv_m);
 
         // swap buffers
-        std::swap(visDataFront, visDataBack);
+        std::swap(visDataBack, visDataSwap);
 
         // local update
         localUpdate.PMError = localization.getPM().getError();
+        localUpdate.PMError_semantics = localization_semantics.getPM().getError();
 
         if (localUpdate.hasStepChanged)
         {
             localization.getPM().setStep(localUpdate.stepSet);
+            localization_semantics.getPM().setStep(localUpdate.stepSet);
             localUpdate.stepGet = localization.getPM().getStep();
             localUpdate.hasStepChanged = false; // Reset the flag
         }
@@ -163,6 +188,7 @@ void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose,
         if (localUpdate.hasQkChanged)
         {
             localization.getEKF().setQ(localUpdate.Qk_covarianceSet);
+            localization_semantics.getEKF().setQ(localUpdate.Qk_covarianceSet);
             localUpdate.Qk_covarianceGet = localization.getEKF().getQk();
             localUpdate.hasQkChanged = false; // Reset the flag
         }
@@ -170,9 +196,16 @@ void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose,
         if (localUpdate.hasPoseChanged)
         {
             localization.setPose(localUpdate.newPose);
+            localization_semantics.setPose(localUpdate.newPose);
             localUpdate.hasPoseChanged = false; // Reset the flag
         }
 
+        if (localUpdate.hasSafetyChanged)
+        {
+            localization_semantics.getPM().setSafetyThreshold(localUpdate.safetyThresholdSet);
+            localUpdate.safetyThresholdGet = localization_semantics.getPM().getSafetyThreshold();
+            localUpdate.hasSafetyChanged = false;
+        }
     }
 
     newDataAvailable.store(true);
@@ -221,11 +254,25 @@ void Visualizer::drawUIElements()
     float halfBase = size / 2.0f;
 
     // Draw triangles for GroundTruth and EstimatedPose
-    drawTriangle(draw_list, visDataFront.groundTruth, ImColor(255, 0, 0));   // green
+    drawTriangle(draw_list, visDataFront.groundTruth, ImColor(255, 0, 0)); // red
+    checkGlError();
     drawTriangle(draw_list, visDataFront.estimatedPose, ImColor(0, 0, 255)); // blue
+    checkGlError();
+    drawTriangle(draw_list, visDataFront.estimatedPoseOutliers, ImColor(255, 128, 0));
+
     draw_list->AddCircle(ImVec2(x_center, y_center), 10, IM_COL32(0, 255, 0, 255), 0, true);
+
     if (visDataFront.drawLaser)
-        drawLidarPoints(draw_list, visDataFront.estimatedPose, visDataFront.laserPoint, IM_COL32(128, 0, 198, 255));
+    {
+        drawLidarPoints(draw_list, visDataFront.estimatedPose, visDataFront.laserPoint, IM_COL32(0, 0, 255, 255));
+        checkGlError();
+    }
+
+    if (visDataFront.drawLaserOutliers)
+    {
+        drawLidarPoints(draw_list, visDataFront.estimatedPoseOutliers, visDataFront.laserPointOutliers, IM_COL32(255, 128, 0, 255));
+        checkGlError();
+    }
 
     draw_list->AddTriangleFilled(
         ImVec2(p.x + halfBase, p.y + 5),               // Top vertex
@@ -247,17 +294,33 @@ void Visualizer::drawUIElements()
     ImGui::Text("Ground Truth [m]:  x=%.3f, y=%.3f, theta=%.3fº", visDataFront.groundTruth.getX(), visDataFront.groundTruth.getY(),
                 visDataFront.groundTruth.getThetaDeg());
 
+    p = ImGui::GetCursorScreenPos();
+
+    draw_list->AddTriangleFilled(
+        ImVec2(p.x + halfBase, p.y + 5),               // Top vertex
+        ImVec2(p.x, p.y + size + 5),                   // Bottom left vertex
+        ImVec2(p.x + size, p.y + size + 5),            // Bottom right vertex
+        ImColor(255, 128, 0));                         // Red filled Triangle
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20); // Push cursor to right by 50 units
+    ImGui::Text("EKF Pose w/ Outliers [m]:  x=%.3f, y=%.3f, theta=%.3fº", visDataFront.estimatedPoseOutliers.getX(), visDataFront.estimatedPoseOutliers.getY(),
+                visDataFront.estimatedPoseOutliers.getThetaDeg());
+
     Pose temp = visDataFront.estimatedPose - visDataFront.groundTruth;
+
+    Pose tempOutliers = visDataFront.estimatedPoseOutliers - visDataFront.groundTruth;
 
     ImGui::Text("Pose error [m]:  x=%.3f, y=%.3f, theta=%.3fº", temp.getX(),
                 temp.getY(), temp.getThetaDeg());
 
-    ImGui::Text("Localization freq [Hz]: %.2f", visDataFront.freq_localization);
+    ImGui::Text("Pose error w/ Outliers [m]:  x=%.3f, y=%.3f, theta=%.3fº", tempOutliers.getX(),
+                tempOutliers.getY(), tempOutliers.getThetaDeg());
 
-    
+    ImGui::Text("Localization freq [Hz]: %.2f", 40.0);
+
     {
         std::lock_guard<std::mutex> lock(cv_m);
         ImGui::Text("PM error [m]: %.3f", localUpdate.PMError);
+        ImGui::Text("PM error w/ Outliers [m]: %.3f", localUpdate.PMError_semantics);
     }
 
     ImGui::SetCursorPosY(0);
@@ -292,8 +355,8 @@ void Visualizer::drawUIElements()
 
     ImGui::SetCursorPosX(texWidth);
     static double Qk = 0.0f;
-    ImGui::PushItemWidth(160);
-    if (ImGui::InputDouble("Process Model Cov", &Qk, 0.01, 0.01, "%.2f"))
+    ImGui::PushItemWidth(180);
+    if (ImGui::InputDouble("Process Model Cov", &Qk, 0.01, 0.01, "%.5f"))
     {
         if (Qk < 0)
             Qk = 0;
@@ -308,17 +371,16 @@ void Visualizer::drawUIElements()
         localUpdate.hasQkChanged = true;
         localUpdate.Qk_covarianceSet = Qk;
     }
-
-    ImGui::SameLine();
     std::string QkText = "Current Qk: ";
     {
         std::lock_guard<std::mutex> lock(cv_m);
-        QkText.append(fmt::format("{:.3f}", localUpdate.Qk_covarianceGet));
+        QkText.append(fmt::format("{:.5f}", localUpdate.Qk_covarianceGet));
     }
+    ImGui::SetCursorPosX(texWidth);
     ImGui::Text("%s", QkText.c_str());
 
     ImGui::SetCursorPosX(texWidth);
-    std::string RkText = "Rk diag: " + fmt::format("100");
+    std::string RkText = "Rk diag: " + fmt::format("0.001");
     ImGui::Text("%s", RkText.c_str());
 
     ImGui::NewLine();
@@ -360,6 +422,36 @@ void Visualizer::drawUIElements()
         localUpdate.hasPoseChanged = true;
         localUpdate.newPose = visDataFront.groundTruth;
     }
+
+    static int safeThresh = 0;
+
+    ImGui::SetCursorPosX(texWidth);
+    ImGui::PushItemWidth(160);
+    if (ImGui::InputInt("Input Thresh", &safeThresh, 1, 1, 0))
+    {
+        if (safeThresh < 0)
+            safeThresh = 0;
+    }
+    ImGui::PopItemWidth();
+
+    ImGui::SetCursorPosX(texWidth);
+
+    if (ImGui::Button("Set safety threshold"))
+    {
+        std::lock_guard<std::mutex> lock(cv_m);
+        localUpdate.hasSafetyChanged = true;
+        localUpdate.safetyThresholdSet = safeThresh;
+    }
+
+    std::string safeThreshStr = "Current safeThresh: ";
+    {
+        std::lock_guard<std::mutex> lock(cv_m);
+        safeThreshStr.append(fmt::format("{}", localUpdate.safetyThresholdGet));
+    }
+    ImGui::SetCursorPosX(texWidth);
+    ImGui::Text("%s", safeThreshStr.c_str());
+
+    checkGlError();
 }
 
 void Visualizer::finishRender()
@@ -369,14 +461,19 @@ void Visualizer::finishRender()
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
+    checkGlError();
     glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
+    checkGlError();
     glClear(GL_COLOR_BUFFER_BIT);
+    checkGlError();
 
     // Render the ImGui content
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     // Swap front and back buffers
+    checkGlError();
     glfwSwapBuffers(window);
+    checkGlError();
 }
 
 void Visualizer::updateDataAvailability()
@@ -385,11 +482,28 @@ void Visualizer::updateDataAvailability()
     newDataAvailable.store(false);
 }
 
+void Visualizer::swapBuffers()
+{
+    std::lock_guard<std::mutex> lock(cv_m);
+    std::swap(visDataSwap, visDataFront);
+}
+
 void Visualizer::render()
 {
+    // Wait for readiness signal
+
+    {
+        std::unique_lock<std::mutex> lock(readinessMutex);
+        readinessCV.wait(lock, [this]
+                         { return isReadyForRendering; });
+    }
+
+    glfwMakeContextCurrent(window);
+
     while (runRenderLoop.load() && (!glfwWindowShouldClose(window)))
     {
         handleEvents();
+        swapBuffers();
         setupImGuiFrame();
         drawUIElements();
         finishRender();
@@ -400,7 +514,7 @@ void Visualizer::render()
 void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &robot, const ImColor &color) const
 {
 
-    // get the pose information
+    // get the pose i3
     double x = robot.getX();
     double y = robot.getY();
     double theta = robot.getTheta();
@@ -443,18 +557,20 @@ void Visualizer::drawTriangle(ImDrawList *draw_list, const Pose &robot, const Im
 
 void Visualizer::glfw_error_callback(int error, const char *description)
 {
-    std::cerr << "Glfw Error " << error << ": " << description << std::endl;
+    auto &log = Logger::getInstance(spdlog::level::level_enum::debug);
+    log.error("Glfw error: " + std::to_string(error) + ". " + description);
 }
 
 #ifdef DEBUG
 void Visualizer::checkGlError()
 {
+    auto &log = Logger::getInstance(spdlog::level::level_enum::debug);
     GLenum err;
     do
     {
         err = glGetError();
         if (err != GL_NO_ERROR)
-            std::cerr << "OpenGL error: " << err << std::endl;
+            log.error("OpenGL error: " + std::to_string(err));
     } while (err != GL_NO_ERROR);
 }
 #else
@@ -482,11 +598,13 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
     vertices[1] = ImVec2(-h / 2, -b / 2); // bottom left
     vertices[2] = ImVec2(-h / 2, b / 2);  // bottom right
 
+    ImU32 col32 = ImGui::ColorConvertFloat4ToU32(color.Value);
+
     for (size_t i = 0; i < laserP.size(); i += 8)
     {
         const auto &point = laserP[i];
 
-        if (point.getD() <= 0)
+        if ((point.getD() <= 0) || (!point.getIsBeamValid()))
             continue;
 
         // Transform from robot's frame to global frame
@@ -531,7 +649,7 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
 
         // Draw the triangle
         draw_list->AddTriangleFilled(rotated_vertices[0], rotated_vertices[1], rotated_vertices[2],
-                                     IM_COL32(0, 128, 255, 255));
+                                     col32);
     }
 }
 
@@ -540,7 +658,7 @@ void Visualizer::stop()
     runRenderLoop.store(false);
     newDataAvailable.store(true);
     cv.notify_all();
-   
+
     if (window)
     {
         glfwSetWindowShouldClose(window, GL_TRUE);

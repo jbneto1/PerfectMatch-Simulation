@@ -3,11 +3,6 @@
 #ifndef PERFECTMATCH_SIMULATION_LOGGER_H
 #define PERFECTMATCH_SIMULATION_LOGGER_H
 
-#include <spdlog/spdlog.h>
-#include <spdlog/common.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/fmt/bin_to_hex.h> // Added to enable binary to hex conversion
 #include <memory>
 #include <iostream>
 #include <chrono>
@@ -15,7 +10,19 @@
 #include <sstream>
 #include <iomanip>
 #include <optional>
+
+#include "spdlog/spdlog.h"
+#include "spdlog/common.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/fmt/bin_to_hex.h" // Added to enable binary to hex conversion
+#include "Eigen/Dense"
+
 #include "config/config.h"
+#include "data_structures/data_structures.h"
+
+using Eigen::Matrix3d;
+using Eigen::Vector3d;
 
 class Logger
 {
@@ -29,6 +36,11 @@ public:
     void error(const std::string &message);
 
     void fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, const std::string &yoloData);
+    void fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, Matrix3d> &localization,
+                                 const std::tuple<Pose, Pose, Pose, double, Matrix3d, u_int> &localization_w_semantics);
+    void createOfflineLoggers();
+
+    void createOnlineLoggers();
 
     void set_level(const spdlog::level::level_enum log_level);
     void setPattern(const std::string &format);
@@ -37,7 +49,7 @@ public:
 private:
     explicit Logger(spdlog::level::level_enum level);
     std::shared_ptr<spdlog::logger> logger;
-    std::shared_ptr<spdlog::logger> fileLogger_data;
+    std::shared_ptr<spdlog::logger> fileLogger_data, fileLogger_offline, fileLogger_offline_w_semantics;
     std::string current_datetime();
     std::string getHighPrecisionTimestamp();
 };

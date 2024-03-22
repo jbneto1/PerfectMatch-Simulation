@@ -5,39 +5,48 @@
 #ifndef PM_PROJECT_VISUALIZER_H
 #define PM_PROJECT_VISUALIZER_H
 
-#include <GL/gl3w.h>
-#include <third_party/ImGui/imgui.h>
-#include <third_party/ImGui/imgui_impl_glfw.h>
-#include <third_party/ImGui/imgui_impl_opengl3.h>
-#include <GLFW/glfw3.h>
-#include <third_party/eigen-3.4.0/Eigen/Dense>
-#include <config/config.h>
 #include <iostream>
 #include <condition_variable>
 #include <mutex>
-#include <third_party/stb/stb_image.h>
-#include "../src/Localization/PerfectMatch/PerfectMatch.h"
-#include <Logger/logger.h>
 #include <chrono>
 #include <thread>
-#include "../src/Localization/Localization.h"
 #include <optional>
+#include <filesystem>
 
-struct VisualizationData {
+#include "Eigen/Dense"
+#include "GL/gl3w.h"
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_glfw.h"
+#include "ImGui/imgui_impl_opengl3.h"
+#include <GLFW/glfw3.h>
+#include "stb/stb_image.h"
+
+#include "config/config.h"
+#include "Localization/PerfectMatch/PerfectMatch.h"
+#include "Logger/logger.h"
+#include "Localization/Localization.h"
+
+struct VisualizationData
+{
     Pose groundTruth = {};
     Pose estimatedPose = {};
+    std::array<LaserPoint, 720> laserPoint = {};
     bool drawLaser = false;
+
     float freq_localization = 0;
 
-    std::array<LaserPoint, 720> laserPoint = {};
+    Pose estimatedPoseOutliers = {};
+    bool drawLaserOutliers = false;
+    std::array<LaserPoint, 720> laserPointOutliers = {};
 };
 
-struct LocalizationUpdateData {
+struct LocalizationUpdateData
+{
 
     bool hasStepChanged = false;
     bool hasQkChanged = false;
     bool hasPoseChanged = false;
-
+    bool hasSafetyChanged = false;
 
     double stepSet = 0.0;
     double stepGet = 0.0;
@@ -45,19 +54,24 @@ struct LocalizationUpdateData {
     double Qk_covarianceSet = 0.0;
     double Qk_covarianceGet = 0.0;
 
+    int safetyThresholdSet = SAFETY_THRESHOLD;
+    int safetyThresholdGet = SAFETY_THRESHOLD;
+
     Pose newPose = {};
 
     double PMError = 0.0;
+    double PMError_semantics = 0.0;
 };
 
-
-class Visualizer {
+class Visualizer
+{
 public:
-    Visualizer(Localization &localization, std::mutex &PM_m);
+    Visualizer(Localization &localization, Localization &localization_outliers, std::mutex &PM_m, Logger &logger);
 
     ~Visualizer();
 
-    void update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::array<LaserPoint, 720>> &laserPoint);
+    void update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::array<LaserPoint, 720>> &laserPoint,
+                const Pose &ePoseOutliers, const std::optional<std::array<LaserPoint, 720>> &laserPointOutliers, const int laserRejectI);
 
     void render();
 
@@ -65,42 +79,46 @@ public:
 
     void cleanup();
 
-private:
+    bool isReadyForRendering = false;
+    std::mutex readinessMutex;
+    std::condition_variable readinessCV;
 
+private:
     // Setup for drawing rectangles
+
+    Logger &logger;
     float x_scale;
     float y_scale;
     float x_center;
     float y_center;
-
 
     //
     double windowWidth;
     double windowHeight;
 
     Localization &localization;
+    Localization &localization_semantics;
 
     std::condition_variable cv;
     std::mutex cv_m;
     std::atomic<bool> newDataAvailable;
     GLFWwindow *window{};
-    GLuint textureId{};  // Texture identifier for the map image
-    int texWidth{}, texHeight{};  // Texture size
+    GLuint textureId{};          // Texture identifier for the map image
+    int texWidth{}, texHeight{}; // Texture size
     std::atomic<bool> runRenderLoop;
-    VisualizationData visDataFront, visDataBack;
+    VisualizationData visDataFront, visDataBack, visDataSwap;
     LocalizationUpdateData localUpdate;
 
     bool initialize();
 
     void handleEvents();
+    void swapBuffers();
     void setupImGuiFrame();
     void drawUIElements();
     void finishRender();
     void updateDataAvailability();
 
-
-
-
+    void error_callback(int error, const char *description);
 
     bool setupTexture();
 
@@ -118,4 +136,4 @@ private:
     bool setupGLLoaderAndImGui();
 };
 
-#endif //PM_PROJECT_VISUALIZER_H
+#endif // PM_PROJECT_VISUALIZER_H

@@ -19,12 +19,13 @@ SimTwoInterface::SimTwoInterface(Logger &logger, Localization &localization, AMR
 SimTwoInterface::~SimTwoInterface()
 {
     // Ensure threads are joined before destruction
-    if (yoloThread.joinable()) {
+    if (yoloThread.joinable())
+    {
         yoloThread.join();
     }
 }
 
-void SimTwoInterface::runIoContext()
+void SimTwoInterface::runIoContextReadyMsg()
 {
     asio::executor_work_guard<asio::io_context::executor_type> guard = asio::make_work_guard(io_context);
     waitForReadyMessage(); // Wait for ready message before starting
@@ -32,7 +33,13 @@ void SimTwoInterface::runIoContext()
     {
         io_context.run_one(); // Process one ASIO event (waiting for "ready" message)
     }
-    if(!earlyStop) {
+}
+
+void SimTwoInterface::runIoContext()
+{
+
+    if (!earlyStop)
+    {
         logger.debug("Waiting for the simulator.");
         io_context.run(); // Continue with the normal operation after receiving the message
     }
@@ -55,6 +62,7 @@ void SimTwoInterface::registerCallback(DataCallback callback)
 // Start receiving data
 void SimTwoInterface::startSimReceive()
 {
+    logger.trace("Simtwo receive called.");
 
     logFrequencySimTwo();
 
@@ -63,6 +71,7 @@ void SimTwoInterface::startSimReceive()
         sender_endpoint,
         [this](std::error_code ec, std::size_t bytes_received)
         {
+            logger.trace("Simtwo msg received.");
             handleReceive(ec, bytes_received);
             memset(simRecvBuffer.data(), 0, bytes_received);
             if (run)
@@ -74,8 +83,7 @@ void SimTwoInterface::startSimReceive()
 
 void SimTwoInterface::startYoloReceive()
 {
-
-    logFrequencyYOLO();
+    logFrequencyYOLO(); // just logs if BBs detected and sent
 
     yolo_socket.async_receive_from(
         asio::buffer(yoloRecvBuffer),
@@ -91,7 +99,66 @@ void SimTwoInterface::startYoloReceive()
         });
 }
 
-// Implement getLatestYoloData
+std::vector<BoundingBox> SimTwoInterface::getOutliers(const std::string &yoloBuffer)
+{
+
+    if (yoloBuffer == "NoDetections")
+    {
+        logger.debug("No detections from YOLO");
+        return {};
+    }
+
+    std::vector<BoundingBox> boundingBoxes;
+    std::istringstream iss(yoloBuffer);
+    std::string token;
+    std::vector<std::string> tokens;
+
+    // Tokenize the yoloBuffer string
+    while (std::getline(iss, token, ','))
+    {
+        tokens.push_back(token);
+    }
+
+    try
+    {
+        size_t currentIndex = 0; // Start from the beginning of the tokens
+
+        // Check if there is an 'N' token indicating the start of bounding box data
+        if ((currentIndex < tokens.size()) && (tokens[currentIndex] == "N"))
+        {
+            size_t bboxCount = std::stoi(tokens[++currentIndex]);
+            currentIndex++; // Move past the bounding box count
+
+            for (size_t i = 0; i < bboxCount; ++i)
+            {
+                if (currentIndex + 5 > tokens.size())
+                {
+                    throw std::runtime_error("Not enough tokens for bounding box data.");
+                }
+
+                // Parse bounding box data
+                int class_id = std::stoi(tokens[currentIndex++].substr(1));
+                double conf = std::stod(tokens[currentIndex++]);
+                double x = std::stod(tokens[currentIndex++]);
+                double y = std::stod(tokens[currentIndex++]);
+                double width = std::stod(tokens[currentIndex++]);
+                double height = std::stod(tokens[currentIndex++]);
+
+                boundingBoxes.push_back(BoundingBox{class_id, conf, x, y, width, height});
+            }
+        }
+
+        return boundingBoxes; // Return the parsed bounding boxes
+    }
+    catch (const std::exception &e)
+    {
+        logger.error("BB parsing error from yoloBuffer. Exception: " + std::string(e.what()));
+        return {}; // Return an empty vector if there is a parsing error
+    }
+}
+
+// DEPRECATED
+//  Implement getLatestYoloData
 std::string SimTwoInterface::getLatestYoloData()
 {
     std::lock_guard<std::mutex> guard(yoloDataMutex);
@@ -116,7 +183,7 @@ void SimTwoInterface::waitForReadyMessage()
                     std::string message(recv_buffer.data(), bytes_received);
                     if (message == "ready")
                     {
-                        this->logger.info("Received ready message. Sending acknowledgment.");
+                        this->logger.info("Received ready message. Sending acknowledgment and starting simtwo receive.");
                         this->sendAckMessage(); // Send acknowledgment
                         this->startLogging = true;
                         startSimReceive();
@@ -153,10 +220,47 @@ void SimTwoInterface::handleReceive(const asio::error_code &error, std::size_t /
 {
     if (!error)
     {
-        this->logger.trace("Received data without error. Handler called.");
-        if (dataCallback)
+        logger.trace("Received data without error. Handler called.");
+        std::string receivedData(simRecvBuffer.data());
+
+        // Assuming the '|' character is at the start and end of each packet's header
+        auto start = receivedData.find('|') + 1;
+        auto end = receivedData.find('|', start);
+        std::string packetInfo = receivedData.substr(start, end - start);
+
+        std::istringstream iss(packetInfo);
+        int packetID, totalPackets;
+        char slash;
+        iss >> packetID >> slash >> totalPackets; // Assuming this format is correct and works
+
+        // Correctly extracting the data part of the packet
+        std::string packetData = receivedData.substr(end + 1);
+
+        // Storing packet data
+        packetBuffer[packetID].push_back(packetData); // Corrected, assuming packetData is a std::string
+
+        // Check if all packets have been received
+        if (packetBuffer.size() == totalPackets)
         {
-            dataCallback(std::string(simRecvBuffer.data()));
+            // All packets received, reconstruct the complete data
+            std::string combinedData;
+            for (int i = 1; i <= totalPackets; ++i)
+            { // Assuming you've correctly calculated/known the total number of packets
+                for (const std::string &packet : packetBuffer[i])
+                {
+                    combinedData += packet;
+                }
+            }
+            // Clear the buffer for this packet ID after usage
+            packetBuffer.clear();
+
+            // logger.info("Datagram reconstructed:\n" + combinedData);
+
+            // Process the combined data
+            if (dataCallback)
+            {
+                dataCallback(combinedData);
+            }
         }
     }
     else
@@ -195,34 +299,56 @@ SimTwoInterface::getSensorData(const std::string &data)
 
     while (std::getline(iss, line))
     {
-        if (line.find("Enc") != std::string::npos)
+        try
         {
-            std::getline(iss, line);
-            encoders[encoder_index++] = std::stoi(line);
-        }
-        else if (line.find("X") != std::string::npos || line.find("Y") != std::string::npos ||
-                 line.find("THETA") != std::string::npos)
-        {
-            std::getline(iss, line);
-            pose[pose_index++] = std::stod(line);
-        }
-        else if (line.find("lidar") != std::string::npos)
-        {
-            // Initialize the lidar data if not done before
-            if (!lidar)
+            if (line.find("Enc") != std::string::npos)
             {
-                lidar = std::array<LaserPoint, 720>{};
+                if (encoder_index >= encoders.size())
+                    throw std::out_of_range("Encoder index out of bounds.");
+                std::getline(iss, line);
+                encoders[encoder_index++] = std::stoi(line);
             }
-
-            std::getline(iss, line);
-            std::istringstream iss_lidar(line);
-            std::string val;
-
-            int lidar_index = 0;
-            while (std::getline(iss_lidar, val, ','))
+            else if (line.find("X") != std::string::npos || line.find("Y") != std::string::npos ||
+                     line.find("THETA") != std::string::npos)
             {
-                lidar.value()[lidar_index++].setD(std::stod(val));
+                if (pose_index >= pose.size())
+                    throw std::out_of_range("Pose index out of bounds.");
+                std::getline(iss, line);
+                pose[pose_index++] = std::stod(line);
             }
+            else if (line.find("lidar") != std::string::npos)
+            {
+                if (!lidar)
+                {
+                    lidar = std::array<LaserPoint, 720>{};
+                }
+
+                std::getline(iss, line);
+                std::istringstream iss_lidar(line);
+                std::string val;
+
+                int lidar_index = 0;
+                while (std::getline(iss_lidar, val, ','))
+                {
+                    if (lidar_index >= lidar->size())
+                        throw std::out_of_range("Lidar index out of bounds.");
+                    lidar.value()[lidar_index++].setD(std::stod(val));
+                }
+            }
+        }
+        catch (const std::invalid_argument &e)
+        {
+            logger.error("Invalid argument during parsing: " + std::string(e.what()));
+            throw std::out_of_range("Invalid argument: " + std::string(e.what()));
+        }
+        catch (const std::out_of_range &e)
+        {
+            logger.error("Out of range error during parsing: " + std::string(e.what()));
+            throw std::out_of_range("Out of range error during parsing: " + std::string(e.what()));
+        }
+        catch (...)
+        {
+            logger.error("Unexpected error during parsing.");
         }
     }
 
@@ -319,24 +445,28 @@ void SimTwoInterface::sendAckMessage()
     sync_socket.send_to(asio::buffer(ackMsg), receiver_endpoint);
 }
 
-void SimTwoInterface::logFrequencySimTwo() {
+void SimTwoInterface::logFrequencySimTwo()
+{
 
     auto now = std::chrono::steady_clock::now();
 
-    if (lastTime_simtwo != std::chrono::steady_clock::time_point{}) {
+    if (lastTime_simtwo != std::chrono::steady_clock::time_point{})
+    {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime_simtwo);
         double freq = 1E6 / double(duration.count());
         localization.setFreq(freq);
-        logger.info("SimTwo Comm[Hz]: " + formatWithTwoDecimals(freq));
+        logger.debug("SimTwo Comm[Hz]: " + formatWithTwoDecimals(freq));
     }
     lastTime_simtwo = now;
 }
 
-void SimTwoInterface::logFrequencyYOLO() {
+void SimTwoInterface::logFrequencyYOLO()
+{
 
     auto now = std::chrono::steady_clock::now();
 
-    if (lastTime_yolo != std::chrono::steady_clock::time_point{}) {
+    if (lastTime_yolo != std::chrono::steady_clock::time_point{})
+    {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime_yolo);
         double freq = 1E6 / double(duration.count());
         logger.debug("YOLO Comm[Hz]: " + formatWithTwoDecimals(freq));

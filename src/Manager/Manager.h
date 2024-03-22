@@ -5,42 +5,57 @@
 #ifndef AMR_PROJECT_MANAGER_H
 #define AMR_PROJECT_MANAGER_H
 
-#include <SimTwoInterface/SimTwoInterface.h>
-#include <Localization/Localization.h>
-#include <Logger/logger.h>
-#include <AMRController/AMRController.h>
-#include <Visualizer/Visualizer.h>
-#include <thread>
 #include <condition_variable>
-#include <asio/signal_set.hpp>
+#include <thread>
 #include <optional>
+#include <iostream>
+#include <filesystem>
 
-class Manager {
+#include "asio/signal_set.hpp"
+
+#include "SimTwoInterface/SimTwoInterface.h"
+#include "Localization/Localization.h"
+#include "Logger/logger.h"
+#include "AMRController/AMRController.h"
+#include "Visualizer/Visualizer.h"
+#include "OfflineAnalysis/OfflineAnalysis.h"
+#include "config/config.h"
+
+class Manager
+{
 public:
-
-    Manager(Logger &logger);
+    Manager(Logger &logger, OperationalMode mode);
 
     ~Manager();
 
-    void run();
+    void run(const bool logData);
+
+    void runOfflineAnalysis(const std::string &logFilePath);
 
 private:
-    Logger& logger;
+    OperationalMode mode;
+    Logger &logger;
     AMRController controller;
-    Localization localization;
+    Localization localization, localization_w_semantics;
     SimTwoInterface interface;
-    Visualizer visualizer;
+    std::unique_ptr<Visualizer> visualizer;
     std::thread visThread;
     asio::any_io_executor exec;
 
     asio::signal_set signals_;
     std::promise<void> CtrlCPromise;
     std::mutex PM_m;
-    
+
+    bool logData;
+
     void setupSignalHandler();
+    void setupVisualizationThread();
     void stop();
 
     void onDataReceived(const std::string &data, SimTwoInterface &interface, Localization &localization,
                         AMRController &controller, Logger &logger);
+
+    // offline analysis
+    OfflineAnalysis offlineAnalysis; // OfflineAnalysis instance
 };
-#endif //AMR_PROJECT_MANAGER_H
+#endif // AMR_PROJECT_MANAGER_H

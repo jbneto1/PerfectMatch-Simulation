@@ -1,6 +1,0 @@
-add_subdirectory(SimTwoInterface)
-add_subdirectory(Localization)
-add_subdirectory(AMRController)
-add_subdirectory(Logger)
-add_subdirectory(Manager)
-add_subdirectory(Visualizer)

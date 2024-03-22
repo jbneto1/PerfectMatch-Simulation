@@ -3,18 +3,23 @@
 
 #include <array>
 #include <chrono>
-#include <Eigen/Dense>
-#include <Logger/logger.h>
+
+#include "Eigen/Dense"
+
+#include "Logger/logger.h"
 #include "PerfectMatch/PerfectMatch.h"
 #include "ExtendedKalmanFilter/ExtendedKalmanFilter.h"
 
-class Localization {
+class Localization
+{
 public:
     Localization(Logger &logger);
 
     void processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData);
     void processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT);
-    void setPose(const Pose &startPose);
+
+    void processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData, const double dt);
+    void processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT, const double dt);
 
     Pose getPose() { return EKF.getPose(); };
     Pose getPreviousPose() { return previousPose; };
@@ -22,9 +27,16 @@ public:
     ExtendedKalmanFilter &getEKF() { return EKF; };
     const double getFreq() const { return freq; };
     const bool getFirstFlag() { return firstIter; };
+    const double getCurrentDT() { return dt; };
 
+    void setPose(const Pose &startPose);
     void setFreq(double frequency) { this->freq = frequency; }
     void setPreviousPose(const Pose currentPose) { this->previousPose = currentPose; };
+    void setNewDT(const double newDT)
+    {
+        this->dt = newDT;
+        EKF.setEKFdt(newDT);
+    };
 
 private:
     // private methods
@@ -36,10 +48,10 @@ private:
     Pose odometry();
 
     // private members
+    double dt;
     Logger &logger;
     ExtendedKalmanFilter EKF;
     PerfectMatch PM;
-    const double dt;
     double freq = 0.0;
     bool firstIter;
 
@@ -53,4 +65,4 @@ private:
     const Eigen::Matrix<double, 3, 4> forwardK_model;
 };
 
-#endif //PERFECTMATCH_SIMULATION_LOCALIZATION_H
+#endif // PERFECTMATCH_SIMULATION_LOCALIZATION_H

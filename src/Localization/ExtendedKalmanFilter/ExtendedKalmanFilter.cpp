@@ -4,10 +4,12 @@
 
 #include "ExtendedKalmanFilter.h"
 
-
-ExtendedKalmanFilter::ExtendedKalmanFilter() : Qk((Matrix3d() << 5, 0, 0,
-        0, 5, 0,
-        0, 0, 5).finished()), dt(CONTROL_CYCLE) {
+ExtendedKalmanFilter::ExtendedKalmanFilter(const double dtEKF) : Qk((Matrix3d() << 0.00005, 0, 0,
+                                                                     0, 0.00005, 0,
+                                                                     0, 0, 0.00005)
+                                                                        .finished()),
+                                                                 dt(dtEKF)
+{
     mu = Pose();
 
     // Initialize the filter
@@ -16,22 +18,25 @@ ExtendedKalmanFilter::ExtendedKalmanFilter() : Qk((Matrix3d() << 5, 0, 0,
     Pk.diagonal() << 1000, 1000, 1000;
     Sk = Matrix3d().Zero(3, 3);
 
-    //Initialization Noise covariance
+    // Initialization Noise covariance
     Hk_PM = Matrix3d::Identity(3, 3);
     Rk_PM = Matrix3d::Identity(3, 3);
-    Rk_PM.diagonal() << 100, 100, 100;
+    Rk_PM.diagonal() << 0.001, 0.001, 0.001;
 }
 
-Pose ExtendedKalmanFilter::getPose() {
+Pose ExtendedKalmanFilter::getPose()
+{
     return this->mu;
 }
 
-void ExtendedKalmanFilter::setPose(const Pose startPose) {
+void ExtendedKalmanFilter::setPose(const Pose startPose)
+{
     mu = startPose;
 }
 
-void ExtendedKalmanFilter::predict(const Eigen::Vector3d twist) {
-    //odometry variable is already ^Xk_k_1
+void ExtendedKalmanFilter::predict(const Eigen::Vector3d twist)
+{
+    // odometry variable is already ^Xk_k_1
     double deriv_fx;
     double deriv_fy;
     double a = cos(mu.getTheta());
@@ -46,7 +51,8 @@ void ExtendedKalmanFilter::predict(const Eigen::Vector3d twist) {
     Pk = Fk * Pk * Fk.transpose() + Qk;
 }
 
-void ExtendedKalmanFilter::update(const Pose Zk) {
+void ExtendedKalmanFilter::update(const Pose Zk)
+{
     Vector3d innovation_PM;
 
     innovation_PM(0, 0) = Zk.getX() - mu.getX();
@@ -63,6 +69,7 @@ void ExtendedKalmanFilter::update(const Pose Zk) {
     Pk = (Matrix3d::Identity() - Kg * Hk_PM) * Pk;
 }
 
-void ExtendedKalmanFilter::setQ(const double principalDiagonal) {
+void ExtendedKalmanFilter::setQ(const double principalDiagonal)
+{
     Qk.diagonal() << principalDiagonal, principalDiagonal, principalDiagonal;
 }

@@ -12,8 +12,8 @@ import time
 running = True
 
 # NETWORK DEFINES for SIMTWO comm
-# ip = "192.168.1.183" # WINDOWS IP HOME
-ip = "193.137.108.176" # WINDOWS IP CEDRI
+ip = "192.168.1.79" # WINDOWS IP HOME
+# ip = "193.137.108.252" # WINDOWS IP CEDRI
 port_simtwo = "9899"
 
 #NETWORK DEFINES FOR READY MSG (WSL2 CODES)
@@ -40,7 +40,7 @@ model = YOLO('yolov8n.pt').to(device)
 # ZMQ setup
 context = zmq.Context()
 socket = context.socket(zmq.SUB)
-socket.connect(f"tcp://{ip}:{port_simtwo}") #windows's IP CeDRI
+socket.connect(f"tcp://{ip}:{port_simtwo}")
 socket.setsockopt_string(zmq.SUBSCRIBE, '')
 socket.setsockopt(zmq.RCVTIMEO, 500)  # Set to non-blocking with a timeout of ms
 
@@ -100,6 +100,10 @@ try:
             decoded = decoded.reshape((480, 640, 4))
             decoded = cv2.flip(decoded, 0)
             decoded = np.delete(decoded, 3, 2)
+            # print(decoded.shape)
+            # decoded = cv2.cvtColor(decoded, cv2.COLOR_RGB2GRAY)
+            # decoded = cv2.cvtColor(decoded, cv2.COLOR_GRAY2RGB)
+            # print(decoded.shape)
 
             # Run YOLO inference without summary info
             # results = model([decoded], stream=True, classes=0, verbose=False)
@@ -113,18 +117,26 @@ try:
             
             for result in results:
                 annotated_frame = result.plot()
-                boxes = result.boxes
-                if (len(boxes.cls) != 0):
-                    log_str = ''
-                    for (iter,box) in enumerate(boxes.data):
-                        x1, y1, x2, y2, conf, cls = box[:6].tolist()
-                        cls = int(cls)
-                        log_str = log_str +  f"b{iter}:{cls},{conf},{x1},{y1},{x2},{y2},"
+                boxes = result.boxes.xywh  # Assuming this is a tensor of shape [N, 4] where N is the number of boxes
+                classes = result.boxes.cls  # Assuming this is a tensor of shape [N,]
+                confidences = result.boxes.conf  # Assuming this is a tensor of shape [N,]
 
-                    log_str = log_str[:-1]
+                if (len(classes) != 0):
+                    log_str = 'N,' + str(len(classes)) + ','
+                    for i in range(len(classes)):
+                        x1, y1, w, h = boxes[i].tolist()  # Correctly indexing the i-th box
+                        conf = confidences[i].item()  # Correctly indexing the i-th confidence, converting to Python scalar
+                        cls = int(classes[i].item())  # Correctly indexing the i-th class, converting to Python scalar
+                        
+                        log_str += f"b{cls},{conf:.2f},{x1},{y1},{w},{h},"
+
+                    log_str = log_str[:-1]  # Removing the last comma
                     if log_str:
                         # print(f"Size in bytes: {len(log_str.encode('utf-8'))}")
                         send_yolo_data(log_str)
+                else:
+                    log_str = 'NoDetections'
+                    send_yolo_data(log_str)
                 
             cv2.imshow("YOLOv8.1 Videostream", annotated_frame)
             

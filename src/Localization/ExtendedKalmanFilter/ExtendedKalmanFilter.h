@@ -6,41 +6,43 @@
 #define PERFECTMATCH_SIMULATION_EXTENDEDKALMANFILTER_H
 
 #include <vector>
-#include "config/config.h"
 #include <cmath>
-#include <Eigen/Dense>
-#include <Eigen/Core>
 
-using Eigen::MatrixXd;
+#include "Eigen/Dense"
+#include "Eigen/Core"
+
+#include "config/config.h"
+#include "data_structures/data_structures.h"
+
 using Eigen::Matrix3d;
 using Eigen::Vector3d;
 
-class ExtendedKalmanFilter {
+class ExtendedKalmanFilter
+{
 public:
-    //Constructor
-    ExtendedKalmanFilter();
+    // Constructor
+    ExtendedKalmanFilter(const double dtEKF);
 
-    //Methods
+    // Methods
     void predict(const Eigen::Vector3d twist);
     void update(const Pose Zk);
 
-    //Getters
+    // Getters
     Pose getPose();
     double getQk() { return Qk.diagonal()[0]; };
+    Matrix3d getPk() { return Pk; };
 
-    //Setters
+    // Setters
     void setPose(const Pose startPose);
     void setQ(const double principalDiagonal);
-
+    void setEKFdt(const double newDT) { dt = newDT; };
 
 private:
-
-    //Methods
+    // Methods
     void odometry();
 
 private:
-
-    //EKF members
+    // EKF members
     Pose mu;
     Matrix3d Pk;
     Matrix3d Qk;
@@ -48,14 +50,13 @@ private:
     Matrix3d Fk;
     double dt;
 
-    //PM variables
+    // PM variables
     Matrix3d Rk_PM;
     Matrix3d Hk_PM;
 
-    //Mahalanobis threshold
+    // Mahalanobis threshold
     double mahalanobis_threshold;
     double dist_mahalanobis;
-
 };
 
-#endif //PERFECTMATCH_SIMULATION_EXTENDEDKALMANFILTER_H
+#endif // PERFECTMATCH_SIMULATION_EXTENDEDKALMANFILTER_H
