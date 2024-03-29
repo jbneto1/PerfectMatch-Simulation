@@ -32,6 +32,7 @@ struct VisualizationData
     Pose estimatedPose = {};
     std::array<LaserPoint, 720> laserPoint = {};
     bool drawLaser = false;
+    int laserRejectCounter = 0;
 
     float freq_localization = 0;
 
@@ -134,6 +135,9 @@ private:
     bool setupGlfwWindow();
 
     bool setupGLLoaderAndImGui();
+
+    // RObot Camera window
+    void DrawLidarPointWithAnnotation(const Vector2d &pImgPx, cv::Mat &image, u_int index, int annotateEveryN, bool isInsideBoundingBox);
 };
 
 #endif // PM_PROJECT_VISUALIZER_H
