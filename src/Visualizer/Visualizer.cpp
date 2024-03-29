@@ -153,6 +153,7 @@ void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, cons
     visDataBack.estimatedPose = estimatedPose;
     visDataBack.drawLaser = laserPoint.has_value();
     visDataBack.freq_localization = localization.getFreq();
+    visDataBack.laserRejectCounter = laserRejectI;
 
     visDataBack.estimatedPoseOutliers = ePoseOutliers;
     visDataBack.drawLaserOutliers = laserPointOutliers.has_value();
@@ -450,6 +451,11 @@ void Visualizer::drawUIElements()
     }
     ImGui::SetCursorPosX(texWidth);
     ImGui::Text("%s", safeThreshStr.c_str());
+
+    std::string laserRejectCounter = "Rejected beams: ";
+    laserRejectCounter.append(fmt::format("{}", visDataFront.laserRejectCounter));
+    ImGui::SetCursorPosX(texWidth);
+    ImGui::Text("%s", laserRejectCounter.c_str());
 
     checkGlError();
 }
