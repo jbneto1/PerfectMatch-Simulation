@@ -33,4 +33,9 @@ enum class OperationalMode
     Offline
 };
 
+constexpr double FX = 219.96470465;
+constexpr double FY = 219.94273694;
+constexpr double CX = 319.21197429;
+constexpr double CY = 241.81387698;
+
 #endif // AMR_PROJECT_CONFIG_H

@@ -12,6 +12,7 @@
 #include <thread>
 #include <optional>
 #include <filesystem>
+#include <opencv4/opencv2/opencv.hpp>
 
 #include "Eigen/Dense"
 #include "GL/gl3w.h"
@@ -21,58 +22,23 @@
 #include <GLFW/glfw3.h>
 #include "stb/stb_image.h"
 
+#include "data_structures/data_structures.h"
 #include "config/config.h"
 #include "Localization/PerfectMatch/PerfectMatch.h"
 #include "Logger/logger.h"
 #include "Localization/Localization.h"
 
-struct VisualizationData
-{
-    Pose groundTruth = {};
-    Pose estimatedPose = {};
-    std::array<LaserPoint, 720> laserPoint = {};
-    bool drawLaser = false;
-    int laserRejectCounter = 0;
-
-    float freq_localization = 0;
-
-    Pose estimatedPoseOutliers = {};
-    bool drawLaserOutliers = false;
-    std::array<LaserPoint, 720> laserPointOutliers = {};
-};
-
-struct LocalizationUpdateData
-{
-
-    bool hasStepChanged = false;
-    bool hasQkChanged = false;
-    bool hasPoseChanged = false;
-    bool hasSafetyChanged = false;
-
-    double stepSet = 0.0;
-    double stepGet = 0.0;
-
-    double Qk_covarianceSet = 0.0;
-    double Qk_covarianceGet = 0.0;
-
-    int safetyThresholdSet = SAFETY_THRESHOLD;
-    int safetyThresholdGet = SAFETY_THRESHOLD;
-
-    Pose newPose = {};
-
-    double PMError = 0.0;
-    double PMError_semantics = 0.0;
-};
+using Eigen::Matrix3d;
 
 class Visualizer
 {
 public:
-    Visualizer(Localization &localization, Localization &localization_outliers, std::mutex &PM_m, Logger &logger);
+    Visualizer(Localization &localization, Localization &localization_outliers, std::mutex &PM_m, Logger &logger, int safety_thresh);
 
     ~Visualizer();
 
     void update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::array<LaserPoint, 720>> &laserPoint,
-                const Pose &ePoseOutliers, const std::optional<std::array<LaserPoint, 720>> &laserPointOutliers, const int laserRejectI);
+                const Pose &ePoseOutliers, const std::optional<std::array<LaserPoint, 720>> &laserPointOutliers, const int &laserRejectI, std::vector<BoundingBox> &bboxes);
 
     void render();
 
@@ -110,12 +76,17 @@ private:
     VisualizationData visDataFront, visDataBack, visDataSwap;
     LocalizationUpdateData localUpdate;
 
+    Matrix3d camK;
+    int safety_threshold;
+    cv::Mat image;
+
     bool initialize();
 
     void handleEvents();
     void swapBuffers();
     void setupImGuiFrame();
     void drawUIElements();
+    void drawCamVis();
     void finishRender();
     void updateDataAvailability();
 
@@ -137,7 +108,9 @@ private:
     bool setupGLLoaderAndImGui();
 
     // RObot Camera window
-    void DrawLidarPointWithAnnotation(const Vector2d &pImgPx, cv::Mat &image, u_int index, int annotateEveryN, bool isInsideBoundingBox);
+    void DrawLidarPointWithAnnotation(const Vector2d &pImgPx, u_int index, int annotateEveryN, bool isInsideBoundingBox);
+    void DrawBoundingBox(BoundingBox &box);
+    void DrawCenterAndCorners();
 };
 
 #endif // PM_PROJECT_VISUALIZER_H

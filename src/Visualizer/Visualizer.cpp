@@ -1,10 +1,16 @@
 #include "Visualizer.h"
 
-Visualizer::Visualizer(Localization &localization, Localization &localization_outliers, std::mutex &PM_m, Logger &logger) : localization(localization),
-                                                                                                                            localization_semantics(localization_outliers),
-                                                                                                                            newDataAvailable(false),
-                                                                                                                            runRenderLoop(true),
-                                                                                                                            logger(logger)
+Visualizer::Visualizer(Localization &localization, Localization &localization_outliers, std::mutex &PM_m, Logger &logger, int safety_thresh) : localization(localization),
+                                                                                                                                               localization_semantics(localization_outliers),
+                                                                                                                                               newDataAvailable(false),
+                                                                                                                                               runRenderLoop(true),
+                                                                                                                                               logger(logger),
+                                                                                                                                               safety_threshold(safety_thresh),
+                                                                                                                                               camK((Matrix3d() << FX, 0, CX,
+                                                                                                                                                     0, FY, CY,
+                                                                                                                                                     0, 0, 1)
+                                                                                                                                                        .finished()),
+                                                                                                                                               image(cv::Mat(480, 640, CV_8UC3))
 {
     windowWidth = 1500;
     windowHeight = 950;
@@ -147,13 +153,14 @@ bool Visualizer::setupTexture()
 }
 
 void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::array<LaserPoint, 720>> &laserPoint,
-                        const Pose &ePoseOutliers, const std::optional<std::array<LaserPoint, 720>> &laserPointOutliers, const int laserRejectI)
+                        const Pose &ePoseOutliers, const std::optional<std::array<LaserPoint, 720>> &laserPointOutliers, const int &laserRejectI, std::vector<BoundingBox> &bboxes)
 {
     visDataBack.groundTruth = groundTruth;
     visDataBack.estimatedPose = estimatedPose;
     visDataBack.drawLaser = laserPoint.has_value();
     visDataBack.freq_localization = localization.getFreq();
     visDataBack.laserRejectCounter = laserRejectI;
+    visDataBack.bboxes = bboxes;
 
     visDataBack.estimatedPoseOutliers = ePoseOutliers;
     visDataBack.drawLaserOutliers = laserPointOutliers.has_value();
@@ -512,6 +519,7 @@ void Visualizer::render()
         swapBuffers();
         setupImGuiFrame();
         drawUIElements();
+        drawCamVis();
         finishRender();
         updateDataAvailability();
     }
@@ -668,5 +676,126 @@ void Visualizer::stop()
     if (window)
     {
         glfwSetWindowShouldClose(window, GL_TRUE);
+    }
+}
+
+void Visualizer::drawCamVis()
+{
+    uint annotateEveryN = 5;
+
+    image.setTo(cv::Scalar(255, 255, 255)); // Set the image to white
+    DrawCenterAndCorners();
+
+    if (!visDataFront.bboxes.empty())
+    {
+        for (auto &box : visDataFront.bboxes)
+        {
+            DrawBoundingBox(box);
+        }
+    }
+
+    for (auto &point : visDataFront.laserPointOutliers)
+    {
+        if (point.getDraw())
+            DrawLidarPointWithAnnotation(point.getImgPts(), point.getBeamIndex(), annotateEveryN, !point.getIsBeamValid());
+    }
+
+    cv::imshow("Bounding Boxes and Lidar Points", image);
+    int key = cv::waitKey(1) & 0xFF;
+    if (key == 27)
+    { // Adjusted for observed codes
+        exit(0);
+    }
+}
+
+void Visualizer::DrawCenterAndCorners()
+{
+    // Draw a black plus sign at the principal point (center of the image)
+    int principal_point_x = static_cast<int>(camK(0, 2));
+    int principal_point_y = static_cast<int>(camK(1, 2));
+    int line_length = 5; // Length of the lines for the plus sign
+
+    // Horizontal line of the plus sign
+    cv::line(image,
+             cv::Point(principal_point_x - line_length, principal_point_y),
+             cv::Point(principal_point_x + line_length, principal_point_y),
+             cv::Scalar(0, 0, 0), 2);
+
+    // Vertical line of the plus sign
+    cv::line(image,
+             cv::Point(principal_point_x, principal_point_y - line_length),
+             cv::Point(principal_point_x, principal_point_y + line_length),
+             cv::Scalar(0, 0, 0), 2);
+
+    // Draw black dots at the corners of the image
+    int dot_radius = 5; // Radius of the dots
+
+    // Top-left corner
+    cv::circle(image, cv::Point(0, 0), dot_radius, cv::Scalar(0, 0, 0), -1);
+    // Top-right corner
+    cv::circle(image, cv::Point(image.cols - 1, 0), dot_radius, cv::Scalar(0, 0, 0), -1);
+    // Bottom-left corner
+    cv::circle(image, cv::Point(0, image.rows - 1), dot_radius, cv::Scalar(0, 0, 0), -1);
+    // Bottom-right corner
+    cv::circle(image, cv::Point(image.cols - 1, image.rows - 1), dot_radius, cv::Scalar(0, 0, 0), -1);
+}
+
+void Visualizer::DrawBoundingBox(BoundingBox &box)
+{
+    // Calculate the actual top-left and bottom-right corners from the center (x, y)
+    int x1 = std::clamp(static_cast<int>(box.x - box.width / 2), 0, image.cols - 1);
+    int y1 = std::clamp(static_cast<int>(box.y - box.height / 2), 0, image.rows - 1);
+    int x2 = std::clamp(static_cast<int>(box.x + box.width / 2), 0, image.cols - 1);
+    int y2 = std::clamp(static_cast<int>(box.y + box.height / 2), 0, image.rows - 1);
+
+    // Draw the actual bounding box in red
+    cv::rectangle(image, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(0, 0, 255), 2);
+
+    // Calculate and draw the expanded bounding box due to safety_threshold in blue
+    int safety_x1 = std::max(0, x1 - safety_threshold);
+    int safety_y1 = std::max(0, y1 - safety_threshold);
+    int safety_x2 = std::min(image.cols - 1, x2 + safety_threshold);
+    int safety_y2 = std::min(image.rows - 1, y2 + safety_threshold);
+
+    cv::rectangle(image, cv::Point(safety_x1, safety_y1), cv::Point(safety_x2, safety_y2), cv::Scalar(255, 0, 0), 1);
+}
+
+void Visualizer::DrawLidarPointWithAnnotation(const Vector2d &pImgPx, u_int index, int annotateEveryN, bool isInsideBoundingBox)
+{
+    // Define a set of y-offsets
+    std::vector<int> yOffset = {-40, -20, 20, 40};
+
+    // Choose offset index based on the point index
+    int offsetIndex = index / annotateEveryN % yOffset.size();
+
+    // Use the chosen offset for the y position
+    int yPosition = static_cast<int>(pImgPx(1)) + yOffset[offsetIndex];
+
+    // Keep the y position within image bounds
+    yPosition = std::max(0, std::min(image.rows - 1, yPosition));
+
+    // Check if the point is within image bounds
+    if (pImgPx(0) >= 0 && pImgPx(0) < image.cols && pImgPx(1) >= 0 && pImgPx(1) < image.rows)
+    {
+
+        cv::Scalar color = isInsideBoundingBox ? cv::Scalar(255, 0, 0) : cv::Scalar(0, 127, 255); // Blue for inside, Orange for outside
+        // Draw the lidar point on the image
+        cv::circle(image, cv::Point(static_cast<int>(pImgPx(0)), static_cast<int>(pImgPx(1))), 3, color, -1);
+
+        // Annotate only every nth point
+        if (index % annotateEveryN == 0)
+        {
+            cv::putText(image, std::to_string(index), cv::Point(static_cast<int>(pImgPx(0)), yPosition),
+                        cv::FONT_HERSHEY_SIMPLEX, 0.5, color, 2);
+        }
+
+        if (!isInsideBoundingBox)
+        {
+            logger.info("Point outside of bounding box - Index: " + std::to_string(index));
+        }
+    }
+    else
+    {
+        logger.info("Point outside of image bounds - Index: " + std::to_string(index));
     }
 }

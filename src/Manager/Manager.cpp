@@ -21,7 +21,7 @@ Manager::Manager(Logger &logger, OperationalMode mode)
     setupSignalHandler();
     if (mode == OperationalMode::Online)
     {
-        visualizer = std::make_unique<Visualizer>(localization, localization_w_semantics, PM_m, logger);
+        visualizer = std::make_unique<Visualizer>(localization, localization_w_semantics, PM_m, logger, SAFETY_THRESHOLD);
         setupVisualizationThread();
     }
 }
@@ -133,7 +133,7 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
             if (visualizer) // Ensure visualizer is not nullptr before dereferencing
             {
                 visualizer->update(GT_pose, localization.getPose(), optLaserReadings, localization_w_semantics.getPose(),
-                                   optLaserReadings_semantics, counter); // TODO: draw counter in visaualizer component
+                                   optLaserReadings_semantics, counter, outliers);
             }
             logger.trace("Processing Perfect Match.");
         }
