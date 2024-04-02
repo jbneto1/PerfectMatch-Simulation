@@ -212,6 +212,7 @@ void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, cons
         {
             localization_semantics.getPM().setSafetyThreshold(localUpdate.safetyThresholdSet);
             localUpdate.safetyThresholdGet = localization_semantics.getPM().getSafetyThreshold();
+            safety_threshold = localization_semantics.getPM().getSafetyThreshold();
             localUpdate.hasSafetyChanged = false;
         }
     }
@@ -618,7 +619,7 @@ void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const 
     {
         const auto &point = laserP[i];
 
-        if ((point.getD() <= 0) || (!point.getIsBeamValid()))
+        if (!point.getIsBeamValid()) // dont draw invalid beams
             continue;
 
         // Transform from robot's frame to global frame
@@ -791,11 +792,11 @@ void Visualizer::DrawLidarPointWithAnnotation(const Vector2d &pImgPx, u_int inde
 
         if (!isInsideBoundingBox)
         {
-            logger.info("Point outside of bounding box - Index: " + std::to_string(index));
+            logger.trace("Point outside of bounding box - Index: " + std::to_string(index));
         }
     }
     else
     {
-        logger.info("Point outside of image bounds - Index: " + std::to_string(index));
+        logger.trace("Point outside of image bounds - Index: " + std::to_string(index));
     }
 }

@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(OpenCV REQUIRED)
 
 # Add thread sanitizer flags if needed
-set(SANITIZE_THREAD TRUE)  # Set this to OFF to disable Thread Sanitizer
+set(SANITIZE_THREAD FALSE)  # Set this to OFF to disable Thread Sanitizer
 if(SANITIZE_THREAD)
     add_compile_options(-fsanitize=thread -g -O1)
     link_libraries(-fsanitize=thread)
