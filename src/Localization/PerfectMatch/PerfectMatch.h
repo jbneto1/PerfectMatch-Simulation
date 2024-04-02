@@ -6,7 +6,6 @@
 #include <cmath>
 #include <stdexcept>
 #include <chrono>
-#include <opencv4/opencv2/opencv.hpp>
 
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
@@ -61,9 +60,6 @@ private:
 
     void IterLaser(std::array<LaserPoint, 720> &LaserPoints);
 
-    void DrawBoundingBox(BoundingBox &box, cv::Mat &image);
-    void DrawLidarPointWithAnnotation(const Vector2d &pImgPx, cv::Mat &image, u_int index, int annotateEveryN, bool isInsideBoundingBox);
-    void DrawCenterAndCorners(cv::Mat &image);
     bool isPointInsideBB(const Vector2d &point, const BoundingBox &box);
 
     // void CorrectDistortion(Vector3d &point);

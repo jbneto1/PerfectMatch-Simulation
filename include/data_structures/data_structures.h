@@ -8,6 +8,9 @@
 #include "Eigen/Dense"
 
 #include "utils/utils.h"
+#include "config/config.h"
+
+using Eigen::Vector2d;
 
 class Pose
 {
@@ -97,15 +100,19 @@ private:
     double y;
     double std_dev;
     bool valid;
+    bool draw;
     u_int index;
 
     double dx, dy, dtheta;
 
+    // Image coordinates
+    Vector2d pImgPx;
+
 public:
-    LaserPoint() : d(0), angle(0), x(0), y(0), std_dev(1), valid(true), index(-1), dx(0), dy(0), dtheta(0) {}
+    LaserPoint() : d(0), angle(0), x(0), y(0), std_dev(1), valid(true), draw(true), index(-1), dx(0), dy(0), dtheta(0), pImgPx(Vector2d::Zero()) {}
 
     LaserPoint(double d, double angle, double x, double y, u_int idx, double std_dev = 1, bool beamValid = true) : d(d), angle(angle), x(x), y(y),
-                                                                                                                   std_dev(std_dev), valid(beamValid), index(idx), dx(0), dy(0), dtheta(0) {}
+                                                                                                                   std_dev(std_dev), valid(beamValid), draw(true), index(idx), dx(0), dy(0), dtheta(0), pImgPx(Vector2d::Zero()) {}
 
     double getD() const { return d; }
 
@@ -146,12 +153,59 @@ public:
     double getDy() const { return dy; }
 
     double getDtheta() const { return dtheta; }
+
+    Vector2d getImgPts() const { return pImgPx; }
+
+    void setImgPts(Vector2d imgPtsPx) { this->pImgPx = imgPtsPx; }
+
+    void setDraw(bool draw) { this->draw = draw; }
+
+    bool getDraw() const { return draw; }
 };
 
 struct BoundingBox
 {
     int class_id;
     double conf, x, y, width, height;
+};
+
+struct VisualizationData
+{
+    Pose groundTruth = {};
+    Pose estimatedPose = {};
+    std::array<LaserPoint, 720> laserPoint = {};
+    bool drawLaser = false;
+    int laserRejectCounter = 0;
+
+    float freq_localization = 0;
+
+    Pose estimatedPoseOutliers = {};
+    bool drawLaserOutliers = false;
+    std::array<LaserPoint, 720> laserPointOutliers = {};
+    std::vector<BoundingBox> bboxes = {};
+};
+
+struct LocalizationUpdateData
+{
+
+    bool hasStepChanged = false;
+    bool hasQkChanged = false;
+    bool hasPoseChanged = false;
+    bool hasSafetyChanged = false;
+
+    double stepSet = 0.0;
+    double stepGet = 0.0;
+
+    double Qk_covarianceSet = 0.0;
+    double Qk_covarianceGet = 0.0;
+
+    int safetyThresholdSet = SAFETY_THRESHOLD;
+    int safetyThresholdGet = SAFETY_THRESHOLD;
+
+    Pose newPose = {};
+
+    double PMError = 0.0;
+    double PMError_semantics = 0.0;
 };
 
 #endif

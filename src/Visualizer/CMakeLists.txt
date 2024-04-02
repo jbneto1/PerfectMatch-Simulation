@@ -35,16 +35,17 @@ add_library(Visualizer ${VISUALIZER_SRC})
 
 # The Visualizer includes headers from the 'include' directory and 'src' directory
 target_include_directories(Visualizer
-    PRIVATE
+    PUBLIC
         ${PROJECT_SOURCE_DIR}/include/
-        ${PROJECT_SOURCE_DIR}/src/       
+        ${PROJECT_SOURCE_DIR}/src/    
+        ${OpenCV_INCLUDE_DIRS}
 )
 
 add_library(stbImageInit ${PROJECT_SOURCE_DIR}/include/third_party/stb/stb_image_init.cpp)
 
 # Link Visualizer with its dependencies
 target_link_libraries(Visualizer
-    PRIVATE
+    PUBLIC
         stbImageInit
         ImGui
         glfw
@@ -52,4 +53,5 @@ target_link_libraries(Visualizer
         OpenGL::GL  # Use the imported target provided by find_package
         Localization
         Logger
+        ${OpenCV_LIBS}
 )

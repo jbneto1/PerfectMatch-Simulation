@@ -12,8 +12,8 @@ import time
 running = True
 
 # NETWORK DEFINES for SIMTWO comm
-ip = "192.168.1.79"  # WINDOWS IP HOME
-# ip = "193.137.108.252" # WINDOWS IP CEDRI
+# ip = "192.168.1.79"  # WINDOWS IP HOME
+ip = "10.20.38.140"  # WINDOWS IP CEDRI
 port_simtwo = "9899"
 
 # NETWORK DEFINES FOR READY MSG (WSL2 CODES)

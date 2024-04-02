@@ -15,8 +15,8 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
                                                                                            TH_LC((Matrix4d() << ((Rz.toRotationMatrix() * Ry.toRotationMatrix()) * Rx.toRotationMatrix()), t_LC,
                                                                                                   0, 0, 0, 1)
                                                                                                      .finished()),
-                                                                                           K((Matrix3d() << 219.96470465, 0, 319.21197429,
-                                                                                              0, 219.94273694, 241.81387698,
+                                                                                           K((Matrix3d() << FX, 0, CX,
+                                                                                              0, FY, CY,
                                                                                               0, 0, 1)
                                                                                                  .finished()),
                                                                                            distCoeffs((VectorXd(5) << -4.24918902e-03,
@@ -128,6 +128,7 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints)
         if (point.getD() <= 0)
         {
             point.setIsBeamValid(false);
+            point.setDraw(false);
             point.setBeamIndex(idx);
             idx++;
             continue;
@@ -163,7 +164,8 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints)
 }
 
 // ------------------------ DEPRECATED -------------------------------------------------------------------------//
-
+// FIXME: need laser beam timestamps
+/*
 Pose PerfectMatch::interpolatePose(const Pose &previousPose, const Pose &currentPose, const double alpha)
 {
     double x = previousPose.getX() + alpha * (currentPose.getX() - previousPose.getX());
@@ -196,7 +198,7 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints, 
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     logger.info("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
 }
-
+*/
 // --------------------------------------------------------------------------------------------------------------//
 
 // TODO: implement the distortion correction for the pinhole camera model.
@@ -227,57 +229,7 @@ void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints, 
 //     point(1) = yCorrected * K(1, 1) + K(1, 2);
 // }
 
-void PerfectMatch::DrawCenterAndCorners(cv::Mat &image)
-{
-    // Draw a black plus sign at the principal point (center of the image)
-    int principal_point_x = static_cast<int>(K(0, 2));
-    int principal_point_y = static_cast<int>(K(1, 2));
-    int line_length = 5; // Length of the lines for the plus sign
-
-    // Horizontal line of the plus sign
-    cv::line(image,
-             cv::Point(principal_point_x - line_length, principal_point_y),
-             cv::Point(principal_point_x + line_length, principal_point_y),
-             cv::Scalar(0, 0, 0), 2);
-
-    // Vertical line of the plus sign
-    cv::line(image,
-             cv::Point(principal_point_x, principal_point_y - line_length),
-             cv::Point(principal_point_x, principal_point_y + line_length),
-             cv::Scalar(0, 0, 0), 2);
-
-    // Draw black dots at the corners of the image
-    int dot_radius = 5; // Radius of the dots
-
-    // Top-left corner
-    cv::circle(image, cv::Point(0, 0), dot_radius, cv::Scalar(0, 0, 0), -1);
-    // Top-right corner
-    cv::circle(image, cv::Point(image.cols - 1, 0), dot_radius, cv::Scalar(0, 0, 0), -1);
-    // Bottom-left corner
-    cv::circle(image, cv::Point(0, image.rows - 1), dot_radius, cv::Scalar(0, 0, 0), -1);
-    // Bottom-right corner
-    cv::circle(image, cv::Point(image.cols - 1, image.rows - 1), dot_radius, cv::Scalar(0, 0, 0), -1);
-}
-
-void PerfectMatch::DrawBoundingBox(BoundingBox &box, cv::Mat &image)
-{
-    // Calculate the actual top-left and bottom-right corners from the center (x, y)
-    int x1 = std::clamp(static_cast<int>(box.x - box.width / 2), 0, image.cols - 1);
-    int y1 = std::clamp(static_cast<int>(box.y - box.height / 2), 0, image.rows - 1);
-    int x2 = std::clamp(static_cast<int>(box.x + box.width / 2), 0, image.cols - 1);
-    int y2 = std::clamp(static_cast<int>(box.y + box.height / 2), 0, image.rows - 1);
-
-    // Draw the actual bounding box in red
-    cv::rectangle(image, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(0, 0, 255), 2);
-
-    // Calculate and draw the expanded bounding box due to safety_threshold in blue
-    int safety_x1 = std::max(0, x1 - safety_threshold);
-    int safety_y1 = std::max(0, y1 - safety_threshold);
-    int safety_x2 = std::min(image.cols - 1, x2 + safety_threshold);
-    int safety_y2 = std::min(image.rows - 1, y2 + safety_threshold);
-
-    cv::rectangle(image, cv::Point(safety_x1, safety_y1), cv::Point(safety_x2, safety_y2), cv::Scalar(255, 0, 0), 1);
-}
+// ------------------------------------------------------------------------------------------------------------//
 
 bool PerfectMatch::isPointInsideBB(const Vector2d &point, const BoundingBox &box)
 {
@@ -291,71 +243,26 @@ bool PerfectMatch::isPointInsideBB(const Vector2d &point, const BoundingBox &box
     return false;
 }
 
-void PerfectMatch::DrawLidarPointWithAnnotation(const Vector2d &pImgPx, cv::Mat &image, u_int index, int annotateEveryN, bool isInsideBoundingBox)
-{
-    // Define a set of y-offsets
-    std::vector<int> yOffset = {-40, -20, 20, 40};
-
-    // Choose offset index based on the point index
-    int offsetIndex = index / annotateEveryN % yOffset.size();
-
-    // Use the chosen offset for the y position
-    int yPosition = static_cast<int>(pImgPx(1)) + yOffset[offsetIndex];
-
-    // Keep the y position within image bounds
-    yPosition = std::max(0, std::min(image.rows - 1, yPosition));
-
-    // Check if the point is within image bounds
-    if (pImgPx(0) >= 0 && pImgPx(0) < image.cols && pImgPx(1) >= 0 && pImgPx(1) < image.rows)
-    {
-
-        cv::Scalar color = isInsideBoundingBox ? cv::Scalar(255, 0, 0) : cv::Scalar(0, 127, 255); // Blue for inside, Orange for outside
-        // Draw the lidar point on the image
-        cv::circle(image, cv::Point(static_cast<int>(pImgPx(0)), static_cast<int>(pImgPx(1))), 3, color, -1);
-
-        // Annotate only every nth point
-        if (index % annotateEveryN == 0)
-        {
-            cv::putText(image, std::to_string(index), cv::Point(static_cast<int>(pImgPx(0)), yPosition),
-                        cv::FONT_HERSHEY_SIMPLEX, 0.5, color, 2);
-        }
-
-        if (!isInsideBoundingBox)
-        {
-            logger.info("Point outside of bounding box - Index: " + std::to_string(index));
-        }
-    }
-    else
-    {
-        logger.info("Point outside of image bounds - Index: " + std::to_string(index));
-    }
-}
-
 void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
 {
-    cv::Mat image(480, 640, CV_8UC3);       // 480 rows x 640 columns 8 bits (0-255) 3 channels (RGB)
-    image.setTo(cv::Scalar(255, 255, 255)); // Set the image to white
-    DrawCenterAndCorners(image);
     counter = 0;
-    int annotateEveryN = 5;
 
-    // Draw all bounding boxes on the image
-    if (!outliers.empty())
-    {
-        for (auto &box : outliers)
-        {
-            DrawBoundingBox(box, image);
-        }
-    }
+    // TODO: verify with supervisors
 
     for (auto &point : LaserPoints)
     {
+        if (!point.getIsBeamValid()) // skip invalid beams
+            continue;
+
         // Transform point from lidar to camera perspective
         Vector4d pointInLidar(point.getX(), point.getY(), 0, 1); // Homogeneous coordinates
         Vector4d pointInCamera = TH_LC * pointInLidar;           // Still in homogeneous coordinates
 
-        if (pointInCamera(2) <= 0) // If it has a negative Z it is behind the camera.
+        if (pointInCamera(2) <= 0)
+        {
+            point.setDraw(false);
             continue;
+        } // If it has a negative Z it is behind the camera.
 
         // Project point onto image plane
         Vector3d nullVector = Vector3d::Zero();
@@ -363,6 +270,7 @@ void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, s
         homogeneousK << K, nullVector;
         Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
         Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
+        point.setImgPts(pImgPx);
 
         // Check if the point falls inside any bounding box
         bool insideAnyBoundingBox = false;
@@ -380,13 +288,65 @@ void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, s
             counter++;
             point.setIsBeamValid(false);
         }
-
-        DrawLidarPointWithAnnotation(pImgPx, image, point.getBeamIndex(), annotateEveryN, insideAnyBoundingBox);
-    }
-    cv::imshow("Bounding Boxes and Lidar Points", image);
-    int key = cv::waitKey(1) & 0xFF;
-    if (key == 27)
-    { // Adjusted for observed codes
-        exit(0);
     }
 }
+
+/*Optimizations*/
+
+// TODO:
+/*
+void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
+{
+    counter = 0;
+
+    // First, compute the image points for all LaserPoints.
+    for (auto &point : LaserPoints)
+    {
+        Vector4d pointInLidar(point.getX(), point.getY(), 0, 1);
+        Vector4d pointInCamera = TH_LC * pointInLidar;
+
+        // Reject points that are behind the camera or too close to it (z <= 0)
+        if (pointInCamera(2) <= 0)
+        {
+            point.setDraw(false); // Optionally mark point as not to be drawn
+            continue;
+        }
+
+        Vector3d nullVector = Vector3d::Zero();
+        MatrixXd homogeneousK(3, 4);
+        homogeneousK << K, nullVector; // Setup for projecting point onto image plane
+        Vector3d pointInImage = homogeneousK * pointInCamera;
+        Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
+        point.setImgPts(pImgPx); // Compute and set the image coordinates
+    }
+
+    if (outliers.empty()) return;
+
+    // Then, check each LaserPoint against the bounding boxes.
+    for (const BoundingBox &box : outliers)
+    {
+        bool hasStartedFallingInside = false;
+
+        for (auto &point : LaserPoints)
+        {
+            // Skip already invalidated points
+            if (!point.getIsBeamValid())
+                continue;
+
+            // Now we only need to check if it's within the bounding box
+            if (isPointInsideBB(point.getImgPts(), box))
+            {
+                hasStartedFallingInside = true;
+                point.setIsBeamValid(false); // Invalidate the point
+                counter++;
+            }
+            else if (hasStartedFallingInside)
+            {
+                // If a point was inside the bounding box, but this one isn't,
+                // subsequent points are unlikely to be inside this bounding box.
+                break;
+            }
+        }
+    }
+}
+*/
