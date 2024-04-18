@@ -89,9 +89,10 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
         tokens.push_back(token);
     }
 
-    if (tokens.size() < (3 /* Pose */ + 4 /* Encoders */ + 720 /* Lidar points */ + 1 /* Timestamp */))
+    // Minimum tokens: 3 Pose + 4 Encoders + 1 Lidar (at least) + 1 Timestamp
+    if (tokens.size() < 9)
     {
-        logger.error("Datagram tokens size less than the minimum size. Returning null.");
+        logger.error("Insufficient tokens in the log line. Returning null.");
         return std::make_tuple(std::array<int, 4>{}, Pose{}, std::nullopt, std::nullopt, 0);
     }
 
@@ -101,59 +102,56 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
         std::array<int, 4> encoders = {std::stoi(tokens[3]), std::stoi(tokens[4]), std::stoi(tokens[5]), std::stoi(tokens[6])};
         std::vector<LaserPoint> lidarPoints;
 
-        for (int i = 0; i < 720; ++i)
+        int currentIndex = 7; // Start of lidar data
+        // Parse lidar points until 'N' or 'NoDetections'
+        while (tokens[currentIndex] != "N" && tokens[currentIndex] != "NoDetections")
         {
-            lidarPoints[i].setD(std::stod(tokens[7 + i]));
+            LaserPoint tmp;
+            tmp.setD(std::stod(tokens[currentIndex++]));
+            lidarPoints.push_back(tmp);
+            if (currentIndex >= tokens.size())
+                break; // Safety check
         }
-
-        size_t currentIndex = 727; // Directly after lidar points
         std::vector<BoundingBox> boundingBoxes;
 
-        try
+        if (tokens[currentIndex] == "N")
         {
-            // bool isTokenN = (tokens[currentIndex] == "N");
-            if ((currentIndex < tokens.size()) && (tokens[currentIndex] == "N"))
+            int bboxCount = std::stoi(tokens[++currentIndex]); // Read count after 'N'
+            currentIndex++;                                    // Move to the start of bounding box data
+            for (int i = 0; i < bboxCount; ++i)
             {
-                size_t bboxCount = std::stoi(tokens[++currentIndex]);
-                currentIndex++; // Move past the bounding box count
-
-                for (size_t i = 0; i < bboxCount; ++i)
+                if (currentIndex + 5 > tokens.size())
                 {
-                    if (currentIndex + 5 > tokens.size())
-                    {
-                        throw std::runtime_error("Not enough tokens for bounding box data.");
-                    }
-
-                    // Parse bounding box data
-                    int class_id = std::stoi(tokens[currentIndex++].substr(1));
-                    double conf = std::stod(tokens[currentIndex++]);
-                    double x = std::stod(tokens[currentIndex++]);
-                    double y = std::stod(tokens[currentIndex++]);
-                    double width = std::stod(tokens[currentIndex++]);
-                    double height = std::stod(tokens[currentIndex++]);
-
-                    boundingBoxes.push_back(BoundingBox{class_id, conf, x, y, width, height});
+                    throw std::runtime_error("Insufficient tokens for bounding box data.");
                 }
-            }
-            long long timestamp = std::stoll(tokens.back());
-            static long long firstTimestamp = -1; // To normalize timestamps
-            if (firstTimestamp == -1)
-            {
-                firstTimestamp = timestamp;
-            }
-            timestamp -= firstTimestamp;
+                int class_id = std::stoi(tokens[currentIndex++].substr(1));
+                double conf = std::stod(tokens[currentIndex++]);
+                double x = std::stod(tokens[currentIndex++]);
+                double y = std::stod(tokens[currentIndex++]);
+                double width = std::stod(tokens[currentIndex++]);
+                double height = std::stod(tokens[currentIndex++]);
 
-            return std::make_tuple(encoders, pose, std::make_optional(lidarPoints), std::make_optional(boundingBoxes), timestamp);
+                boundingBoxes.push_back(BoundingBox{class_id, conf, x, y, width, height});
+            }
         }
-        catch (const std::exception &e)
+        else if (tokens[currentIndex] == "NoDetections")
         {
-            logger.error("General BB parsing error of the data log line. Exception: " + std::string(e.what()));
-            return std::make_tuple(std::array<int, 4>{}, Pose{}, std::nullopt, std::nullopt, 0);
+            currentIndex++; // Simply skip this token
         }
+
+        long long timestamp = std::stoll(tokens.back());
+        static long long firstTimestamp = -1; // Normalize timestamps
+        if (firstTimestamp == -1)
+        {
+            firstTimestamp = timestamp;
+        }
+        timestamp -= firstTimestamp;
+
+        return std::make_tuple(encoders, pose, std::make_optional(lidarPoints), std::make_optional(boundingBoxes), timestamp);
     }
     catch (const std::exception &e)
     {
-        logger.error("General proprioceptive data parsing error of the data log line. Exception: " + std::string(e.what()));
+        logger.error("General parsing error of the data log line. Exception: " + std::string(e.what()));
         return std::make_tuple(std::array<int, 4>{}, Pose{}, std::nullopt, std::nullopt, 0);
     }
 }

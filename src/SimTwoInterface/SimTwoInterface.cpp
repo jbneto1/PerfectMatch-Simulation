@@ -318,21 +318,15 @@ SimTwoInterface::getSensorData(const std::string &data)
             }
             else if (line.find("lidar") != std::string::npos)
             {
-                if (!lidar)
-                {
-                    lidar = std::vector<LaserPoint>{};
-                }
-
-                std::getline(iss, line);
-                std::istringstream iss_lidar(line);
+                if (!lidar.has_value())
+                    lidar.emplace(); // Create the vector if not already created.
+                std::istringstream iss_lidar(line.substr(line.find(":") + 1));
                 std::string val;
-
-                int lidar_index = 0;
                 while (std::getline(iss_lidar, val, ','))
                 {
-                    if (lidar_index >= lidar->size())
-                        throw std::out_of_range("Lidar index out of bounds.");
-                    lidar.value()[lidar_index++].setD(std::stod(val));
+                    LaserPoint lp;
+                    lp.setD(std::stod(val));
+                    lidar->push_back(lp);
                 }
             }
         }
