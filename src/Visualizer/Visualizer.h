@@ -37,8 +37,8 @@ public:
 
     ~Visualizer();
 
-    void update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::array<LaserPoint, 720>> &laserPoint,
-                const Pose &ePoseOutliers, const std::optional<std::array<LaserPoint, 720>> &laserPointOutliers, const int &laserRejectI, std::vector<BoundingBox> &bboxes);
+    void update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::vector<LaserPoint>> &laserPoint,
+                const Pose &ePoseOutliers, const std::optional<std::vector<LaserPoint>> &laserPointOutliers, const int &laserRejectI, std::vector<BoundingBox> &bboxes);
 
     void render();
 
@@ -100,7 +100,7 @@ private:
 
     void drawTriangle(ImDrawList *draw_list, const Pose &pose, const ImColor &color) const;
 
-    void drawLidarPoints(ImDrawList *draw_list, const Pose &robot, const std::array<LaserPoint, 720> &laserPoint,
+    void drawLidarPoints(ImDrawList *draw_list, const Pose &robot, const std::vector<LaserPoint> &laserPoint,
                          const ImColor &color) const;
 
     bool setupGlfwWindow();

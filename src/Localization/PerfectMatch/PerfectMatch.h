@@ -28,7 +28,7 @@ class PerfectMatch
 public:
     PerfectMatch(Logger &logger, const Pose startPose = Pose(), const double stepScale = STEP_SCALE);
 
-    Pose match(std::array<LaserPoint, 720> &data);
+    Pose match(std::vector<LaserPoint> &data);
 
     void setPose(const Pose pose) { this->RobotPose = pose; }
 
@@ -36,10 +36,10 @@ public:
 
     double getError() const { return this->pmError; }
 
-    void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints);
-    void ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints, const Pose &previousPose, const Pose &currentPose);
+    void ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints);
+    void ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints, const Pose &previousPose, const Pose &currentPose);
 
-    void ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
+    void ProcessBBOutliers(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
 
     void setStep(const double stepScale) { this->stepScale = stepScale; }
 
@@ -58,7 +58,7 @@ private:
 
     int YTopixel(double y);
 
-    void IterLaser(std::array<LaserPoint, 720> &LaserPoints);
+    void IterLaser(std::vector<LaserPoint> &LaserPoints);
 
     bool isPointInsideBB(const Vector2d &point, const BoundingBox &box);
 

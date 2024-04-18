@@ -173,7 +173,7 @@ struct VisualizationData
 {
     Pose groundTruth = {};
     Pose estimatedPose = {};
-    std::array<LaserPoint, 720> laserPoint = {};
+    std::vector<LaserPoint> laserPoint = {};
     bool drawLaser = false;
     int laserRejectCounter = 0;
 
@@ -181,7 +181,7 @@ struct VisualizationData
 
     Pose estimatedPoseOutliers = {};
     bool drawLaserOutliers = false;
-    std::array<LaserPoint, 720> laserPointOutliers = {};
+    std::vector<LaserPoint> laserPointOutliers = {};
     std::vector<BoundingBox> bboxes = {};
 };
 

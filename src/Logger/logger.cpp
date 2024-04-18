@@ -222,7 +222,7 @@ void Logger::deactivate_Loggers()
 }
 
 void Logger::fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose,
-                         const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, const std::string &yoloData)
+                         const std::optional<std::vector<LaserPoint>> &laserReadings, const std::string &yoloData)
 {
     std::ostringstream oss;
     std::string now_c;

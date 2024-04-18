@@ -36,7 +36,7 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
     pmError = 0;
 }
 
-Pose PerfectMatch::match(std::array<LaserPoint, 720> &data)
+Pose PerfectMatch::match(std::vector<LaserPoint> &data)
 {
     // Implement the matching algorithm and return the results
 
@@ -64,7 +64,7 @@ int PerfectMatch::YTopixel(double y)
     return static_cast<int>(std::round(-y * meterToPixel) + map.getHeight() / 2);
 }
 
-void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints)
+void PerfectMatch::IterLaser(std::vector<LaserPoint> &LaserPoints)
 {
     auto start = std::chrono::high_resolution_clock::now();
     double dx = 0;
@@ -116,7 +116,7 @@ void PerfectMatch::IterLaser(std::array<LaserPoint, 720> &LaserPoints)
         pmError = pmError / n;
 }
 
-void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints)
+void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints)
 {
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -243,7 +243,7 @@ bool PerfectMatch::isPointInsideBB(const Vector2d &point, const BoundingBox &box
     return false;
 }
 
-void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
+void PerfectMatch::ProcessBBOutliers(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
 {
     counter = 0;
 

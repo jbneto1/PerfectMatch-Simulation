@@ -35,7 +35,7 @@ public:
     void warn(const std::string &message);
     void error(const std::string &message);
 
-    void fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::array<LaserPoint, 720UL>> &laserReadings, const std::string &yoloData);
+    void fileLog_bag(const std::array<int, 4UL> &encs, const Pose &GT_pose, const std::optional<std::vector<LaserPoint>> &laserReadings, const std::string &yoloData);
     void fileLog_offlineAnalysis(const std::tuple<Pose, Pose, Pose, double, Matrix3d> &localization,
                                  const std::tuple<Pose, Pose, Pose, double, Matrix3d, u_int> &localization_w_semantics);
     void createOfflineLoggers();
