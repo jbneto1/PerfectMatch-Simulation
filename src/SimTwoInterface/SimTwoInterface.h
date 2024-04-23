@@ -30,7 +30,7 @@ public:
     ~SimTwoInterface();
 
     // Sensor Data Processing
-    std::tuple<std::array<int, 4>, Pose, std::optional<std::array<LaserPoint, 720>>>
+    std::tuple<std::array<int, 4>, Pose, std::optional<std::vector<LaserPoint>>>
     getSensorData(const std::string &data);
 
     std::vector<BoundingBox> getOutliers(const std::string &yoloBuffer);

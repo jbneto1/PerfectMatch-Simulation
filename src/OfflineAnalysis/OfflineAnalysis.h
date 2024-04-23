@@ -27,7 +27,7 @@ private:
     Logger &logger;
 
     void parseLine(const std::string &line);
-    std::tuple<std::array<int, 4>, Pose, std::optional<std::array<LaserPoint, 720>>, std::optional<std::vector<BoundingBox>>, long long> extractDataFromLine(const std::string &line);
+    std::tuple<std::array<int, 4>, Pose, std::optional<std::vector<LaserPoint>>, std::optional<std::vector<BoundingBox>>, long long> extractDataFromLine(const std::string &line);
 
     // Analysis members
     Pose EKF_pose;

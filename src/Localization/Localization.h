@@ -15,10 +15,10 @@ class Localization
 public:
     Localization(Logger &logger);
 
-    void processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData);
+    void processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT, std::vector<LaserPoint> &lidarData);
     void processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT);
 
-    void processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT, std::array<LaserPoint, 720> &lidarData, const double dt);
+    void processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT, std::vector<LaserPoint> &lidarData, const double dt);
     void processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT, const double dt);
 
     Pose getPose() { return EKF.getPose(); };
@@ -40,7 +40,7 @@ public:
 
 private:
     // private methods
-    Pose PMMatchingWithLimit(PerfectMatch &PM, std::array<LaserPoint, 720> &lidarData, int max_iter,
+    Pose PMMatchingWithLimit(PerfectMatch &PM, std::vector<LaserPoint> &lidarData, int max_iter,
                              std::chrono::milliseconds max_duration);
     void forward_kinematics(const Eigen::Vector4d encs);
     void wSpeeds_estimation(const Eigen::Vector4d encs);

@@ -24,7 +24,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
     {
         auto [encoders, GT_pose, optLaserReadings, yoloData, timestamp] = extractDataFromLine(line);
 
-        std::optional<std::array<LaserPoint, 720UL>> optLaserReadings_semantics;
+        std::optional<std::vector<LaserPoint>> optLaserReadings_semantics;
         std::array<int, 4UL> encoders_semantics;
         Pose GT_pose_semantics;
         u_int counter = 0;
@@ -77,7 +77,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
     }
 }
 
-std::tuple<std::array<int, 4>, Pose, std::optional<std::array<LaserPoint, 720>>, std::optional<std::vector<BoundingBox>>, long long>
+std::tuple<std::array<int, 4>, Pose, std::optional<std::vector<LaserPoint>>, std::optional<std::vector<BoundingBox>>, long long>
 OfflineAnalysis::extractDataFromLine(const std::string &line)
 {
     std::istringstream iss(line);
@@ -99,7 +99,7 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
     {
         Pose pose(std::stod(tokens[0]), std::stod(tokens[1]), std::stod(tokens[2]));
         std::array<int, 4> encoders = {std::stoi(tokens[3]), std::stoi(tokens[4]), std::stoi(tokens[5]), std::stoi(tokens[6])};
-        std::array<LaserPoint, 720> lidarPoints;
+        std::vector<LaserPoint> lidarPoints;
 
         for (int i = 0; i < 720; ++i)
         {

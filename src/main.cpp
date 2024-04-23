@@ -7,12 +7,12 @@
 
 int main(int argc, char *argv[])
 {
-    OperationalMode mode = OperationalMode::Online;
-    std::string logPath = "docs/logs/sensor_data_2024-02-29_12-18-46.txt";
+    OperationalMode mode = OperationalMode::Offline;
+    std::string logPath = "docs/logs/sensor_data_2024-04-23_11-08-28.txt";
 
     try
     {
-        Logger &logger = Logger::getInstance(spdlog::level::debug);
+        Logger &logger = Logger::getInstance(spdlog::level::trace);
         logger.setPattern(std::string("[%^%l%$] %v"));       // Set logging pattern
         logger.trace("Logger instantiated and pattern set"); // Add logging
         Manager manager = Manager(logger, mode);             // Create manager with specified control cycle and logger

@@ -37,7 +37,7 @@ void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const P
 }
 
 void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT,
-                                    std::array<LaserPoint, 720> &lidarData, const double dt)
+                                    std::vector<LaserPoint> &lidarData, const double dt)
 {
 
     processData_wo_PM(encoders, GT);
@@ -85,7 +85,7 @@ void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const P
 }
 
 void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT,
-                                    std::array<LaserPoint, 720> &lidarData)
+                                    std::vector<LaserPoint> &lidarData)
 {
 
     processData_wo_PM(encoders, GT);
@@ -108,7 +108,7 @@ void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Po
     logger.trace("EKF update [us]: " + std::to_string(duration.count()));
 }
 
-Pose Localization::PMMatchingWithLimit(PerfectMatch &PM, std::array<LaserPoint, 720> &lidarData, int max_iter,
+Pose Localization::PMMatchingWithLimit(PerfectMatch &PM, std::vector<LaserPoint> &lidarData, int max_iter,
                                        std::chrono::milliseconds max_duration)
 {
     auto timeout_time = std::chrono::high_resolution_clock::now() + max_duration;

@@ -152,8 +152,8 @@ bool Visualizer::setupTexture()
     return true;
 }
 
-void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::array<LaserPoint, 720>> &laserPoint,
-                        const Pose &ePoseOutliers, const std::optional<std::array<LaserPoint, 720>> &laserPointOutliers, const int &laserRejectI, std::vector<BoundingBox> &bboxes)
+void Visualizer::update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::vector<LaserPoint>> &laserPoint,
+                        const Pose &ePoseOutliers, const std::optional<std::vector<LaserPoint>> &laserPointOutliers, const int &laserRejectI, std::vector<BoundingBox> &bboxes)
 {
     visDataBack.groundTruth = groundTruth;
     visDataBack.estimatedPose = estimatedPose;
@@ -594,7 +594,7 @@ void Visualizer::checkGlError() {}
 
 #endif
 
-void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const std::array<LaserPoint, 720> &laserP,
+void Visualizer::drawLidarPoints(ImDrawList *draw_list, const Pose &pose, const std::vector<LaserPoint> &laserP,
                                  const ImColor &color) const
 {
 
