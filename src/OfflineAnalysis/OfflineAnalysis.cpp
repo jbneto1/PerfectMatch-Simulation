@@ -109,8 +109,8 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
             LaserPoint tmp;
             tmp.setD(std::stod(tokens[currentIndex++]));
             lidarPoints.push_back(tmp);
-            if (currentIndex >= tokens.size())
-                break; // Safety check
+            if (currentIndex >= (tokens.size() - 1)) // -1 to avoid storing timestamp in lidarPoints if there is no BB data
+                break;                               // Safety check
         }
         std::vector<BoundingBox> boundingBoxes;
 

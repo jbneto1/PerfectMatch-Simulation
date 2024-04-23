@@ -52,6 +52,11 @@ file_path_semantics = (
     "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-02-29_12-19-56.txt"
 )
 # %%
+# Case STUDY CONTAINER REFACTOR
+file_path = "/home/braun/Repositories/PerfectMatch-Simulation/docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-04-23_14-35-00.txt"
+file_path_semantics = "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-04-23_11-09-28_ARRAY.txt"
+
+# %%
 
 df = pd.read_csv(file_path)
 df_semantics = pd.read_csv(file_path_semantics)
