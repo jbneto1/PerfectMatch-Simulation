@@ -124,6 +124,7 @@ void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints)
 
     for (auto &point : LaserPoints)
     {
+        logger.debug("Current idx: " + std::to_string(idx));
 
         if (point.getD() <= 0)
         {
@@ -158,7 +159,6 @@ void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints)
         point.setBeamIndex(idx);
 
         idx++;
-        logger.debug("Current idx: " + std::to_string(idx));
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

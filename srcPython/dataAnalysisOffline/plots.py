@@ -53,9 +53,12 @@ file_path_semantics = (
 )
 # %%
 # Case STUDY CONTAINER REFACTOR
-file_path = "/home/braun/Repositories/PerfectMatch-Simulation/docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-04-23_14-35-00.txt"
-file_path_semantics = "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-04-23_11-09-28_ARRAY.txt"
-
+file_path = "docs/logs/logs_offlineAnalysis/container_test__ARRAY_W_SEMANTICS.txt"
+file_path_semantics = (
+    "docs/logs/logs_offlineAnalysis/container_test_VECTOR_W_SEMANTICS.txt"
+)
+print(file_path)
+print(file_path_semantics)
 # %%
 
 df = pd.read_csv(file_path)

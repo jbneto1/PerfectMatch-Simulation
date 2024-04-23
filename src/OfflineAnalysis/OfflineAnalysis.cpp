@@ -31,7 +31,10 @@ void OfflineAnalysis::parseLine(const std::string &line)
 
         encoders_semantics = encoders;
         GT_pose_semantics = GT_pose;
-        optLaserReadings_semantics = *optLaserReadings;
+        if (optLaserReadings.has_value())
+            optLaserReadings_semantics = *optLaserReadings;
+        else
+            logger.error("No lidar data to process!.");
 
         localization.getPM().ProcessLaserPoints(optLaserReadings.value());
 
@@ -117,7 +120,7 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
         logger.info("Parsed " + std::to_string(count) + " laser beams.");
         std::vector<BoundingBox> boundingBoxes;
 
-        if (tokens[currentIndex] == "N")
+        if ((currentIndex < tokens.size()) && (tokens[currentIndex] == "N"))
         {
             int bboxCount = std::stoi(tokens[++currentIndex]); // Read count after 'N'
             currentIndex++;                                    // Move to the start of bounding box data
@@ -137,7 +140,7 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
                 boundingBoxes.push_back(BoundingBox{class_id, conf, x, y, width, height});
             }
         }
-        else if (tokens[currentIndex] == "NoDetections")
+        else if ((currentIndex < tokens.size()) && (tokens[currentIndex] == "NoDetections"))
         {
             currentIndex++; // Simply skip this token
         }
