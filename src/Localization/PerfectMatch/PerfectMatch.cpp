@@ -135,6 +135,7 @@ void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints)
         }
         // CCW rotation
         double currentAngleDegrees = degreeStep * (&point - &LaserPoints[0]);
+        logger.debug("Current angle: " + std::to_string(currentAngleDegrees));
 
         // Adjusted for clockwise rotation, starting from the back
         // convert the angle to radians
@@ -157,6 +158,7 @@ void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints)
         point.setBeamIndex(idx);
 
         idx++;
+        logger.debug("Current idx: " + std::to_string(idx));
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

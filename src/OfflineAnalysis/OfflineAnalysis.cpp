@@ -103,15 +103,18 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
         std::vector<LaserPoint> lidarPoints;
 
         int currentIndex = 7; // Start of lidar data
+        unsigned int count = 0;
         // Parse lidar points until 'N' or 'NoDetections'
         while (tokens[currentIndex] != "N" && tokens[currentIndex] != "NoDetections")
         {
+            count++;
             LaserPoint tmp;
             tmp.setD(std::stod(tokens[currentIndex++]));
             lidarPoints.push_back(tmp);
             if (currentIndex >= (tokens.size() - 1)) // -1 to avoid storing timestamp in lidarPoints if there is no BB data
                 break;                               // Safety check
         }
+        logger.info("Parsed " + std::to_string(count) + " laser beams.");
         std::vector<BoundingBox> boundingBoxes;
 
         if (tokens[currentIndex] == "N")

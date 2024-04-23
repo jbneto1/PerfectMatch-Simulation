@@ -320,13 +320,23 @@ SimTwoInterface::getSensorData(const std::string &data)
             {
                 if (!lidar.has_value())
                     lidar.emplace(); // Create the vector if not already created.
-                std::istringstream iss_lidar(line.substr(line.find(":") + 1));
+                std::getline(iss, line);
+                std::istringstream iss_lidar(line);
                 std::string val;
                 while (std::getline(iss_lidar, val, ','))
                 {
-                    LaserPoint lp;
-                    lp.setD(std::stod(val));
-                    lidar->push_back(lp);
+                    try
+                    {
+                        double distance = std::stod(val); // Convert and catch conversion issues.
+                        LaserPoint lp;
+                        lp.setD(distance);
+                        lidar->push_back(lp);
+                    }
+                    catch (const std::invalid_argument &e)
+                    {
+                        logger.error("Invalid float conversion for lidar data with value: " + val);
+                        continue; // Optionally skip this value or handle it differently.
+                    }
                 }
             }
         }
