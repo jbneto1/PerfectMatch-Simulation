@@ -21,13 +21,14 @@ class OfflineAnalysis
 public:
     OfflineAnalysis(Localization &localization, Localization &localization_w_semantics, Logger &logger);
     void processLogFile(const std::string &filePath);
+    static std::tuple<std::array<int, 4>, Pose, std::optional<std::vector<LaserPoint>>, std::optional<std::vector<BoundingBox>>, long long> extractDataFromLine(const std::string &line, Logger &logger);
 
 private:
     Localization &localization, &localization_w_semantics;
     Logger &logger;
 
-    void parseLine(const std::string &line);
     std::tuple<std::array<int, 4>, Pose, std::optional<std::vector<LaserPoint>>, std::optional<std::vector<BoundingBox>>, long long> extractDataFromLine(const std::string &line);
+    void parseLine(const std::string &line);
 
     // Analysis members
     Pose EKF_pose;
