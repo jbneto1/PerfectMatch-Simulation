@@ -124,6 +124,7 @@ void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints)
 
     for (auto &point : LaserPoints)
     {
+        logger.debug("Current idx: " + std::to_string(idx));
 
         if (point.getD() <= 0)
         {
@@ -135,6 +136,7 @@ void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints)
         }
         // CCW rotation
         double currentAngleDegrees = degreeStep * (&point - &LaserPoints[0]);
+        logger.debug("Current angle: " + std::to_string(currentAngleDegrees));
 
         // Adjusted for clockwise rotation, starting from the back
         // convert the angle to radians
@@ -174,7 +176,7 @@ Pose PerfectMatch::interpolatePose(const Pose &previousPose, const Pose &current
     return Pose(x, y, theta);
 }
 
-void PerfectMatch::ProcessLaserPoints(std::array<LaserPoint, 720> &LaserPoints, const Pose &previousPose, const Pose &currentPose)
+void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints, const Pose &previousPose, const Pose &currentPose)
 {
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -293,9 +295,9 @@ void PerfectMatch::ProcessBBOutliers(std::vector<LaserPoint> &LaserPoints, std::
 
 /*Optimizations*/
 
-// TODO:
+// TODO: results are not the same, it seems not all points are rejected
 /*
-void PerfectMatch::ProcessBBOutliers(std::array<LaserPoint, 720> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
+void PerfectMatch::ProcessBBOutliers(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
 {
     counter = 0;
 
