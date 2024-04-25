@@ -335,7 +335,6 @@ SimTwoInterface::getSensorData(const std::string &data)
                     catch (const std::invalid_argument &e)
                     {
                         logger.error("Invalid float conversion for lidar data with value: " + val);
-                        continue; // Optionally skip this value or handle it differently.
                     }
                 }
             }
