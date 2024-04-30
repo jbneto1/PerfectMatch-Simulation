@@ -20,10 +20,18 @@ constexpr double CONTROL_CYCLE = 0.025;
 constexpr double STEP_SCALE = 0.04;
 constexpr double LASER_RANGE = 360.0;
 constexpr int LASER_RAYS = 720;
-constexpr double A = 0.25 / 2 - 0.05;
-constexpr double B = 0.155 / 2 + 0.015;
+
+// Real robot values
+constexpr double A = 0.0965;
+constexpr double B = 0.109;
 constexpr double C = A + B;
-constexpr double R = 0.065 / 2;
+constexpr double R = 0.065;
+
+// // Simulation values
+// constexpr double A = 0.25 / 2 - 0.05;
+// constexpr double B = 0.155 / 2 + 0.015;
+// constexpr double C = A + B;
+// constexpr double R = 0.065 / 2;
 
 constexpr int SAFETY_THRESHOLD = 5;
 
