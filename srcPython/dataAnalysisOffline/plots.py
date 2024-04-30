@@ -53,8 +53,10 @@ file_path_semantics = (
 )
 # %%
 # Case STUDY CONTAINER REFACTOR
-file_path = "docs/logs/logs_offlineAnalysis/SIMTWO_ARRAY_semantics.txt"
-file_path_semantics = "docs/logs/logs_offlineAnalysis/SIMTWO_VECTOR_semantics.txt"
+file_path = "docs/logs/logs_offlineAnalysis/test_without_outliers_processed.txt"
+file_path_semantics = (
+    "docs/logs/logs_offlineAnalysis/test_without_outliers_w_semantics_processed.txt"
+)
 print(file_path)
 print(file_path_semantics)
 # %%

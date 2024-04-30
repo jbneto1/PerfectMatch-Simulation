@@ -91,14 +91,13 @@ void PerfectMatch::IterLaser(std::vector<LaserPoint> &LaserPoints)
             double gradX = map.getGradientX(u, v);
             double gradY = map.getGradientY(u, v);
 
-            // FIXME: the units of the gradients are in pixels / mm, but the pose is in meters. is that okay?
             dx -= gradX / laserPoint.getStdDev();
             dy += gradY / laserPoint.getStdDev();
             dtheta -= gradX / laserPoint.getStdDev() * (-laserPoint.getX() * st - laserPoint.getY() * ct) - gradY / laserPoint.getStdDev() * (laserPoint.getX() * ct - laserPoint.getY() * st);
             laserPoint.setDx(dx);
             laserPoint.setDy(dy);
             laserPoint.setDtheta(dtheta);
-            pmError += map.getDistance(u, v); // FIXME: this is in pixels, but can be interpreted also as mm
+            pmError += map.getDistance(u, v);
             ++n;
         }
     }
@@ -162,7 +161,7 @@ void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints)
 }
 
 // ------------------------ DEPRECATED -------------------------------------------------------------------------//
-// FIXME: need laser beam timestamps
+// TODO: need laser beam timestamps. maybe
 /*
 Pose PerfectMatch::interpolatePose(const Pose &previousPose, const Pose &currentPose, const double alpha)
 {
@@ -244,8 +243,6 @@ bool PerfectMatch::isPointInsideBB(const Vector2d &point, const BoundingBox &box
 void PerfectMatch::ProcessBBOutliers(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
 {
     counter = 0;
-
-    // TODO: verify with supervisors
 
     for (auto &point : LaserPoints)
     {

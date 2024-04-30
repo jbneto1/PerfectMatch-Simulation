@@ -8,15 +8,15 @@
 int main(int argc, char *argv[])
 {
     OperationalMode mode = OperationalMode::Offline;
-    std::string logPath = "docs/logs/simtwo_test.txt";
+    std::string logPath = "docs/logs/test_with_outliers_raw.txt";
 
     try
     {
         Logger &logger = Logger::getInstance(spdlog::level::debug);
-        logger.setPattern(std::string("[%^%l%$] %v"));       // Set logging pattern
-        logger.trace("Logger instantiated and pattern set"); // Add logging
-        Manager manager = Manager(logger, mode);             // Create manager with specified control cycle and logger
-        logger.trace("Manager instantiated.");               // Add logging
+        logger.setPattern(std::string("[%^%l%$] %v"));
+        logger.trace("Logger instantiated and pattern set");
+        Manager manager = Manager(logger, mode);
+        logger.trace("Manager instantiated.");
 
         if (mode == OperationalMode::Online)
         {
