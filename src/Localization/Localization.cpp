@@ -7,14 +7,18 @@ Localization::Localization(Logger &logger)
           (Eigen::Matrix<double, 3, 4>() << 1, 1, 1, 1,
            -1, 1, 1, -1,
            -1 / c, 1 / c, -1 / c, 1 / c)
-              .finished())
+              .finished()),
+      offsetRot(
+          (Eigen::Matrix2d() << 0.99946845, -0.03260074, 0.03260074, 0.99946845)
+              .finished()),
+      offsetTrans(
+          (Eigen::Vector2d() << 0.00778812, -0.00082407).finished())
 {
     firstIter = true;
 }
 
 void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT, const double dt)
 {
-
     auto start = std::chrono::high_resolution_clock::now();
 
     if (firstIter)
@@ -36,10 +40,10 @@ void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const P
     logger.trace("EKF Predict [us]: " + std::to_string(duration.count()));
 }
 
+// TODO: NOT USED
 void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT,
                                     std::vector<LaserPoint> &lidarData, const double dt)
 {
-
     processData_wo_PM(encoders, GT);
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -62,7 +66,6 @@ void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Po
 
 void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT)
 {
-
     auto start = std::chrono::high_resolution_clock::now();
 
     if (firstIter)
@@ -87,7 +90,6 @@ void Localization::processData_wo_PM(const std::array<int, 4> &encoders, const P
 void Localization::processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT,
                                     std::vector<LaserPoint> &lidarData)
 {
-
     processData_wo_PM(encoders, GT);
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -132,9 +134,67 @@ void Localization::setPose(const Pose &startPose)
     EKF.setPose(startPose);
 }
 
+Pose Localization::extrinsic_calibrate_GT(Pose &uncalibrated_pose)
+{
+    // Create the 2D homogeneous transformation matrix
+    Matrix3d transformation = Matrix3d::Identity();
+    Pose tmp;
+
+    // Set rotation
+    transformation(0, 0) = offsetRot(0, 0);
+    transformation(0, 1) = offsetRot(0, 1);
+    transformation(1, 0) = offsetRot(1, 0);
+    transformation(1, 1) = offsetRot(1, 1);
+
+    // Set translation
+    transformation(0, 2) = offsetTrans(0);
+    transformation(1, 2) = offsetTrans(1);
+
+    // Represent the pose as a homogeneous coordinate vector
+    Vector3d pose_vector(uncalibrated_pose.getX(), uncalibrated_pose.getY(), 1);
+
+    // Apply the transformation
+    Vector3d transformed_pose_vector = transformation * pose_vector;
+
+    // Update the pose's x and y from the transformed vector
+    tmp.setX(transformed_pose_vector(0));
+    tmp.setY(transformed_pose_vector(1));
+    tmp.setTheta(normalizeAngle(atan2(tmp.getY(), tmp.getX())));
+
+    return tmp;
+}
+Pose Localization::extrinsic_calibrate_PM(Pose &uncalibrated_pose)
+{
+    // Create the 2D homogeneous transformation matrix
+    Matrix3d transformation = Matrix3d::Identity();
+    Pose tmp;
+
+    // Set rotation
+    transformation(0, 0) = -1;
+    transformation(0, 1) = 0;
+    transformation(1, 0) = 0;
+    transformation(1, 1) = -1;
+
+    // Set translation
+    transformation(0, 2) = offsetTrans(0);
+    transformation(1, 2) = offsetTrans(1);
+
+    // Represent the pose as a homogeneous coordinate vector
+    Vector3d pose_vector(uncalibrated_pose.getX(), uncalibrated_pose.getY(), 1);
+
+    // Apply the transformation
+    Vector3d transformed_pose_vector = transformation * pose_vector;
+
+    // Update the pose's x and y from the transformed vector
+    tmp.setX(transformed_pose_vector(0));
+    tmp.setY(transformed_pose_vector(1));
+    tmp.setTheta(normalizeAngle(atan2(tmp.getY(), tmp.getX())));
+
+    return tmp;
+}
+
 void Localization::forward_kinematics(const Eigen::Vector4d encs)
 {
-
     wSpeeds_estimation(encs);
     speedsStates = r / 4 * (forwardK_model * wSpeeds);
 }

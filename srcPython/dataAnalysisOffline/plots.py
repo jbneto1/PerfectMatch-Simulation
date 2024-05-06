@@ -1,9 +1,30 @@
 # %%
+# CASE STUDY I
+file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-02-27_16-08-05.txt"
+file_path_semantics = (
+    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-02-27_16-08-05.txt"
+)
+# %%
+# Case STUDY II
+file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-02-29_12-19-56.txt"
+file_path_semantics = (
+    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-02-29_12-19-56.txt"
+)
+# %%
+# Case STUDY CONTAINER REFACTOR
+file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-05-05_16-42-59.txt"
+file_path_semantics = (
+    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-05-05_16-42-59.txt"
+)
+print(file_path)
+print(file_path_semantics)
+
+
+# %%
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Ellipse
-
 
 color_df_wo_semantics = "blue"
 color_df_w_semantics = "darkorange"
@@ -39,26 +60,6 @@ def draw_cov_ellipse(cov, pos, nstd=1, ax=None, **kwargs):
     return ellipse
 
 
-# %%
-# CASE STUDY I
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-02-27_16-08-05.txt"
-file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-02-27_16-08-05.txt"
-)
-# %%
-# Case STUDY II
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-02-29_12-19-56.txt"
-file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-02-29_12-19-56.txt"
-)
-# %%
-# Case STUDY CONTAINER REFACTOR
-file_path = "docs/logs/logs_offlineAnalysis/test_without_outliers_processed.txt"
-file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/test_without_outliers_w_semantics_processed.txt"
-)
-print(file_path)
-print(file_path_semantics)
 # %%
 
 df = pd.read_csv(file_path)

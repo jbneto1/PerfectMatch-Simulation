@@ -21,6 +21,9 @@ public:
     void processData_w_PM(const std::array<int, 4> &encoders, const Pose &GT, std::vector<LaserPoint> &lidarData, const double dt);
     void processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT, const double dt);
 
+    Pose extrinsic_calibrate_GT(Pose &uncalibrated_pose);
+    Pose extrinsic_calibrate_PM(Pose &uncalibrated_pose);
+
     Pose getPose() { return EKF.getPose(); };
     Pose getPreviousPose() { return previousPose; };
     PerfectMatch &getPM() { return PM; };
@@ -63,6 +66,8 @@ private:
     // r is radius of the wheel
     const double c; // a + b
     const Eigen::Matrix<double, 3, 4> forwardK_model;
+    Eigen::Matrix2d offsetRot;
+    Eigen::Vector2d offsetTrans;
 };
 
 #endif // PERFECTMATCH_SIMULATION_LOCALIZATION_H
