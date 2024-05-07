@@ -8,7 +8,7 @@
 int main(int argc, char *argv[])
 {
     OperationalMode mode = OperationalMode::Offline;
-    std::string logPath = "docs/logs/test_translated_table_max_1_7m_no_ppl.txt";
+    std::string logPath = "docs/logs/translated_table_wo_ppl.txt";
 
     try
     {

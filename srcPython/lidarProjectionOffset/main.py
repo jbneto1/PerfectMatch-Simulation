@@ -231,8 +231,10 @@ def verify_data(df):
 # %%
 
 # Define the paths to your log filesa
-raw_log_path = "docs/logs/test_translated_table_max_1_7m_no_ppl.txt"
-processed_log_path = "docs/logs/logs_offlineAnalysis/test_translated_table_max_1_7m_no_ppl_wo_semantics.txt"
+raw_log_path = "docs/logs/translated_table_wo_ppl.txt"
+processed_log_path = (
+    "docs/logs/logs_offlineAnalysis/translated_table_wo_ppl_wo_semantics.txt"
+)
 # %%
 
 df_raw = process_log_file(raw_log_path)

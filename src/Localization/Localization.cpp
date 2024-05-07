@@ -9,10 +9,10 @@ Localization::Localization(Logger &logger)
            -1 / c, 1 / c, -1 / c, 1 / c)
               .finished()),
       offsetRot(
-          (Eigen::Matrix2d() << 0.99946845, -0.03260074, 0.03260074, 0.99946845)
+          (Eigen::Matrix2d() << 0, -1, 1, 0)
               .finished()),
       offsetTrans(
-          (Eigen::Vector2d() << 0.00778812, -0.00082407).finished())
+          (Eigen::Vector2d() << -0.005, 0.001).finished())
 {
     firstIter = true;
 }
@@ -136,61 +136,31 @@ void Localization::setPose(const Pose &startPose)
 
 Pose Localization::extrinsic_calibrate_GT(Pose &uncalibrated_pose)
 {
-    // Create the 2D homogeneous transformation matrix
-    Matrix3d transformation = Matrix3d::Identity();
-    Pose tmp;
+    // Transform pose of ground truth to LIDAR FRAME.
+
+    // Create the 2D homogeneous transformation matrix from GT to LIDAR frame
+    Matrix3d T_LGT = Matrix3d::Identity();
+    Pose pose_vector_L;
 
     // Set rotation
-    transformation(0, 0) = offsetRot(0, 0);
-    transformation(0, 1) = offsetRot(0, 1);
-    transformation(1, 0) = offsetRot(1, 0);
-    transformation(1, 1) = offsetRot(1, 1);
+    T_LGT(0, 1) = offsetRot(0, 1);
+    T_LGT(0, 0) = offsetRot(0, 0);
+    T_LGT(1, 0) = offsetRot(1, 0);
+    T_LGT(1, 1) = offsetRot(1, 1);
 
     // Set translation
-    transformation(0, 2) = offsetTrans(0);
-    transformation(1, 2) = offsetTrans(1);
+    T_LGT(0, 2) = offsetTrans(0);
+    T_LGT(1, 2) = offsetTrans(1);
 
     // Represent the pose as a homogeneous coordinate vector
-    Vector3d pose_vector(uncalibrated_pose.getX(), uncalibrated_pose.getY(), 1);
+    Vector3d pose_vector_GT(uncalibrated_pose.getX(), uncalibrated_pose.getY(), 1);
 
     // Apply the transformation
-    Vector3d transformed_pose_vector = transformation * pose_vector;
+    pose_vector_L = T_LGT * pose_vector_GT;
 
-    // Update the pose's x and y from the transformed vector
-    tmp.setX(transformed_pose_vector(0));
-    tmp.setY(transformed_pose_vector(1));
-    tmp.setTheta(normalizeAngle(atan2(tmp.getY(), tmp.getX())));
+    pose_vector_L.setTheta(normalizeAngle(atan2(pose_vector_L.getY(), pose_vector_L.getX())));
 
-    return tmp;
-}
-Pose Localization::extrinsic_calibrate_PM(Pose &uncalibrated_pose)
-{
-    // Create the 2D homogeneous transformation matrix
-    Matrix3d transformation = Matrix3d::Identity();
-    Pose tmp;
-
-    // Set rotation
-    transformation(0, 0) = -1;
-    transformation(0, 1) = 0;
-    transformation(1, 0) = 0;
-    transformation(1, 1) = -1;
-
-    // Set translation
-    transformation(0, 2) = offsetTrans(0);
-    transformation(1, 2) = offsetTrans(1);
-
-    // Represent the pose as a homogeneous coordinate vector
-    Vector3d pose_vector(uncalibrated_pose.getX(), uncalibrated_pose.getY(), 1);
-
-    // Apply the transformation
-    Vector3d transformed_pose_vector = transformation * pose_vector;
-
-    // Update the pose's x and y from the transformed vector
-    tmp.setX(transformed_pose_vector(0));
-    tmp.setY(transformed_pose_vector(1));
-    tmp.setTheta(normalizeAngle(atan2(tmp.getY(), tmp.getX())));
-
-    return tmp;
+    return pose_vector_L;
 }
 
 void Localization::forward_kinematics(const Eigen::Vector4d encs)

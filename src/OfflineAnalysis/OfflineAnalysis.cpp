@@ -29,6 +29,10 @@ void OfflineAnalysis::parseLine(const std::string &line)
         Pose GT_pose_semantics;
         u_int counter = 0;
 
+        // Transforming GT_pose to lidar's frame, which is the robot's pose.
+
+        GT_pose = localization.extrinsic_calibrate_GT(GT_pose);
+
         encoders_semantics = encoders;
         GT_pose_semantics = GT_pose;
         if (optLaserReadings.has_value())
@@ -46,7 +50,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
         error_PM = localization.getPM().getError();
         EKF_cov = localization.getEKF().getPk();
 
-        auto offlineData = std::make_tuple(EKF_pose, localization.extrinsic_calibrate_PM(PM_pose), error_EKF, error_PM, EKF_cov);
+        auto offlineData = std::make_tuple(EKF_pose, PM_pose, error_EKF, error_PM, EKF_cov);
 
         // Process semantic interpretation
         localization_w_semantics.getPM().ProcessLaserPoints(optLaserReadings_semantics.value());
@@ -68,7 +72,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
         error_PM_semantics = localization_w_semantics.getPM().getError();
         EKF_cov_semantics = localization_w_semantics.getEKF().getPk();
 
-        auto offlineData_semantics = std::make_tuple(EKF_pose_semantics, localization.extrinsic_calibrate_PM(PM_pose_semantics), error_EKF_semantics, error_PM_semantics, EKF_cov_semantics, counter);
+        auto offlineData_semantics = std::make_tuple(EKF_pose_semantics, PM_pose_semantics, error_EKF_semantics, error_PM_semantics, EKF_cov_semantics, counter);
 
         // Log the data
         logger.fileLog_offlineAnalysis(offlineData, offlineData_semantics);

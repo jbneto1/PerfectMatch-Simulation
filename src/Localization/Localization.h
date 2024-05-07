@@ -22,7 +22,6 @@ public:
     void processData_wo_PM(const std::array<int, 4> &encoders, const Pose &GT, const double dt);
 
     Pose extrinsic_calibrate_GT(Pose &uncalibrated_pose);
-    Pose extrinsic_calibrate_PM(Pose &uncalibrated_pose);
 
     Pose getPose() { return EKF.getPose(); };
     Pose getPreviousPose() { return previousPose; };
