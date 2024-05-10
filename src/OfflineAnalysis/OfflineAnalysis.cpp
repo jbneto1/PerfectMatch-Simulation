@@ -29,9 +29,9 @@ void OfflineAnalysis::parseLine(const std::string &line)
         Pose GT_pose_semantics;
         u_int counter = 0;
 
-        // Transforming GT_pose to lidar's frame, which is the robot's pose.
+        // Transforming GT_pose to robot's center frame, which is the robot's pose.
 
-        // GT_pose = localization.extrinsic_calibrate_GT(GT_pose);
+        GT_pose = localization.extrinsic_calibrate_GT(GT_pose);
 
         encoders_semantics = encoders;
         GT_pose_semantics = GT_pose;

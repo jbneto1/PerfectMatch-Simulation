@@ -62,6 +62,8 @@ private:
 
     bool isPointInsideBB(const Vector2d &point, const BoundingBox &box);
 
+    void calibrate_lidar_points(double &rx, double &ry, double px, double py);
+
     // void CorrectDistortion(Vector3d &point);
 
     Map map;

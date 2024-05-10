@@ -9,10 +9,10 @@ Localization::Localization(Logger &logger)
            -1 / c, 1 / c, -1 / c, 1 / c)
               .finished()),
       offsetRot(
-          (Eigen::Matrix2d() << 0, -1, 1, 0)
+          (Eigen::Matrix2d() << cos(degToRad(-0.53)), -(sin(degToRad(-0.53))), sin(degToRad(-0.53)), cos(degToRad(-0.53)))
               .finished()),
       offsetTrans(
-          (Eigen::Vector2d() << -0.005, 0.001).finished())
+          (Eigen::Vector2d() << 1.5, 0.15).finished())
 {
     firstIter = true;
 }
@@ -136,31 +136,29 @@ void Localization::setPose(const Pose &startPose)
 
 Pose Localization::extrinsic_calibrate_GT(Pose &uncalibrated_pose)
 {
-    // Transform pose of ground truth to LIDAR FRAME.
-
-    // Create the 2D homogeneous transformation matrix from GT to LIDAR frame
-    Matrix3d T_LGT = Matrix3d::Identity();
-    Pose pose_vector_L;
+    // Create the 2D homogeneous transformation matrix from GT to robot's center frame
+    Matrix3d T_CG = Matrix3d::Identity();
+    Pose calibrated_gt;
 
     // Set rotation
-    T_LGT(0, 1) = offsetRot(0, 1);
-    T_LGT(0, 0) = offsetRot(0, 0);
-    T_LGT(1, 0) = offsetRot(1, 0);
-    T_LGT(1, 1) = offsetRot(1, 1);
+    T_CG(0, 1) = offsetRot(0, 1);
+    T_CG(0, 0) = offsetRot(0, 0);
+    T_CG(1, 0) = offsetRot(1, 0);
+    T_CG(1, 1) = offsetRot(1, 1);
 
     // Set translation
-    T_LGT(0, 2) = offsetTrans(0);
-    T_LGT(1, 2) = offsetTrans(1);
+    T_CG(0, 2) = offsetTrans(0);
+    T_CG(1, 2) = offsetTrans(1);
 
     // Represent the pose as a homogeneous coordinate vector
     Vector3d pose_vector_GT(uncalibrated_pose.getX(), uncalibrated_pose.getY(), 1);
 
     // Apply the transformation
-    pose_vector_L = T_LGT * pose_vector_GT;
+    calibrated_gt = T_CG * pose_vector_GT;
 
-    pose_vector_L.setTheta(normalizeAngle(atan2(pose_vector_L.getY(), pose_vector_L.getX())));
+    calibrated_gt.setTheta(normalizeAngle(atan2(calibrated_gt.getY(), calibrated_gt.getX())));
 
-    return pose_vector_L;
+    return calibrated_gt;
 }
 
 void Localization::forward_kinematics(const Eigen::Vector4d encs)

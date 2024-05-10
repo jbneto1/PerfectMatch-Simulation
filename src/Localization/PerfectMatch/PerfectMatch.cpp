@@ -54,6 +54,29 @@ void PerfectMatch::RotateAndTranslate(double &rx, double &ry, double px, double 
     logger.trace("Coordinates rotated and translated.");
 }
 
+void PerfectMatch::calibrate_lidar_points(double &rx, double &ry, double px, double py)
+{
+    // Create the 2D homogeneous transformation matrix from Lidar to robot's center frame
+    Matrix3d T_CL = Matrix3d::Identity();
+    Pose calibrated_lidar;
+
+    // Set rotation
+    // Identity matrix for rotation... not theta offset
+
+    // Set translation
+    T_CL(0, 2) = 0.85;
+    T_CL(1, 2) = 0.2;
+
+    // Represent the pose as a homogeneous coordinate vector
+    Vector3d pose_vector_lidar(px, py, 1);
+
+    // Apply the transformation
+    calibrated_lidar = T_CL * pose_vector_lidar;
+
+    rx = calibrated_lidar.getX();
+    ry = calibrated_lidar.getY();
+}
+
 int PerfectMatch::XTopixel(double x)
 {
     return static_cast<int>(std::round(x * meterToPixel) + map.getWidth() / 2);
@@ -82,6 +105,8 @@ void PerfectMatch::IterLaser(std::vector<LaserPoint> &LaserPoints)
 
         double rx, ry;
         RotateAndTranslate(rx, ry, laserPoint.getX(), laserPoint.getY(), RobotPose.getX(), RobotPose.getY(), st, ct);
+        double r_cx, r_cy; // calibrated lidar world points (robots center)
+        calibrate_lidar_points(r_cx, r_cy, rx, ry);
 
         int u = XTopixel(rx);
         int v = YTopixel(ry);
