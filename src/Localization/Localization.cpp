@@ -9,10 +9,10 @@ Localization::Localization(Logger &logger)
            -1 / c, 1 / c, -1 / c, 1 / c)
               .finished()),
       offsetRot(
-          (Eigen::Matrix2d() << cos(degToRad(-0.53)), -(sin(degToRad(-0.53))), sin(degToRad(-0.53)), cos(degToRad(-0.53)))
+          (Eigen::Matrix2d() << cos(degToRad(-0.53)), -sin(degToRad(-0.53)), sin(degToRad(-0.53)), cos(degToRad(-0.53)))
               .finished()),
       offsetTrans(
-          (Eigen::Vector2d() << 1.5, 0.15).finished())
+          (Eigen::Vector2d() << 1.5e-2, 0.3e-2).finished())
 {
     firstIter = true;
 }
@@ -136,29 +136,21 @@ void Localization::setPose(const Pose &startPose)
 
 Pose Localization::extrinsic_calibrate_GT(Pose &uncalibrated_pose)
 {
-    // Create the 2D homogeneous transformation matrix from GT to robot's center frame
-    Matrix3d T_CG = Matrix3d::Identity();
-    Pose calibrated_gt;
+    Pose calibrated;
+    double ct, st;
+    ct = cos(uncalibrated_pose.getTheta() + degToRad(-0.53));
+    st = sin(uncalibrated_pose.getTheta() + degToRad(-0.53));
 
-    // Set rotation
-    T_CG(0, 1) = offsetRot(0, 1);
-    T_CG(0, 0) = offsetRot(0, 0);
-    T_CG(1, 0) = offsetRot(1, 0);
-    T_CG(1, 1) = offsetRot(1, 1);
+    double tmp_x = offsetTrans(0);
+    double tmp_y = offsetTrans(1);
 
-    // Set translation
-    T_CG(0, 2) = offsetTrans(0);
-    T_CG(1, 2) = offsetTrans(1);
+    double rotated_off_x = tmp_x * ct - tmp_y * st;
+    double rotated_off_y = tmp_x * st + tmp_y * ct;
 
-    // Represent the pose as a homogeneous coordinate vector
-    Vector3d pose_vector_GT(uncalibrated_pose.getX(), uncalibrated_pose.getY(), 1);
-
-    // Apply the transformation
-    calibrated_gt = T_CG * pose_vector_GT;
-
-    calibrated_gt.setTheta(normalizeAngle(atan2(calibrated_gt.getY(), calibrated_gt.getX())));
-
-    return calibrated_gt;
+    calibrated.setX(rotated_off_x + uncalibrated_pose.getX());
+    calibrated.setY(rotated_off_y + uncalibrated_pose.getY());
+    calibrated.setTheta(normalizeAngle(uncalibrated_pose.getTheta() + (degToRad(-0.53))));
+    return calibrated;
 }
 
 void Localization::forward_kinematics(const Eigen::Vector4d encs)

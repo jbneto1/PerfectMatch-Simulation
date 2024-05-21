@@ -89,6 +89,11 @@ public:
         theta = arr[2];
         return *this;
     }
+
+    bool isEmpty() const
+    {
+        return x == 0 && y == 0 && theta == 0;
+    }
 };
 
 class LaserPoint

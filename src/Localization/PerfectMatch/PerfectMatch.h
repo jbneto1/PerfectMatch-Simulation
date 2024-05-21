@@ -39,7 +39,10 @@ public:
     void ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints);
     void ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints, const Pose &previousPose, const Pose &currentPose);
 
-    void ProcessBBOutliers(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
+    void ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
+    void ProcessBBOutliersRear(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
+    void ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
+    void ProcessBBOutliersRight(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
 
     void setStep(const double stepScale) { this->stepScale = stepScale; }
 

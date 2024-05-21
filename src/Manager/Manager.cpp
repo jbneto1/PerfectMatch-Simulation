@@ -127,7 +127,7 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
             localization.processData_w_PM(encs, GT_pose, optLaserReadings.value());
 
             localization_w_semantics.getPM().ProcessLaserPoints(optLaserReadings_semantics.value()); // TODO: if there is no new lidar data, maintain the projected lidar pose points from the previous robot pose
-            localization_w_semantics.getPM().ProcessBBOutliers(optLaserReadings_semantics.value(), outliers, counter);
+            localization_w_semantics.getPM().ProcessBBOutliersFront(optLaserReadings_semantics.value(), outliers, counter);
             localization_w_semantics.processData_w_PM(encs, GT_pose, optLaserReadings_semantics.value());
 
             if (visualizer) // Ensure visualizer is not nullptr before dereferencing

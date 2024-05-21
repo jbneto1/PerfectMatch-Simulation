@@ -12,9 +12,9 @@ file_path_semantics = (
 )
 # %%
 # Case STUDY CONTAINER REFACTOR
-file_path = "docs/logs/logs_offlineAnalysis/first_test_working_no_ppl.txt"
+file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-05-21_21-58-17.txt"
 file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/first_test_working_no_ppl_semantics.txt"
+    "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-05-21_21-58-17.txt"
 )
 print(file_path)
 print(file_path_semantics)

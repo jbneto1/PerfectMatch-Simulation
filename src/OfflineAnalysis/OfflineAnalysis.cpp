@@ -22,14 +22,26 @@ void OfflineAnalysis::parseLine(const std::string &line)
 {
     try
     {
-        auto [encoders, GT_pose, optLaserReadings, yoloData, timestamp] = extractDataFromLine(line);
+        std::array<int, 4> encoders;
+        Pose GT_pose;
+        std::optional<std::vector<LaserPoint>> optLaserReadings;
+        std::map<std::string, std::optional<std::vector<BoundingBox>>> yoloDataMap;
+        int timestamp;
+
+        try
+        {
+            std::tie(encoders, GT_pose, optLaserReadings, yoloDataMap, timestamp) = extractDataFromLine(line);
+        }
+        catch (const std::exception &e)
+        {
+            logger.warn("Datagram empty or corrupted. Parsing failed.");
+            return;
+        }
 
         std::optional<std::vector<LaserPoint>> optLaserReadings_semantics;
         std::array<int, 4UL> encoders_semantics;
         Pose GT_pose_semantics;
         u_int counter = 0;
-
-        // Transforming GT_pose to robot's center frame, which is the robot's pose.
 
         GT_pose = localization.extrinsic_calibrate_GT(GT_pose);
 
@@ -57,11 +69,37 @@ void OfflineAnalysis::parseLine(const std::string &line)
 
         try
         {
-            localization_w_semantics.getPM().ProcessBBOutliers(optLaserReadings_semantics.value(), yoloData.value(), counter);
+            // Iterate through std::map
+            for (auto &[key, val] : yoloDataMap)
+            {
+                if (val.has_value())
+                {
+                    logger.info("Key: " + key + ". Number of BBs: " + std::to_string(val.value().size()));
+                    if (key == FRONTCAM)
+                    {
+                        localization_w_semantics.getPM().ProcessBBOutliersFront(optLaserReadings_semantics.value(), val.value(), counter);
+                    }
+                    else if (key == REARCAM)
+                    {
+                        localization_w_semantics.getPM().ProcessBBOutliersRear(optLaserReadings_semantics.value(), val.value(), counter);
+                    }
+                    else if (key == LEFTCAM)
+                    {
+                        localization_w_semantics.getPM().ProcessBBOutliersLeft(optLaserReadings_semantics.value(), val.value(), counter);
+                    }
+                    else if (key == RIGHTCAM)
+                    {
+                        localization_w_semantics.getPM().ProcessBBOutliersRight(optLaserReadings_semantics.value(), val.value(), counter);
+                    }
+                }
+                else
+                    continue;
+            }
         }
         catch (std::exception &e)
         {
             logger.warn("Exception caught processing outliers: " + std::string(e.what()));
+            exit;
         }
 
         // With semantic interpretation
@@ -84,89 +122,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
     }
 }
 
-std::tuple<std::array<int, 4>, Pose, std::optional<std::vector<LaserPoint>>, std::optional<std::vector<BoundingBox>>, long long>
-OfflineAnalysis::extractDataFromLine(const std::string &line, Logger &logger)
-{
-    std::istringstream iss(line);
-    std::string token;
-    std::vector<std::string> tokens;
-
-    while (std::getline(iss, token, ','))
-    {
-        tokens.push_back(token);
-    }
-
-    // Minimum tokens: 3 Pose + 4 Encoders + 1 Lidar (at least) + 1 Timestamp
-    if (tokens.size() < 9)
-    {
-        logger.error("Insufficient tokens in the log line. Returning null.");
-        return std::make_tuple(std::array<int, 4>{}, Pose{}, std::nullopt, std::nullopt, 0);
-    }
-
-    try
-    {
-        Pose pose(std::stod(tokens[0]), std::stod(tokens[1]), std::stod(tokens[2]));
-        std::array<int, 4> encoders = {std::stoi(tokens[3]), std::stoi(tokens[4]), std::stoi(tokens[5]), std::stoi(tokens[6])};
-        std::vector<LaserPoint> lidarPoints;
-
-        int currentIndex = 7; // Start of lidar data
-        unsigned int count = 0;
-        // Parse lidar points until 'N' or 'NoDetections'
-        while (tokens[currentIndex] != "N" && tokens[currentIndex] != "NoDetections")
-        {
-            count++;
-            LaserPoint tmp;
-            tmp.setD(std::stod(tokens[currentIndex++]));
-            lidarPoints.push_back(tmp);
-            if (currentIndex >= (tokens.size() - 1)) // -1 to avoid storing timestamp in lidarPoints if there is no BB data
-                break;                               // Safety check
-        }
-        logger.info("Parsed " + std::to_string(count) + " laser beams.");
-        std::vector<BoundingBox> boundingBoxes;
-
-        if ((currentIndex < tokens.size()) && (tokens[currentIndex] == "N"))
-        {
-            int bboxCount = std::stoi(tokens[++currentIndex]); // Read count after 'N'
-            currentIndex++;                                    // Move to the start of bounding box data
-            for (int i = 0; i < bboxCount; ++i)
-            {
-                if (currentIndex + 5 > tokens.size())
-                {
-                    throw std::runtime_error("Insufficient tokens for bounding box data.");
-                }
-                int class_id = std::stoi(tokens[currentIndex++].substr(1));
-                double conf = std::stod(tokens[currentIndex++]);
-                double x = std::stod(tokens[currentIndex++]);
-                double y = std::stod(tokens[currentIndex++]);
-                double width = std::stod(tokens[currentIndex++]);
-                double height = std::stod(tokens[currentIndex++]);
-
-                boundingBoxes.push_back(BoundingBox{class_id, conf, x, y, width, height});
-            }
-        }
-        else if ((currentIndex < tokens.size()) && (tokens[currentIndex] == "NoDetections"))
-        {
-            currentIndex++; // Simply skip this token
-        }
-
-        long long timestamp = std::stoll(tokens.back());
-        static long long firstTimestamp = -1; // Normalize timestamps
-        if (firstTimestamp == -1)
-        {
-            firstTimestamp = timestamp;
-        }
-        timestamp -= firstTimestamp;
-
-        return std::make_tuple(encoders, pose, std::make_optional(lidarPoints), std::make_optional(boundingBoxes), timestamp);
-    }
-    catch (const std::exception &e)
-    {
-        logger.error("General parsing error of the data log line. Exception: " + std::string(e.what()));
-        return std::make_tuple(std::array<int, 4>{}, Pose{}, std::nullopt, std::nullopt, 0);
-    }
-}
-
-std::tuple<std::array<int, 4>, Pose, std::optional<std::vector<LaserPoint>>, std::optional<std::vector<BoundingBox>>, long long>
+std::tuple<std::array<int, 4>, Pose, std::optional<std::vector<LaserPoint>>, std::map<std::string, std::optional<std::vector<BoundingBox>>>, long long>
 OfflineAnalysis::extractDataFromLine(const std::string &line)
 {
     std::istringstream iss(line);
@@ -181,8 +137,7 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
     // Minimum tokens: 3 Pose + 4 Encoders + 1 Lidar (at least) + 1 Timestamp
     if (tokens.size() < 9)
     {
-        logger.error("Insufficient tokens in the log line. Returning null.");
-        return std::make_tuple(std::array<int, 4>{}, Pose{}, std::nullopt, std::nullopt, 0);
+        throw std::runtime_error("Datagram empty or corrupted. Parsing failed.");
     }
 
     try
@@ -193,42 +148,54 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
 
         int currentIndex = 7; // Start of lidar data
         unsigned int count = 0;
-        // Parse lidar points until 'N' or 'NoDetections'
-        while (tokens[currentIndex] != "N" && tokens[currentIndex] != "NoDetections")
+        // Parse lidar points until a camera label or the last token (timestamp)
+        std::set<std::string> cameraLabels = {"FrontCam", "RearCam", "RightCam", "LeftCam"};
+        while (currentIndex < tokens.size() - 1 && cameraLabels.find(tokens[currentIndex]) == cameraLabels.end())
         {
             count++;
             LaserPoint tmp;
             tmp.setD(std::stod(tokens[currentIndex++]));
             lidarPoints.push_back(tmp);
-            if (currentIndex >= (tokens.size() - 1)) // -1 to avoid storing timestamp in lidarPoints if there is no BB data
-                break;                               // Safety check
         }
-        logger.info("Parsed " + std::to_string(count) + " laser beams.");
-        std::vector<BoundingBox> boundingBoxes;
+        logger.debug("Parsed " + std::to_string(count) + " laser beams.");
+        std::map<std::string, std::optional<std::vector<BoundingBox>>> cameraBoundingBoxes;
 
-        if ((currentIndex < tokens.size()) && (tokens[currentIndex] == "N"))
-        {
-            int bboxCount = std::stoi(tokens[++currentIndex]); // Read count after 'N'
-            currentIndex++;                                    // Move to the start of bounding box data
-            for (int i = 0; i < bboxCount; ++i)
+        // Parse bounding boxes with camera labels
+        while (currentIndex < tokens.size() - 1)
+        { // Excluding the last token (timestamp)
+            std::string cameraLabel = tokens[currentIndex++];
+            std::vector<BoundingBox> boundingBoxes;
+
+            if (tokens[currentIndex] == "N")
             {
-                if (currentIndex + 5 > tokens.size())
+                int bboxCount = std::stoi(tokens[++currentIndex]); // Read count after 'N'
+                currentIndex++;                                    // Move to the start of bounding box data
+                for (int i = 0; i < bboxCount; ++i)
                 {
-                    throw std::runtime_error("Insufficient tokens for bounding box data.");
-                }
-                int class_id = std::stoi(tokens[currentIndex++].substr(1));
-                double conf = std::stod(tokens[currentIndex++]);
-                double x = std::stod(tokens[currentIndex++]);
-                double y = std::stod(tokens[currentIndex++]);
-                double width = std::stod(tokens[currentIndex++]);
-                double height = std::stod(tokens[currentIndex++]);
+                    if (currentIndex + 5 > tokens.size())
+                    {
+                        throw std::runtime_error("Insufficient tokens for bounding box data.");
+                    }
+                    int class_id = std::stoi(tokens[currentIndex++].substr(1));
+                    double conf = std::stod(tokens[currentIndex++]);
+                    double x = std::stod(tokens[currentIndex++]);
+                    double y = std::stod(tokens[currentIndex++]);
+                    double width = std::stod(tokens[currentIndex++]);
+                    double height = std::stod(tokens[currentIndex++]);
 
-                boundingBoxes.push_back(BoundingBox{class_id, conf, x, y, width, height});
+                    boundingBoxes.push_back(BoundingBox{class_id, conf, x, y, width, height});
+                }
+                cameraBoundingBoxes[cameraLabel] = boundingBoxes;
             }
-        }
-        else if ((currentIndex < tokens.size()) && (tokens[currentIndex] == "NoDetections"))
-        {
-            currentIndex++; // Simply skip this token
+            else if (tokens[currentIndex] == "NoDetections")
+            {
+                cameraBoundingBoxes[cameraLabel] = std::nullopt;
+                currentIndex++; // Simply skip this token
+            }
+            else
+            {
+                throw std::runtime_error("Unexpected token while parsing camera metadata.");
+            }
         }
 
         long long timestamp = std::stoll(tokens.back());
@@ -239,11 +206,10 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
         }
         timestamp -= firstTimestamp;
 
-        return std::make_tuple(encoders, pose, std::make_optional(lidarPoints), std::make_optional(boundingBoxes), timestamp);
+        return std::make_tuple(encoders, pose, std::make_optional(lidarPoints), cameraBoundingBoxes, timestamp);
     }
     catch (const std::exception &e)
     {
-        logger.error("General parsing error of the data log line. Exception: " + std::string(e.what()));
-        return std::make_tuple(std::array<int, 4>{}, Pose{}, std::nullopt, std::nullopt, 0);
+        throw std::runtime_error("Datagram corrupted. Parsing failed: " + std::string(e.what()));
     }
 }

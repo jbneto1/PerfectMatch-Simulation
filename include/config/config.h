@@ -5,13 +5,15 @@
 #ifndef AMR_PROJECT_CONFIG_H
 #define AMR_PROJECT_CONFIG_H
 
+#include <string_view>
+
 constexpr int MAX_BUFFER_SIZE = 16256;
 constexpr int SIMTWO_RECEIVE_PORT = 9000;
 constexpr int SYNCMSG_RECEIVE_PORT = 9890;
 constexpr int YOLOMSG_RECEIVE_PORT = 9010;
 constexpr int YOLOMSG_SEND_PORT = 9009;
 
-const char *const IP_WSL2 = "172.20.35.129";
+constexpr const char IP_WSL2[] = "172.20.35.129";
 
 constexpr int PM_MAX_ITER = 25;   // maximum number of iterations for computation
 constexpr int PM_MAX_PERIOD = 10; // maximum period for computation in milliseconds
@@ -26,6 +28,13 @@ constexpr double A = 0.0965;
 constexpr double B = 0.109;
 constexpr double C = A + B;
 constexpr double R = 0.065;
+constexpr double OFFSET_X = 0.85e-2; // LIDAR BODY FRAME OFFSET MEASURED FROM ROBOTS FRAME
+constexpr double OFFSET_Y = 0.2e-2;  // LIDAR BODY FRAME OFFSET MEASURE FROM ROBOTS FRAME
+
+constexpr std::string_view FRONTCAM = "FrontCam";
+constexpr std::string_view REARCAM = "RearCam";
+constexpr std::string_view LEFTCAM = "LeftCam";
+constexpr std::string_view RIGHTCAM = "RightCam";
 
 // // Simulation values
 // constexpr double A = 0.25 / 2 - 0.05;

@@ -56,25 +56,12 @@ void PerfectMatch::RotateAndTranslate(double &rx, double &ry, double px, double 
 
 void PerfectMatch::calibrate_lidar_points(double &rx, double &ry, double px, double py)
 {
-    // Create the 2D homogeneous transformation matrix from Lidar to robot's center frame
-    Matrix3d T_CL = Matrix3d::Identity();
-    Pose calibrated_lidar;
+    // since both frames are aligned and these lidar points are in the lidar body frame
 
-    // Set rotation
-    // Identity matrix for rotation... not theta offset
+    rx = px + OFFSET_X;
+    ry = py + OFFSET_Y;
 
-    // Set translation
-    T_CL(0, 2) = 0.85;
-    T_CL(1, 2) = 0.2;
-
-    // Represent the pose as a homogeneous coordinate vector
-    Vector3d pose_vector_lidar(px, py, 1);
-
-    // Apply the transformation
-    calibrated_lidar = T_CL * pose_vector_lidar;
-
-    rx = calibrated_lidar.getX();
-    ry = calibrated_lidar.getY();
+    // Lidar is behind in x and y.
 }
 
 int PerfectMatch::XTopixel(double x)
@@ -103,11 +90,18 @@ void PerfectMatch::IterLaser(std::vector<LaserPoint> &LaserPoints)
         if ((laserPoint.getD() < 0.1) || (!laserPoint.getIsBeamValid()))
             continue;
 
+        // // NOT WORKING
+        // double rx, ry;
+        // calibrate_lidar_points(rx, ry, laserPoint.getX(), laserPoint.getY());
+        // double r_cx, r_cy; // calibrated lidar world points (robots center)
+        // RotateAndTranslate(r_cx, r_cy, rx, ry, RobotPose.getX(), RobotPose.getY(), st, ct);
+
+        // int u = XTopixel(r_cx);
+        // int v = YTopixel(r_cy);
+
+        // WORKING
         double rx, ry;
         RotateAndTranslate(rx, ry, laserPoint.getX(), laserPoint.getY(), RobotPose.getX(), RobotPose.getY(), st, ct);
-        double r_cx, r_cy; // calibrated lidar world points (robots center)
-        calibrate_lidar_points(r_cx, r_cy, rx, ry);
-
         int u = XTopixel(rx);
         int v = YTopixel(ry);
 
@@ -265,7 +259,145 @@ bool PerfectMatch::isPointInsideBB(const Vector2d &point, const BoundingBox &box
     return false;
 }
 
-void PerfectMatch::ProcessBBOutliers(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
+void PerfectMatch::ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
+
+{
+    counter = 0;
+
+    for (auto &point : LaserPoints)
+    {
+        if (!point.getIsBeamValid()) // skip invalid beams
+            continue;
+
+        // Transform point from lidar to camera perspective
+        Vector4d pointInLidar(point.getX(), point.getY(), 0, 1); // Homogeneous coordinates
+        Vector4d pointInCamera = TH_LC * pointInLidar;           // Still in homogeneous coordinates
+
+        if (pointInCamera(2) <= 0)
+        {
+            point.setDraw(false);
+            continue;
+        } // If it has a negative Z it is behind the camera.
+
+        // Project point onto image plane
+        Vector3d nullVector = Vector3d::Zero();
+        MatrixXd homogeneousK(3, 4);
+        homogeneousK << K, nullVector;
+        Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
+        Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
+        point.setImgPts(pImgPx);
+
+        // Check if the point falls inside any bounding box
+        bool insideAnyBoundingBox = false;
+        if (!outliers.empty())
+        {
+            insideAnyBoundingBox = std::any_of(outliers.begin(), outliers.end(),
+                                               [&pImgPx, this](const BoundingBox &box)
+                                               {
+                                                   return isPointInsideBB(pImgPx, box);
+                                               });
+        }
+
+        if (insideAnyBoundingBox)
+        {
+            counter++;
+            point.setIsBeamValid(false);
+        }
+    }
+}
+
+// TODO: Rear, left, Right adjust transformations after fixating the cameras
+void PerfectMatch::ProcessBBOutliersRear(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
+{
+    counter = 0;
+
+    for (auto &point : LaserPoints)
+    {
+        if (!point.getIsBeamValid()) // skip invalid beams
+            continue;
+
+        // Transform point from lidar to camera perspective
+        Vector4d pointInLidar(point.getX(), point.getY(), 0, 1); // Homogeneous coordinates
+        Vector4d pointInCamera = TH_LC * pointInLidar;           // Still in homogeneous coordinates
+
+        if (pointInCamera(2) <= 0)
+        {
+            point.setDraw(false);
+            continue;
+        } // If it has a negative Z it is behind the camera.
+
+        // Project point onto image plane
+        Vector3d nullVector = Vector3d::Zero();
+        MatrixXd homogeneousK(3, 4);
+        homogeneousK << K, nullVector;
+        Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
+        Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
+        point.setImgPts(pImgPx);
+
+        // Check if the point falls inside any bounding box
+        bool insideAnyBoundingBox = false;
+        if (!outliers.empty())
+        {
+            insideAnyBoundingBox = std::any_of(outliers.begin(), outliers.end(),
+                                               [&pImgPx, this](const BoundingBox &box)
+                                               {
+                                                   return isPointInsideBB(pImgPx, box);
+                                               });
+        }
+
+        if (insideAnyBoundingBox)
+        {
+            counter++;
+            point.setIsBeamValid(false);
+        }
+    }
+}
+void PerfectMatch::ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
+{
+    counter = 0;
+
+    for (auto &point : LaserPoints)
+    {
+        if (!point.getIsBeamValid()) // skip invalid beams
+            continue;
+
+        // Transform point from lidar to camera perspective
+        Vector4d pointInLidar(point.getX(), point.getY(), 0, 1); // Homogeneous coordinates
+        Vector4d pointInCamera = TH_LC * pointInLidar;           // Still in homogeneous coordinates
+
+        if (pointInCamera(2) <= 0)
+        {
+            point.setDraw(false);
+            continue;
+        } // If it has a negative Z it is behind the camera.
+
+        // Project point onto image plane
+        Vector3d nullVector = Vector3d::Zero();
+        MatrixXd homogeneousK(3, 4);
+        homogeneousK << K, nullVector;
+        Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
+        Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
+        point.setImgPts(pImgPx);
+
+        // Check if the point falls inside any bounding box
+        bool insideAnyBoundingBox = false;
+        if (!outliers.empty())
+        {
+            insideAnyBoundingBox = std::any_of(outliers.begin(), outliers.end(),
+                                               [&pImgPx, this](const BoundingBox &box)
+                                               {
+                                                   return isPointInsideBB(pImgPx, box);
+                                               });
+        }
+
+        if (insideAnyBoundingBox)
+        {
+            counter++;
+            point.setIsBeamValid(false);
+        }
+    }
+}
+void PerfectMatch::ProcessBBOutliersRight(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
 {
     counter = 0;
 
