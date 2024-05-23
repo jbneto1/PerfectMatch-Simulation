@@ -33,6 +33,7 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
         ", " + std::to_string(startPose.getTheta()) + "), " + ", stepScale: " +
         std::to_string(stepScale));
     meterToPixel = map.getWidth() / 1.68;
+    std::cout << TH_LC << std::endl;
     pmError = 0;
 }
 
@@ -272,6 +273,11 @@ void PerfectMatch::ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, 
         // Transform point from lidar to camera perspective
         Vector4d pointInLidar(point.getX(), point.getY(), 0, 1); // Homogeneous coordinates
         Vector4d pointInCamera = TH_LC * pointInLidar;           // Still in homogeneous coordinates
+        /*FIXME: name wrong. It is actually T_CL where t_cl is the offset of the lidar frame from perspective of camera frame
+         and R_CL is lidar frame orientation relative from camera frame
+         R_cl was assembled using roll-pitch'-yaw'' alibi convention (RzRyRx)
+
+        */
 
         if (pointInCamera(2) <= 0)
         {
