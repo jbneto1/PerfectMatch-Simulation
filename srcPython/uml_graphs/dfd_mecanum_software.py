@@ -24,6 +24,18 @@ def create_uml():
     # Define node styles with increased size and margin for better visibility
     dot.attr(
         "node",
+        shape="cylinder",
+        style="filled",
+        color="gray",
+        width=width,
+        height=height,
+        margin="0.2, 0.2",
+    )
+
+    dot.node("DataLog", "Data logs")
+
+    dot.attr(
+        "node",
         shape="rectangle",
         style="filled",
         color=microcontrollercolor,
@@ -96,7 +108,7 @@ def create_uml():
     dot.edge(
         "CamScript",
         "EdgeDevice",
-        "Raspicam V2 Stream@12Hz\nvia ZMQ",
+        "Raspicam V2 Stream@15Hz\nvia ZMQ",
         color="orange",
     )
 
@@ -107,21 +119,22 @@ def create_uml():
         color="red",
     )
     dot.edge(
-        "EdgeDevice",
         "RobotScript",
-        "YOLO Metadata @12Hz\nvia UDP (4 Ports)",
-        color="green",
+        "DataLog",
+        "Ground truth, encoders, yolo metadata, and timestamp sensor data;\nLocalization data @40Hz",
+        color="blue",
     )
-    dot.edge(
-        "PythonAruco", "RobotScript", "ArUco Metadata @8Hz\nvia UDP", color="green"
-    )
-    dot.edge("ESP32Cams", "EdgeDevice", "Imagery Data @v12Hz\nvia UDP", color="green")
     dot.edge(
         "EdgeDevice",
         "RobotScript",
-        "Processed YOLO Metadata from ESP32Cams\nvia UDP",
+        "Inference @15Hz\nvia UDP (4 Ports)",
         color="green",
     )
+    dot.edge(
+        "PythonAruco", "RobotScript", "ArUco Metadata @10Hz\nvia UDP", color="green"
+    )
+    dot.edge("ESP32Cams", "EdgeDevice", "Imagery Data @v15Hz\nvia UDP", color="green")
+
     dot.edge("CPPLidar", "RobotScript", "Lidar Data @7Hz\nvia UDP", color="green")
     dot.edge(
         "PythonGT", "RobotScript", "Ground Truth Data @30Hz\nvia UDP", color="green"
