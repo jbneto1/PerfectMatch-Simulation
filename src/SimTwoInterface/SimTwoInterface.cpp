@@ -269,6 +269,98 @@ void SimTwoInterface::handleReceive(const asio::error_code &error, std::size_t /
     }
 }
 
+// void SimTwoInterface::handleReceive(const asio::error_code& error, std::size_t /*bytes_transferred*/) {
+/*    if (!error) {
+        logger.trace("Received data without error. Handler called.");
+        std::string receivedData(simRecvBuffer.data());
+
+        // Check if received data length is at least 2 to cover checksum and some data
+        if (receivedData.length() < 2) {
+            logger.error("Data too short to include checksum and payload.");
+            return;
+        }
+
+        // Lambda function to compute XOR checksum
+        auto computeXORChecksum = [](const std::string& data) -> unsigned char {
+            unsigned char checksum = 0;
+            for (auto ch : data) {
+                checksum ^= ch;
+            }
+            return checksum;
+        };
+
+        // Assuming the first character is the checksum
+        unsigned char receivedChecksum = receivedData[0];
+        std::string packetData = receivedData.substr(1);  // Data starts after the checksum byte
+
+        // Compute checksum of the packet data (excluding the received checksum byte)
+        unsigned char computedChecksum = computeXORChecksum(packetData);
+
+        // Verify checksum
+        if (receivedChecksum != computedChecksum) {
+            logger.error("Checksum mismatch. Discarding packet.");
+            return;  // Checksum mismatch, discard the packet
+        }
+
+        // Extracting the header information
+        auto start = packetData.find('|') + 1;
+        auto end = packetData.find('|', start);
+        std::string packetInfo = packetData.substr(start, end - start);
+
+        std::istringstream iss(packetInfo);
+        int packetID, totalPackets;
+        char slash;
+        iss >> packetID >> slash >> totalPackets; // Extracting packetID and totalPackets
+
+        // Check for initial conditions
+        if (packetID == 1 && !packetBuffer.empty()) {
+            packetBuffer.clear(); // Ensure the buffer is clean on new transmission
+        }
+
+        // Early discard if the packet ID is out of expected range or the buffer already has all needed packets
+        if (packetID > totalPackets || packetBuffer.size() >= totalPackets) {
+            logger.error("Unexpected packet ID or excessive packet count. Discarding datagram.");
+            packetBuffer.clear();
+            return; // Discard and wait for a new datagram starting with ID 1
+        }
+
+        // Storing or overwriting packet data
+        packetBuffer[packetID] = packetData.substr(end + 1); // Overwrite existing data if packetID is duplicated
+
+        // Check if all packets have been received in the correct order
+        if (packetBuffer.size() == totalPackets) {
+            bool inOrder = true;
+            for (int i = 1; i <= totalPackets; i++) {
+                if (packetBuffer.find(i) == packetBuffer.end()) {
+                    inOrder = false;
+                    break;
+                }
+            }
+
+            if (inOrder) {
+                // Reconstruct the complete data
+                std::string combinedData;
+                for (int i = 1; i <= totalPackets; i++) {
+                    combinedData += packetBuffer[i];
+                }
+                logger.info("Datagram reconstructed:\n" + combinedData);
+
+                // Process the combined data
+                if (dataCallback) {
+                    dataCallback(combinedData);
+                }
+
+                packetBuffer.clear(); // Clear the buffer after successful processing
+            } else {
+                logger.error("Packets not in order. Discarding datagram.");
+                packetBuffer.clear(); // Discard the buffer and wait for a new start
+            }
+        }
+    } else {
+        logger.error("Error while receiving data: " + error.message());
+    }
+}*/
+
 // Send wheel speeds
 void SimTwoInterface::sendWheelSpeeds(double frontLeftSpeed, double frontRightSpeed, double backLeftSpeed,
                                       double backRightSpeed)
