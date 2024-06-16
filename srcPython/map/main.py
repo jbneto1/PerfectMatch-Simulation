@@ -2,19 +2,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 from scipy import ndimage
+import matplotlib.patches as mpatches
 
 # Map dimensions in meters
 map_width = 1.68
 map_height = 1.18
 
 # Matrix dimensions corresponding to 1mm per pixel
-matrix_width = 1680
+matrix_width = 1680  # mm/px
 matrix_height = 1180
 
 c_err = 70
 
 # Scaling factors to transform real-world coordinates to matrix indices
-scale_x = matrix_width / map_width  # Uniform scale for x and y
+scale_x = matrix_width / map_width  # Uniform scale for x and y # mm/(px*m)
 scale_y = matrix_height / map_height  # Uniform scale for x and y
 
 # Define constants from the XML
@@ -22,10 +23,12 @@ cell_x = 0.15
 cell_y = 0.08
 wall_thickness = 0.02
 
+
 def d_err(d):
     d = np.float64(d)
     c2 = c_err * c_err
     return 1 - c2 / (c2 + d * d)
+
 
 def compute_dist_map(matrix):
     """
@@ -34,15 +37,18 @@ def compute_dist_map(matrix):
     """
     return ndimage.distance_transform_edt(matrix)
 
+
 def calc_grad_maps_m_estimator(matrix):
     image = np.float64(matrix)
     grad_y, grad_x = np.gradient(d_err(matrix))
     return grad_x, grad_y
 
+
 def calc_grad_maps(matrix):
     image = np.float64(matrix)
     grad_y, grad_x = np.gradient(matrix)
     return grad_x, grad_y
+
 
 def real_to_matrix(x, y):
     # Translate the real-world coordinates so the origin aligns with the center of the matrix
@@ -59,11 +65,12 @@ def real_to_matrix(x, y):
 
     return i, j
 
+
 def draw_obstacle(matrix, obstacle):
-    size_x = obstacle['size'][0] * scale_x
-    size_y = obstacle['size'][1] * scale_y
-    pos_i, pos_j = real_to_matrix(obstacle['pos'][0], obstacle['pos'][1])
-    rotation = obstacle.get('rotation', 0)
+    size_x = obstacle["size"][0] * scale_x
+    size_y = obstacle["size"][1] * scale_y
+    pos_i, pos_j = real_to_matrix(obstacle["pos"][0], obstacle["pos"][1])
+    rotation = obstacle.get("rotation", 0)
 
     # If rotated, swap the sizes
     if rotation == 90 or rotation == -90:
@@ -86,26 +93,27 @@ def draw_obstacle(matrix, obstacle):
 
     return matrix
 
+
 # Define obstacles
 incoming_warehouse = {
-    'pos': (-0.47, 0.580),
-    'size': (4 * cell_x + wall_thickness, wall_thickness),
-    'rotation': 0
+    "pos": (-0.47, 0.580),
+    "size": (4 * cell_x + wall_thickness, wall_thickness),
+    "rotation": 0,
 }
 outgoing_warehouse = {
-    'pos': (0.47, -0.58),
-    'size': (4 * cell_x + wall_thickness, wall_thickness),
-    'rotation': 180
+    "pos": (0.47, -0.58),
+    "size": (4 * cell_x + wall_thickness, wall_thickness),
+    "rotation": 180,
 }
 machine_A = {
-    'pos': (-0.347, -0.08),
-    'size': (2 * cell_x + wall_thickness, wall_thickness),
-    'rotation': -90
+    "pos": (-0.347, -0.08),
+    "size": (2 * cell_x + wall_thickness, wall_thickness),
+    "rotation": -90,
 }
 machine_B = {
-    'pos': (0.347, 0.07),
-    'size': (2 * cell_x + wall_thickness, wall_thickness),
-    'rotation': -90
+    "pos": (0.347, 0.07),
+    "size": (2 * cell_x + wall_thickness, wall_thickness),
+    "rotation": -90,
 }
 
 # Initialize matrix with free space
@@ -116,10 +124,21 @@ for obs in [outgoing_warehouse, incoming_warehouse, machine_A, machine_B]:
     draw_obstacle(matrix, obs)
 
 # Visualization
-plt.imshow(matrix, cmap='gray', interpolation='none')
-plt.colorbar()
-plt.title('2D Matrix Map Representation')
-plt.show()
+plt.imshow(matrix, cmap="gray", interpolation="none")
+plt.title("2D Matrix Map Representation")
+plt.xlabel("Cells (1 cell = 1 mm)")
+plt.ylabel("Cells (1 cell = 1 mm)")
+legend_handles = [
+    mpatches.Patch(facecolor="white", label="Free Space"),
+    mpatches.Patch(facecolor="black", label="Obstacle"),
+]
+
+# Create legend with custom patches
+legend = plt.legend(handles=legend_handles, loc="upper right")
+legend.get_frame().set_facecolor("lightgray")  # Optional: set legend background color
+plt.tight_layout()
+plt.savefig("2d_matrix_map.pdf", dpi=300)
+
 
 # Convert matrix to a format suitable for visualization [0-255]
 matrix_png = (matrix * 255).astype(np.uint8)
@@ -135,8 +154,7 @@ new_width = int(new_height * aspect_ratio)
 resized_image = image.resize((new_width, new_height), Image.LANCZOS)
 
 # Save the resized image as PNG
-resized_image.save('matrix.png')
-
+resized_image.save("matrix.png")
 
 
 # Add this part to the end of your code:
@@ -152,41 +170,56 @@ m_grad_x, m_grad_y = calc_grad_maps_m_estimator(dist_map)
 
 # Visualization of Distance Map
 plt.figure(figsize=(8, 6))
-plt.imshow(dist_map, cmap='hot', interpolation='none')
-plt.colorbar()
-plt.title('Distance Map')
-plt.show()
+plt.imshow(dist_map, cmap="gray", interpolation="none")
+plt.colorbar(label="Euclidean distance from nearest obstacle")
+plt.title("Distance Map")
+plt.xlabel("Cells (1 cell = 1 mm)")
+plt.ylabel("Cells (1 cell = 1 mm)")
+plt.tight_layout()
+plt.savefig("dist_map.pdf", dpi=300)
 
 print((np.max(dist_map), np.min(dist_map)))
 
 # Visualization of Gradient-X
 plt.figure(figsize=(8, 6))
-plt.imshow(grad_x, cmap='bwr', interpolation='none')
-plt.colorbar()
-plt.title('Gradient-X')
-plt.show()
+plt.imshow(grad_x, cmap="seismic", interpolation="none")
+plt.colorbar(label="Change in Distance per Cell")
+plt.title("Gradient-X")
+plt.xlabel("Cells (1 cell = 1 mm)")
+plt.ylabel("Cells (1 cell = 1 mm)")
+plt.tight_layout()
+plt.savefig("grad_x_map.pdf", dpi=300)
 
 # Visualization of M-estimator Gradient-X
 plt.figure(figsize=(8, 6))
-plt.imshow(m_grad_x, cmap='bwr', interpolation='none')
-plt.colorbar()
-plt.title('M-estimator Gradient-X')
-plt.show()
+plt.imshow(m_grad_x, cmap="seismic", interpolation="none")
+plt.colorbar(label="Normalized Gradient per Cell")
+plt.title("M-estimator Gradient-X")
+plt.xlabel("Cells (1 cell = 1 mm)")
+plt.ylabel("Cells (1 cell = 1 mm)")
+plt.tight_layout()
+plt.savefig("m_estimator_grad_x_map.pdf", dpi=300)
 
 # Visualization of Gradient-Y
 plt.figure(figsize=(8, 6))
-plt.imshow(grad_y, cmap='bwr', interpolation='none')
-plt.colorbar()
-plt.title('Gradient-Y')
-plt.show()
+plt.imshow(grad_y, cmap="seismic", interpolation="none")
+plt.colorbar(label="Change in Distance per Cell")
+plt.title("Gradient-Y")
+plt.xlabel("Cells (1 cell = 1 mm)")
+plt.ylabel("Cells (1 cell = 1 mm)")
+plt.tight_layout()
+plt.savefig("grad_y_map.pdf", dpi=300)
 
 # Visualization of M-estimator Gradient-Y
 plt.figure(figsize=(8, 6))
-plt.imshow(m_grad_y, cmap='bwr', interpolation='none')
-plt.colorbar()
-plt.title('M-estimator Gradient-Y')
-plt.show()
+plt.imshow(m_grad_y, cmap="seismic", interpolation="none")
+plt.colorbar(label="Normalized Gradient per Cell")
+plt.title("M-estimator Gradient-Y")
+plt.xlabel("Cells (1 cell = 1 mm)")
+plt.ylabel("Cells (1 cell = 1 mm)")
+plt.tight_layout()
+plt.savefig("m_estimator_grad_y_map.pdf", dpi=300)
 
-np.savetxt('distance_map.csv', dist_map, delimiter=',')
-np.savetxt('m_estimator_gradient_x.csv', m_grad_x, delimiter=',')
-np.savetxt('m_estimator_gradient_y.csv', m_grad_y, delimiter=',')
+np.savetxt("distance_map.csv", dist_map, delimiter=",")
+np.savetxt("m_estimator_gradient_x.csv", m_grad_x, delimiter=",")
+np.savetxt("m_estimator_gradient_y.csv", m_grad_y, delimiter=",")

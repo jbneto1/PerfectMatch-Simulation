@@ -72,17 +72,39 @@ dfd.edge("Simtwo", "YOLOv8", "(RGB)\n15 Hz")
 
 dfd.edge("SimtwoInterface", "Manager", "(Encs, GT, LIDAR) 40 Hz\n(RGB) 15 Hz")
 
-dfd.edge("Manager", "Localization", "(Encs, GT, LIDAR) 40 Hz\n(RGB) 15 Hz")
+dfd.edge(
+    "Manager",
+    "Localization",
+    "(Encs, LIDAR) 40 Hz\n(RGB) 15 Hz",
+)
 dfd.edge(
     "Manager",
     "LoggerData",
     "(Encs, GT, timestamp) 40Hz\n(LIDAR) 7 Hz\n(Inference metadata) 15 Hz",
 )
-dfd.edge("Manager", "Visualizer", "(EKF μ, EKF Out. μ, GT) 40 Hz\n(LIDAR) 7 Hz")
+dfd.edge(
+    "Manager",
+    "Visualizer",
+    "(Localization data) 40 Hz\n(LIDAR, LIDAR Out.) 7 Hz\n(Inference metadata) 15 Hz",
+)
+# dfd.edge(
+#     "Manager",
+#     "Visualizer",
+#     "(EKF μ, EKF Out. μ, GT) 40 Hz\n(LIDAR, LIDAR Out.) 7 Hz\n(Inference metadata) 15 Hz\n(Localization metadata) 40 Hz",
+# )
 
 dfd.edge("Localization", "PerfectMatch", "(LIDAR, LIDAR Out.) 15 Hz")
 dfd.edge("Localization", "EKF", "(Odo) 40 Hz\n(PM Pose, PM Out. Pose) 15 Hz")
-dfd.edge("Localization", "Manager", "(EKF μ, EKF Out. μ) 40 Hz")
+# dfd.edge(
+#     "Localization",
+#     "Manager",
+#     "(EKF μ, EKF Out. μ) 40 Hz\n(Localization metadata) 40 Hz",
+# )
+dfd.edge(
+    "Localization",
+    "Manager",
+    "(Localization data) 40 Hz",
+)
 
 dfd.edge(
     "PerfectMatch",
@@ -97,7 +119,7 @@ dfd.edge("YOLOv8", "SimtwoInterface", "Inference metadata\n15 Hz")
 dfd.edge(
     "LoggerData",
     "Log",
-    "(Encs, GT, timestamp) 40Hz\n(LIDAR) 7 Hz\n(Inference metadata) 15 Hz\n(Localization data) 40 Hz",
+    "(Encs, GT, timestamp) 40Hz\n(LIDAR) 7 Hz\n(Inference metadata) 15 Hz",
 )
 
 

@@ -1,10 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def d_err(d, c_err):
     d = np.float64(d)
     c2 = c_err * c_err
     return 1 - c2 / (c2 + d * d)
+
 
 # Define a symmetric range of d values
 d_values = np.linspace(-701, 701, 1000)  # You can adjust the range as needed
@@ -17,10 +19,11 @@ plt.figure(figsize=(10, 6))
 for c_err in c_err_values:
     plt.plot(d_values, d_err(d_values, c_err), label=f"c_err = {c_err}")
 
-plt.title("Behavior of d_err for different c_err values")
-plt.xlabel("d")
-plt.ylabel("d_err(d)")
+plt.title("M-Estimator for c_err value of 70")
+plt.xlabel("Error")
+plt.ylabel("M-Estimator(Error)")
 plt.legend()
 plt.grid(True)
-plt.xticks(np.arange(-700, 700, step=100))
-plt.show()
+plt.xticks(np.arange(-700, 751, step=100))  # Extending the range to include 700
+plt.tight_layout()
+plt.savefig("m_estimator.pdf", dpi=300)
