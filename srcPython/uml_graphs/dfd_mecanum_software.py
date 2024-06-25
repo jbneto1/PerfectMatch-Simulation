@@ -146,32 +146,70 @@ def create_uml():
         color="green",
     )
 
-    dot.attr("node", style="filled", color="none")  # Set no fill color for legend node
-    legend_label = """<
-    <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" COLOR="black">
-        <TR><TD COLSPAN="2" ALIGN="CENTER"><FONT POINT-SIZE="20"><B>Legend</B></FONT></TD></TR>
-        <TR>
-            <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="orange"></TD>
-            <TD ALIGN="LEFT">Runs on the Raspberry Pi 4B</TD>
-        </TR>
-        <TR>
-            <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="#D30000"></TD>
-            <TD ALIGN="LEFT">Runs on the Raspberry Pi 5</TD>
-        </TR>
-        <TR>
-            <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="#619bcc"></TD>
-            <TD ALIGN="LEFT">Runs on the Edge Device</TD>
-        </TR>
-        <TR>
-            <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="#008147"></TD>
-            <TD ALIGN="LEFT">Runs on the ESP32-Cams</TD>
-        </TR>
-        <TR>
-            <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="#95C5A5"></TD>
-            <TD ALIGN="LEFT">Runs on the Arduino Mega</TD>
-        </TR>
-    </TABLE>>"""
-    dot.node("legend", legend_label)
+    dot.node("anchor", style="invis")  # Invisible node
+
+    with dot.subgraph() as s:
+        s.attr(rank="max")
+        # Define the legend node
+        s.node(
+            "legend",
+            """<
+        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" COLOR="black">
+            <TR><TD COLSPAN="2" ALIGN="CENTER"><FONT POINT-SIZE="20"><B>Legend (nodes)</B></FONT></TD></TR>
+            <TR>
+                <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="orange"></TD>
+                <TD ALIGN="LEFT">Runs on the Raspberry Pi 4B</TD>
+            </TR>
+            <TR>
+                <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="#D30000"></TD>
+                <TD ALIGN="LEFT">Runs on the Raspberry Pi 5</TD>
+            </TR>
+            <TR>
+                <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="#619bcc"></TD>
+                <TD ALIGN="LEFT">Runs on the Edge Device</TD>
+            </TR>
+            <TR>
+                <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="#008147"></TD>
+                <TD ALIGN="LEFT">Runs on the ESP32-Cams</TD>
+            </TR>
+            <TR>
+                <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="#95C5A5"></TD>
+                <TD ALIGN="LEFT">Runs on the Arduino Mega</TD>
+            </TR>
+        </TABLE>>""",
+            style="filled",
+            color="none",
+        )
+        # Invisible edge to push the legend to the top-right
+        s.edge("anchor", "legend", style="invis")
+
+    with dot.subgraph() as s:
+        s.attr(rank="sink")
+        s.attr(rankdir="RL")  # Direction from top to bottom within the subgraph
+        s.node(
+            "protocol_legend",
+            """<
+        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" COLOR="black">
+            <TR><TD COLSPAN="2" ALIGN="CENTER"><FONT POINT-SIZE="20"><B>Legend (edges)</B></FONT></TD></TR>
+            <TR>
+                <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="red"></TD>
+                <TD ALIGN="LEFT">USART</TD>
+            </TR>
+            <TR>
+                <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="orange"></TD>
+                <TD ALIGN="LEFT">ZMQ Pub/Sub</TD>
+            </TR>
+            <TR>
+                <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="blue"></TD>
+                <TD ALIGN="LEFT">Data Logging</TD>
+            </TR>
+            <TR>
+                <TD WIDTH="40" HEIGHT="20" FIXEDSIZE="TRUE" BGCOLOR="green"></TD>
+                <TD ALIGN="LEFT">UDP</TD>
+            </TR>
+        </TABLE>>""",
+            style="invisible",
+        )
 
     # Save the UML diagram to a file
     output_path = "robot_system_interactions_high_quality"
