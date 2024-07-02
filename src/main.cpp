@@ -7,8 +7,8 @@
 
 int main(int argc, char *argv[])
 {
-    OperationalMode mode = OperationalMode::Online;
-    std::string logPath = "docs/logs/log_test_multiple_cameras_parsing.txt";
+    OperationalMode mode = OperationalMode::Offline;
+    std::string logPath = "docs/logs/log_2024-07-02_17-36-22.txt";
 
     try
     {
