@@ -1,0 +1,17 @@
+
+\begin{table}[htb!]
+    \centering
+    \begin{tabular}{lrrrrr}
+\toprule
+ & MAE & STD & MAX & MIN & RMSE \\
+\midrule
+X [\%] & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+Y [\%] & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+$\theta$ [\%] & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+PM [\%] & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\bottomrule
+\end{tabular}
+
+    \caption{Error percentage of the localization system with outlier rejection relative to the original.}
+    \label{tab:error_percentage}
+\end{table}

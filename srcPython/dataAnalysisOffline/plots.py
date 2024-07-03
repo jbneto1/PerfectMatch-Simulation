@@ -1,21 +1,19 @@
-# %%
-# CASE STUDY I
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-02-27_16-08-05.txt"
-file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-02-27_16-08-05.txt"
-)
-# %%
-# Case STUDY II
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-02-29_12-19-56.txt"
-file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-02-29_12-19-56.txt"
-)
+# # %%
+# # CASE STUDY I
+# file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-02-27_16-08-05.txt"
+# file_path_semantics = (
+#     "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-02-27_16-08-05.txt"
+# )
+# # %%
+# # Case STUDY II
+# file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-02-29_12-19-56.txt"
+# file_path_semantics = (
+#     "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-02-29_12-19-56.txt"
+# )
 # %%
 # Case STUDY CONTAINER REFACTOR
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-02_17-39-09.txt"
-file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-07-02_17-39-09.txt"
-)
+file_path = "docs/logs/logs_offlineAnalysis/PM_4_cams_new_model.txt"
+file_path_semantics = "docs/logs/logs_offlineAnalysis/PM_semantics_4_cams_new_model.txt"
 print(file_path)
 print(file_path_semantics)
 
@@ -237,7 +235,7 @@ axs[1].legend()
 axs[1].set_title("Robust PM")
 
 plt.tight_layout()
-plt.savefig("case_study_2_trajectory_dynamic.pdf", dpi=300)
+plt.savefig("PM_wo_outliers_trajectory.pdf", dpi=300)
 plt.show()
 # %% Error comparison of both systems
 
@@ -322,7 +320,7 @@ for ax in axs[:, 0]:
     ax.set_ylabel("Error", fontsize=label_fontsize)
 
 plt.tight_layout()
-plt.savefig("case_study_2_absolute_errors_dynamic.pdf", dpi=300)
+plt.savefig("PM_wo_outliers_metrics.pdf", dpi=300)
 plt.show()
 
 
@@ -354,7 +352,7 @@ plt.legend()
 plt.axis("equal")  # Ensure equal scaling for x and y axes
 plt.grid(True)
 plt.tight_layout()
-plt.savefig("case_study_2_trajectory_comparison.pdf", dpi=300)
+plt.savefig("PM_wo_outliers_trajectory_dashed.pdf", dpi=300)
 plt.show()
 
 
@@ -411,7 +409,9 @@ print(error_percentage.to_latex(index=True))
 # %%
 
 
-def to_latex_custom(df, decimals, num_format_dec, caption, label, per=False):
+def to_latex_custom(
+    df, decimals, num_format_dec, caption, label, per=False, filename=None
+):
     """
     Generates a LaTeX table from a DataFrame with values rounded and formatted to a given number of decimal places,
     and renames the row labels according to specific mappings for better readability in the LaTeX output.
@@ -466,6 +466,11 @@ def to_latex_custom(df, decimals, num_format_dec, caption, label, per=False):
     \\label{{{label}}}
 \\end{{table}}
 """
+
+    if filename:
+        with open(filename, "w") as file:
+            file.write(latex_table)
+
     return latex_table
 
 
@@ -474,17 +479,37 @@ num_format = 2
 # Example usage of the function
 caption1 = "Original."
 label1 = "tab:original"
-latex_table1 = to_latex_custom(df1_metrics, decimals, num_format, caption1, label1)
+latex_table1 = to_latex_custom(
+    df1_metrics,
+    decimals,
+    num_format,
+    caption1,
+    label1,
+    filename="original_system_table.txt",
+)
 
 caption2 = "Localization system with object rejection."
 label2 = "tab:with_detection"
-latex_table2 = to_latex_custom(df2_metrics, decimals, num_format, caption2, label2)
+latex_table2 = to_latex_custom(
+    df2_metrics,
+    decimals,
+    num_format,
+    caption2,
+    label2,
+    filename="robust_system_table.txt",
+)
 
 # Assuming error_percentage_df is the DataFrame containing error percentages
 caption3 = "Error percentage of the localization system with outlier rejection relative to the original."
 label3 = "tab:error_percentage"
 latex_table3 = to_latex_custom(
-    error_percentage, decimals, num_format, caption3, label3, True
+    error_percentage,
+    decimals,
+    num_format,
+    caption3,
+    label3,
+    True,
+    filename="percent_diff_table.txt",
 )
 print(latex_table1)
 print(latex_table2)
