@@ -91,20 +91,20 @@ void PerfectMatch::IterLaser(std::vector<LaserPoint> &LaserPoints)
         if ((laserPoint.getD() < 0.1) || (!laserPoint.getIsBeamValid()))
             continue;
 
-        // // NOT WORKING
-        // double rx, ry;
-        // calibrate_lidar_points(rx, ry, laserPoint.getX(), laserPoint.getY());
-        // double r_cx, r_cy; // calibrated lidar world points (robots center)
-        // RotateAndTranslate(r_cx, r_cy, rx, ry, RobotPose.getX(), RobotPose.getY(), st, ct);
+        // NOT WORKING
+        double rx, ry;
+        calibrate_lidar_points(rx, ry, laserPoint.getX(), laserPoint.getY());
+        double r_cx, r_cy; // calibrated lidar world points (robots center)
+        RotateAndTranslate(r_cx, r_cy, rx, ry, RobotPose.getX(), RobotPose.getY(), st, ct);
 
-        // int u = XTopixel(r_cx);
-        // int v = YTopixel(r_cy);
+        int u = XTopixel(r_cx);
+        int v = YTopixel(r_cy);
 
         // WORKING
-        double rx, ry;
-        RotateAndTranslate(rx, ry, laserPoint.getX(), laserPoint.getY(), RobotPose.getX(), RobotPose.getY(), st, ct);
-        int u = XTopixel(rx);
-        int v = YTopixel(ry);
+        // double rx, ry;
+        // RotateAndTranslate(rx, ry, laserPoint.getX(), laserPoint.getY(), RobotPose.getX(), RobotPose.getY(), st, ct);
+        // int u = XTopixel(rx);
+        // int v = YTopixel(ry);
 
         if (u >= 0 && u < map.getWidth() && v >= 0 && v < map.getHeight())
         {

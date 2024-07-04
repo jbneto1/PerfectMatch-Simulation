@@ -28,8 +28,8 @@ constexpr double A = 0.0965;
 constexpr double B = 0.109;
 constexpr double C = A + B;
 constexpr double R = 0.065;
-constexpr double OFFSET_X = 0.85e-2; // LIDAR BODY FRAME OFFSET MEASURED FROM ROBOTS FRAME
-constexpr double OFFSET_Y = 0.2e-2;  // LIDAR BODY FRAME OFFSET MEASURE FROM ROBOTS FRAME
+constexpr double OFFSET_X = 0.85e-2 - 1.45e-2; // LIDAR BODY FRAME OFFSET MEASURED FROM ROBOTS FRAME CM
+constexpr double OFFSET_Y = 0.2e-2 - 0.65e-2;  // LIDAR BODY FRAME OFFSET MEASURE FROM ROBOTS FRAME CM
 
 constexpr std::string_view FRONTCAM = "FrontCam";
 constexpr std::string_view REARCAM = "RearCam";

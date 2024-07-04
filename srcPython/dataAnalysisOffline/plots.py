@@ -12,8 +12,9 @@
 # )
 # %%
 # Case STUDY CONTAINER REFACTOR
-file_path = "docs/logs/logs_offlineAnalysis/PM_4_cams_new_model.txt"
-file_path_semantics = "docs/logs/logs_offlineAnalysis/PM_semantics_4_cams_new_model.txt"
+
+file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-04_10-23-44_x_n_1_45_y_n_0_65.txt"
+file_path_semantics = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-04_10-25-23_x_n_1_4_y_n_0_65.txt"
 print(file_path)
 print(file_path_semantics)
 
@@ -63,13 +64,13 @@ def draw_cov_ellipse(cov, pos, nstd=1, ax=None, **kwargs):
 df = pd.read_csv(file_path)
 df_semantics = pd.read_csv(file_path_semantics)
 
-print("DF w/o semantics")
-print(df.head())
-print(df.shape, df.ndim)
+# print("DF w/o semantics")
+# print(df.head())
+# print(df.shape, df.ndim)
 
-print("DF with semantics")
-print(df_semantics.head())
-print(df_semantics.shape, df_semantics.ndim)
+# print("DF with semantics")
+# print(df_semantics.head())
+# print(df_semantics.shape, df_semantics.ndim)
 
 # %%
 
@@ -235,7 +236,7 @@ axs[1].legend()
 axs[1].set_title("Robust PM")
 
 plt.tight_layout()
-plt.savefig("PM_wo_outliers_trajectory.pdf", dpi=300)
+# plt.savefig("PM_wo_outliers_trajectory.pdf", dpi=300)
 plt.show()
 # %% Error comparison of both systems
 
@@ -320,7 +321,7 @@ for ax in axs[:, 0]:
     ax.set_ylabel("Error", fontsize=label_fontsize)
 
 plt.tight_layout()
-plt.savefig("PM_wo_outliers_metrics.pdf", dpi=300)
+# plt.savefig("PM_wo_outliers_metrics.pdf", dpi=300)
 plt.show()
 
 
@@ -352,7 +353,7 @@ plt.legend()
 plt.axis("equal")  # Ensure equal scaling for x and y axes
 plt.grid(True)
 plt.tight_layout()
-plt.savefig("PM_wo_outliers_trajectory_dashed.pdf", dpi=300)
+# plt.savefig("PM_wo_outliers_trajectory_dashed.pdf", dpi=300)
 plt.show()
 
 
@@ -388,22 +389,22 @@ df2_metrics = compute_metrics(df_semantics)
 error_percentage = compute_error_percentage(df1_metrics, df2_metrics)
 
 # Print tables for inspection
-print("DF1 Metrics:")
-print(df1_metrics)
-print("\nDF2 Metrics:")
-print(df2_metrics)
-print("\nError Percentage (DF2 relative to DF1):")
-print(error_percentage)
+# print("DF1 Metrics:")
+# print(df1_metrics)
+# print("\nDF2 Metrics:")
+# print(df2_metrics)
+# print("\nError Percentage (DF2 relative to DF1):")
+# print(error_percentage)
 
-# Export to LaTeX
-print("DF1 Metrics LaTeX:")
-print(df1_metrics.to_latex(index=True))
+# # Export to LaTeX
+# print("DF1 Metrics LaTeX:")
+# print(df1_metrics.to_latex(index=True))
 
-print("DF2 Metrics LaTeX:")
-print(df2_metrics.to_latex(index=True))
+# print("DF2 Metrics LaTeX:")
+# print(df2_metrics.to_latex(index=True))
 
-print("Error Percentage LaTeX:")
-print(error_percentage.to_latex(index=True))
+# print("Error Percentage LaTeX:")
+# print(error_percentage.to_latex(index=True))
 
 
 # %%
@@ -467,9 +468,9 @@ def to_latex_custom(
 \\end{{table}}
 """
 
-    if filename:
-        with open(filename, "w") as file:
-            file.write(latex_table)
+    # if filename:
+    #     with open(filename, "w") as file:
+    #         file.write(latex_table)
 
     return latex_table
 
