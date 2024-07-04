@@ -34,7 +34,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
         }
         catch (const std::exception &e)
         {
-            logger.warn("Datagram empty or corrupted. Parsing failed.");
+            logger.warn("Datagram empty or corrupted. Parsing failed. Exception: " + std::string(e.what()));
             return;
         }
 
@@ -50,7 +50,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
         if (optLaserReadings.has_value())
             optLaserReadings_semantics = *optLaserReadings;
         else
-            logger.error("No lidar data to process!.");
+            logger.error("parseLine: No lidar data to process!.");
 
         localization.getPM().ProcessLaserPoints(optLaserReadings.value());
 
@@ -81,7 +81,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
                     }
                     else if (key == REARCAM)
                     {
-                        localization_w_semantics.getPM().ProcessBBOutliersRear(optLaserReadings_semantics.value(), val.value(), counter);
+                        localization_w_semantics.getPM().ProcessBBOutliersBack(optLaserReadings_semantics.value(), val.value(), counter);
                     }
                     else if (key == LEFTCAM)
                     {
@@ -157,7 +157,7 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
             tmp.setD(std::stod(tokens[currentIndex++]));
             lidarPoints.push_back(tmp);
         }
-        logger.debug("Parsed " + std::to_string(count) + " laser beams.");
+        logger.trace("Parsed " + std::to_string(count) + " laser beams.");
         std::map<std::string, std::optional<std::vector<BoundingBox>>> cameraBoundingBoxes;
 
         // Parse bounding boxes with camera labels

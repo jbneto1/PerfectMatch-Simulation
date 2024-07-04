@@ -38,10 +38,9 @@ Manager::~Manager()
 
 void Manager::setupVisualizationThread()
 {
-    logger.info("Setup Vis Thread called.");
     if (visualizer)
     {
-        logger.info("Thread T2 instantiated.");
+        logger.trace("Thread T2 instantiated.");
         visThread = std::thread(&Visualizer::render, visualizer.get());
         {
             std::lock_guard<std::mutex> lock(visualizer->readinessMutex);
@@ -88,7 +87,7 @@ void Manager::run(const bool logData)
     interface.registerCallback([this](const std::string &data)
                                { onDataReceived(data, interface, localization, controller, logger); });
 
-    logger.debug("Waiting Python Script.");
+    logger.trace("Waiting Python Script.");
 
     interface.runIoContextReadyMsg();
 
@@ -128,6 +127,7 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
 
             localization_w_semantics.getPM().ProcessLaserPoints(optLaserReadings_semantics.value()); // TODO: if there is no new lidar data, maintain the projected lidar pose points from the previous robot pose
             localization_w_semantics.getPM().ProcessBBOutliersFront(optLaserReadings_semantics.value(), outliers, counter);
+            logger.trace("Processing Perfect Match.");
             localization_w_semantics.processData_w_PM(encs, GT_pose, optLaserReadings_semantics.value());
 
             if (visualizer) // Ensure visualizer is not nullptr before dereferencing
@@ -135,7 +135,6 @@ void Manager::onDataReceived(const std::string &data, SimTwoInterface &interface
                 visualizer->update(GT_pose, localization.getPose(), optLaserReadings, localization_w_semantics.getPose(),
                                    optLaserReadings_semantics, counter, outliers);
             }
-            logger.trace("Processing Perfect Match.");
         }
         else
         {

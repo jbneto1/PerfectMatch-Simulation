@@ -40,7 +40,7 @@ void SimTwoInterface::runIoContext()
 
     if (!earlyStop)
     {
-        logger.debug("Waiting for the simulator.");
+        logger.info("Waiting for the simulator.");
         io_context.run(); // Continue with the normal operation after receiving the message
     }
 }
@@ -56,7 +56,7 @@ void SimTwoInterface::runYoloIoContext()
 void SimTwoInterface::registerCallback(DataCallback callback)
 {
     dataCallback = std::move(callback);
-    logger.debug("Data callback registered.");
+    logger.trace("Data callback registered.");
 }
 
 // Start receiving data
@@ -366,12 +366,12 @@ void SimTwoInterface::sendWheelSpeeds(double frontLeftSpeed, double frontRightSp
                                       double backRightSpeed)
 {
     // Placeholder implementation, replace with actual logic
-    logger.info("Setting wheel speeds: "
-                "Front Left: " +
-                std::to_string(frontLeftSpeed) +
-                ", Front Right: " + std::to_string(frontRightSpeed) +
-                ", Back Left: " + std::to_string(backLeftSpeed) +
-                ", Back Right: " + std::to_string(backRightSpeed));
+    logger.trace("Setting wheel speeds: "
+                 "Front Left: " +
+                 std::to_string(frontLeftSpeed) +
+                 ", Front Right: " + std::to_string(frontRightSpeed) +
+                 ", Back Left: " + std::to_string(backLeftSpeed) +
+                 ", Back Right: " + std::to_string(backRightSpeed));
 }
 
 // Parse received data
@@ -441,9 +441,13 @@ SimTwoInterface::getSensorData(const std::string &data)
             logger.error("Out of range error during parsing: " + std::string(e.what()));
             throw std::out_of_range("Out of range error during parsing: " + std::string(e.what()));
         }
+        catch (const std::exception &e)
+        {
+            logger.error("Exception caught during parsing: " + std::string(e.what()));
+        }
         catch (...)
         {
-            logger.error("Unexpected error during parsing.");
+            logger.error("getSensorData. Unexpected expection caught.");
         }
     }
 
@@ -470,7 +474,7 @@ void SimTwoInterface::stopIosContexts()
         // Double-check if it's really stopped.
         if (io_context.stopped())
         {
-            logger.debug("io_context has been successfully stopped.");
+            logger.trace("io_context has been successfully stopped.");
         }
         else
         {
@@ -503,7 +507,7 @@ void SimTwoInterface::stopIosContexts()
         // Double-check if it's really stopped.
         if (yoloIoContext.stopped())
         {
-            logger.debug("yoloIocontext has been successfully stopped.");
+            logger.trace("yoloIocontext has been successfully stopped.");
         }
         else
         {

@@ -8,17 +8,17 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
                                                                                                startPose),
                                                                                            stepScale(
                                                                                                stepScale),
-                                                                                           t_LC(0, -0.055, -0.155 / 2),
+                                                                                           t_FC_L(0, -0.055, -0.155 / 2),
                                                                                            Rx(Eigen::AngleAxisd(roll, Vector3d::UnitX())),
                                                                                            Ry(Eigen::AngleAxisd(pitch, Vector3d::UnitY())),
                                                                                            Rz(Eigen::AngleAxisd(yaw, Vector3d::UnitZ())),
-                                                                                           TH_LC((Matrix4d() << ((Rz.toRotationMatrix() * Ry.toRotationMatrix()) * Rx.toRotationMatrix()), t_LC,
-                                                                                                  0, 0, 0, 1)
-                                                                                                     .finished()),
-                                                                                           K((Matrix3d() << FX, 0, CX,
-                                                                                              0, FY, CY,
-                                                                                              0, 0, 1)
-                                                                                                 .finished()),
+                                                                                           T_FC_L((Matrix4d() << ((Rz.toRotationMatrix() * Ry.toRotationMatrix()) * Rx.toRotationMatrix()), t_FC_L,
+                                                                                                   0, 0, 0, 1)
+                                                                                                      .finished()),
+                                                                                           K_FC((Matrix3d() << FX, 0, CX,
+                                                                                                 0, FY, CY,
+                                                                                                 0, 0, 1)
+                                                                                                    .finished()),
                                                                                            distCoeffs((VectorXd(5) << -4.24918902e-03,
                                                                                                        3.99664887e-03,
                                                                                                        2.37389148e-04,
@@ -28,12 +28,12 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
                                                                                            safety_threshold(SAFETY_THRESHOLD)
 {
     // TH_LC rotation convention is z-y'-x'' therefore Rz*Ry*Rx.
-    logger.debug(
+    logger.info(
         "Parameters: startPose (" + std::to_string(startPose.getX()) + ", " + std::to_string(startPose.getY()) +
         ", " + std::to_string(startPose.getTheta()) + "), " + ", stepScale: " +
         std::to_string(stepScale));
     meterToPixel = map.getWidth() / 1.68;
-    std::cout << TH_LC << std::endl;
+    std::cout << T_FC_L << std::endl;
     pmError = 0;
 }
 
@@ -49,10 +49,8 @@ Pose PerfectMatch::match(std::vector<LaserPoint> &data)
 void PerfectMatch::RotateAndTranslate(double &rx, double &ry, double px, double py, double tx, double ty, double st,
                                       double ct)
 {
-    logger.trace("Rotating and translating coordinates...");
     rx = px * ct - py * st + tx;
     ry = px * st + py * ct + ty;
-    logger.trace("Coordinates rotated and translated.");
 }
 
 void PerfectMatch::calibrate_lidar_points(double &rx, double &ry, double px, double py)
@@ -144,7 +142,7 @@ void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints)
 
     for (auto &point : LaserPoints)
     {
-        logger.debug("Current idx: " + std::to_string(idx));
+        logger.trace("ProcessLaserPoints. Current idx: " + std::to_string(idx));
 
         if (point.getD() <= 0)
         {
@@ -156,7 +154,7 @@ void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints)
         }
         // CCW rotation
         double currentAngleDegrees = degreeStep * idx;
-        logger.debug("Current angle: " + std::to_string(currentAngleDegrees));
+        logger.trace("ProcessLaserPoints. Current angle: " + std::to_string(currentAngleDegrees));
 
         double angleRadians = degToRad(currentAngleDegrees);
         angleRadians = normalizeAngle(angleRadians);
@@ -213,7 +211,7 @@ void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints, cons
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    logger.info("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
+    logger.trace("ProcessLaserPoints [us]: " + std::to_string(duration.count()));
 }
 */
 // --------------------------------------------------------------------------------------------------------------//
@@ -272,7 +270,7 @@ void PerfectMatch::ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, 
 
         // Transform point from lidar to camera perspective
         Vector4d pointInLidar(point.getX(), point.getY(), 0, 1); // Homogeneous coordinates
-        Vector4d pointInCamera = TH_LC * pointInLidar;           // Still in homogeneous coordinates
+        Vector4d pointInCamera = T_FC_L * pointInLidar;          // Still in homogeneous coordinates
         /*FIXME: name wrong. It is actually T_CL where t_cl is the offset of the lidar frame from perspective of camera frame
          and R_CL is lidar frame orientation relative from camera frame
          R_cl was assembled using roll-pitch'-yaw'' alibi convention (RzRyRx)
@@ -288,7 +286,7 @@ void PerfectMatch::ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, 
         // Project point onto image plane
         Vector3d nullVector = Vector3d::Zero();
         MatrixXd homogeneousK(3, 4);
-        homogeneousK << K, nullVector;
+        homogeneousK << K_FC, nullVector;
         Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
         Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
         point.setImgPts(pImgPx);
@@ -310,10 +308,12 @@ void PerfectMatch::ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, 
             point.setIsBeamValid(false);
         }
     }
+
+    logger.info("FrontCam: rejected " + std::to_string(counter) + " beams.");
 }
 
 // TODO: Rear, left, Right adjust transformations after fixating the cameras
-void PerfectMatch::ProcessBBOutliersRear(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
+void PerfectMatch::ProcessBBOutliersBack(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
 {
     counter = 0;
 
@@ -324,7 +324,7 @@ void PerfectMatch::ProcessBBOutliersRear(std::vector<LaserPoint> &LaserPoints, s
 
         // Transform point from lidar to camera perspective
         Vector4d pointInLidar(point.getX(), point.getY(), 0, 1); // Homogeneous coordinates
-        Vector4d pointInCamera = TH_LC * pointInLidar;           // Still in homogeneous coordinates
+        Vector4d pointInCamera = T_BC_L * pointInLidar;          // Still in homogeneous coordinates
 
         if (pointInCamera(2) <= 0)
         {
@@ -335,7 +335,7 @@ void PerfectMatch::ProcessBBOutliersRear(std::vector<LaserPoint> &LaserPoints, s
         // Project point onto image plane
         Vector3d nullVector = Vector3d::Zero();
         MatrixXd homogeneousK(3, 4);
-        homogeneousK << K, nullVector;
+        homogeneousK << K_BC, nullVector;
         Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
         Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
         point.setImgPts(pImgPx);
@@ -369,7 +369,7 @@ void PerfectMatch::ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, s
 
         // Transform point from lidar to camera perspective
         Vector4d pointInLidar(point.getX(), point.getY(), 0, 1); // Homogeneous coordinates
-        Vector4d pointInCamera = TH_LC * pointInLidar;           // Still in homogeneous coordinates
+        Vector4d pointInCamera = T_LC_L * pointInLidar;          // Still in homogeneous coordinates
 
         if (pointInCamera(2) <= 0)
         {
@@ -380,7 +380,7 @@ void PerfectMatch::ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, s
         // Project point onto image plane
         Vector3d nullVector = Vector3d::Zero();
         MatrixXd homogeneousK(3, 4);
-        homogeneousK << K, nullVector;
+        homogeneousK << K_LC, nullVector;
         Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
         Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
         point.setImgPts(pImgPx);
@@ -414,7 +414,7 @@ void PerfectMatch::ProcessBBOutliersRight(std::vector<LaserPoint> &LaserPoints, 
 
         // Transform point from lidar to camera perspective
         Vector4d pointInLidar(point.getX(), point.getY(), 0, 1); // Homogeneous coordinates
-        Vector4d pointInCamera = TH_LC * pointInLidar;           // Still in homogeneous coordinates
+        Vector4d pointInCamera = T_RC_L * pointInLidar;          // Still in homogeneous coordinates
 
         if (pointInCamera(2) <= 0)
         {
@@ -425,7 +425,7 @@ void PerfectMatch::ProcessBBOutliersRight(std::vector<LaserPoint> &LaserPoints, 
         // Project point onto image plane
         Vector3d nullVector = Vector3d::Zero();
         MatrixXd homogeneousK(3, 4);
-        homogeneousK << K, nullVector;
+        homogeneousK << K_RC, nullVector;
         Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
         Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
         point.setImgPts(pImgPx);

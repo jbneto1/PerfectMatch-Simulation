@@ -40,7 +40,7 @@ public:
     void ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints, const Pose &previousPose, const Pose &currentPose);
 
     void ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
-    void ProcessBBOutliersRear(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
+    void ProcessBBOutliersBack(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
     void ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
     void ProcessBBOutliersRight(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
 
@@ -78,19 +78,78 @@ private:
 
     Logger &logger;
 
-    // Constant members that represent the spatial-relationship between LiDAR Scanner and Camera in the robot
-    const Vector3d t_LC;
-    const double yaw = M_PI_2;
+    int safety_threshold;
+
+    // ------------------------------------- Front Cam -------------------------------------------------------//
+    // Constant members that represent the spatial-relationship between LiDAR Scanner and the Front Camera in the robot
+    const Vector3d t_FC_L;     // translation of Lidar frame in FrontCam's frame perspective
+    const double yaw = M_PI_2; // Ive reorganized the lidar container to have the positive x axis pointing to the front of the robot.
     const double pitch = -M_PI_2;
     const double roll = 0;
     const Eigen::AngleAxisd Rx, Ry, Rz;
-    const Matrix4d TH_LC;
+    const Matrix4d T_FC_L; // Lidar to FrontCam homogeneous transformation matrix
     /*K = [fx, skew, px
             0, fy, py,
             0, 0, 1]*/
-    const Matrix3d K;
+    const Matrix3d K_FC;
     const VectorXd distCoeffs;
-    int safety_threshold;
+
+    // ------------------------------------- Left Cam -------------------------------------------------------//
+    const Vector3d t_LC_L = Vector3d(0, -5.575e-2, -10.6e-2);
+    const Matrix3d R_LC_L = (Matrix3d() << 1, 0, 0,
+                             0, 0, -1,
+                             0, 1, 0)
+                                .finished();
+    const Matrix4d T_LC_L = (Matrix4d() << R_LC_L(0, 0), R_LC_L(0, 1), R_LC_L(0, 2), t_LC_L(0),
+                             R_LC_L(1, 0), R_LC_L(1, 1), R_LC_L(1, 2), t_LC_L(1),
+                             R_LC_L(2, 0), R_LC_L(2, 1), R_LC_L(2, 2), t_LC_L(2),
+                             0, 0, 0, 1)
+                                .finished(); // Lidar to Left Cam homogeneous transformation matrix
+
+    const Matrix3d K_LC = (Matrix3d() << 1, 0, 0,
+                           0, 1, 0,
+                           0, 0, 1)
+                              .finished();
+
+    const VectorXd distCoeffs_LC = (VectorXd::Zero(5));
+    // ------------------------------------- Right Cam -------------------------------------------------------//
+    const Vector3d t_RC_L = Vector3d(0, -5.275e-2, -10.4e-2);
+    const Matrix3d R_RC_L = (Matrix3d() << -1, 0, 0,
+                             0, 0, -1,
+                             0, -1, 0)
+                                .finished();
+    const Matrix4d T_RC_L = (Matrix4d() << R_RC_L(0, 0), R_RC_L(0, 1), R_RC_L(0, 2), t_RC_L(0),
+                             R_RC_L(1, 0), R_RC_L(1, 1), R_RC_L(1, 2), t_RC_L(1),
+                             R_RC_L(2, 0), R_RC_L(2, 1), R_RC_L(2, 2), t_RC_L(2),
+                             0, 0, 0, 1)
+                                .finished();
+    // Lidar to Right Cam homogeneous transformation matrix
+
+    const Matrix3d K_RC = (Matrix3d() << 1, 0, 0,
+                           0, 1, 0,
+                           0, 0, 1)
+                              .finished();
+    const VectorXd distCoeffs_RC = (VectorXd::Zero(5));
+
+    // ------------------------------------- Back Cam -------------------------------------------------------//
+    const Vector3d t_BC_L = Vector3d(6e-3, -5.675e-2, -14.1e-2);
+    const Matrix3d R_BC_L = (Matrix3d() << 0, 1, 0,
+                             0, 0, -1,
+                             -1, 0, 0)
+                                .finished();
+
+    const Matrix4d T_BC_L = (Matrix4d() << R_BC_L(0, 0), R_BC_L(0, 1), R_BC_L(0, 2), t_BC_L(0),
+                             R_BC_L(1, 0), R_BC_L(1, 1), R_BC_L(1, 2), t_BC_L(1),
+                             R_BC_L(2, 0), R_BC_L(2, 1), R_BC_L(2, 2), t_BC_L(2),
+                             0, 0, 0, 1)
+                                .finished();
+    // Lidar to Back Cam homogeneous transformation matrix
+
+    const Matrix3d K_BC = (Matrix3d() << 1, 0, 0,
+                           0, 1, 0,
+                           0, 0, 1)
+                              .finished();
+    const VectorXd distCoeffs_BC = (VectorXd::Zero(5));
 };
 
 #endif // PERFECTMATCH_H
