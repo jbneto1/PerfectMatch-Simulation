@@ -8,7 +8,7 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
                                                                                                startPose),
                                                                                            stepScale(
                                                                                                stepScale),
-                                                                                           t_FC_L(0, -0.055, -0.155 / 2),
+                                                                                           t_FC_L(0, -5.05e-2, -13.4e-2),
                                                                                            Rx(Eigen::AngleAxisd(roll, Vector3d::UnitX())),
                                                                                            Ry(Eigen::AngleAxisd(pitch, Vector3d::UnitY())),
                                                                                            Rz(Eigen::AngleAxisd(yaw, Vector3d::UnitZ())),
@@ -356,6 +356,7 @@ void PerfectMatch::ProcessBBOutliersBack(std::vector<LaserPoint> &LaserPoints, s
             counter++;
             point.setIsBeamValid(false);
         }
+        logger.info("BackCam: rejected " + std::to_string(counter) + " beams.");
     }
 }
 void PerfectMatch::ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
@@ -401,6 +402,7 @@ void PerfectMatch::ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, s
             counter++;
             point.setIsBeamValid(false);
         }
+        logger.info("LeftCam: rejected " + std::to_string(counter) + " beams.");
     }
 }
 void PerfectMatch::ProcessBBOutliersRight(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
@@ -447,6 +449,7 @@ void PerfectMatch::ProcessBBOutliersRight(std::vector<LaserPoint> &LaserPoints, 
             point.setIsBeamValid(false);
         }
     }
+    logger.info("RightCam: rejected " + std::to_string(counter) + " beams.");
 }
 
 /*Optimizations*/

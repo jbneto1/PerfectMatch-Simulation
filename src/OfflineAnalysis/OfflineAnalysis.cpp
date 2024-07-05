@@ -74,7 +74,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
             {
                 if (val.has_value())
                 {
-                    logger.info("Key: " + key + ". Number of BBs: " + std::to_string(val.value().size()));
+                    logger.debug("Key: " + key + ". Number of BBs: " + std::to_string(val.value().size()));
                     if (key == FRONTCAM)
                     {
                         localization_w_semantics.getPM().ProcessBBOutliersFront(optLaserReadings_semantics.value(), val.value(), counter);
