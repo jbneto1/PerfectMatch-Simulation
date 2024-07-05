@@ -1,23 +1,46 @@
 // Logger.cpp
 #include "logger.h"
 
+// Logger::Logger(spdlog::level::level_enum level)
+// {
+//     std::vector<spdlog::sink_ptr> sinks;
+//     try
+//     {
+//         sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+//         logger = std::make_shared<spdlog::logger>("logger", begin(sinks), end(sinks));
+//         logger->set_level(level);
+//         this->trace("Console colored logger initialized.");
+//     }
+//     catch (const spdlog::spdlog_ex &ex)
+//     {
+//         std::cerr << "Console Logger initialization failed: " << ex.what() << '\n';
+//     }
+//     catch (const std::exception &ex)
+//     {
+//         std::cerr << "Console Logger initialization failed. General exception: " << ex.what() << '\n';
+//     }
+// }
+
 Logger::Logger(spdlog::level::level_enum level)
 {
     std::vector<spdlog::sink_ptr> sinks;
     try
     {
-        sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+        // Create and add a file sink instead of a console sink
+        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logfile.txt", true); // 'true' for appending to file
+        sinks.push_back(file_sink);
+
         logger = std::make_shared<spdlog::logger>("logger", begin(sinks), end(sinks));
         logger->set_level(level);
-        this->trace("Console colored logger initialized.");
+        this->trace("File logger initialized."); // Log message indicating file logger setup
     }
     catch (const spdlog::spdlog_ex &ex)
     {
-        std::cerr << "Console Logger initialization failed: " << ex.what() << '\n';
+        std::cerr << "File Logger initialization failed: " << ex.what() << '\n';
     }
     catch (const std::exception &ex)
     {
-        std::cerr << "Console Logger initialization failed. General exception: " << ex.what() << '\n';
+        std::cerr << "File Logger initialization failed. General exception: " << ex.what() << '\n';
     }
 }
 

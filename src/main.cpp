@@ -8,11 +8,11 @@
 int main(int argc, char *argv[])
 {
     OperationalMode mode = OperationalMode::Offline;
-    std::string logPath = "docs/logs/PM_with_outliers_4_cams_new_model.txt";
+    std::string logPath = "docs/logs/test_10_bonecos_4entrance_4machines_2exit_05_07.txt";
 
     try
     {
-        Logger &logger = Logger::getInstance(spdlog::level::info);
+        Logger &logger = Logger::getInstance(spdlog::level::debug);
         logger.setPattern(std::string("[%^%l%$] %v"));
         logger.trace("Logger instantiated and pattern set");
         Manager manager = Manager(logger, mode);

@@ -42,7 +42,7 @@ constexpr std::string_view RIGHTCAM = "RightCam";
 // constexpr double C = A + B;
 // constexpr double R = 0.065 / 2;
 
-constexpr int SAFETY_THRESHOLD = 5;
+constexpr int SAFETY_THRESHOLD = 70; // 5
 
 enum class OperationalMode
 {

@@ -104,7 +104,7 @@ std::vector<BoundingBox> SimTwoInterface::getOutliers(const std::string &yoloBuf
 
     if (yoloBuffer == "NoDetections")
     {
-        logger.debug("No detections from YOLO");
+        logger.trace("No detections from YOLO");
         return {};
     }
 
@@ -554,7 +554,7 @@ void SimTwoInterface::logFrequencySimTwo()
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime_simtwo);
         double freq = 1E6 / double(duration.count());
         localization.setFreq(freq);
-        logger.debug("SimTwo Comm[Hz]: " + formatWithTwoDecimals(freq));
+        logger.trace("SimTwo Comm[Hz]: " + formatWithTwoDecimals(freq));
     }
     lastTime_simtwo = now;
 }
@@ -568,7 +568,7 @@ void SimTwoInterface::logFrequencyYOLO()
     {
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime_yolo);
         double freq = 1E6 / double(duration.count());
-        logger.debug("YOLO Comm[Hz]: " + formatWithTwoDecimals(freq));
+        logger.trace("YOLO Comm[Hz]: " + formatWithTwoDecimals(freq));
     }
     lastTime_yolo = now;
 }
