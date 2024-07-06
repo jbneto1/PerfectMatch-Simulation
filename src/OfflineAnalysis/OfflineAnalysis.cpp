@@ -79,7 +79,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
                     {
                         localization_w_semantics.getPM().ProcessBBOutliersFront(optLaserReadings_semantics.value(), val.value(), counter);
                     }
-                    else if (key == REARCAM)
+                    else if (key == BACKCAM)
                     {
                         localization_w_semantics.getPM().ProcessBBOutliersBack(optLaserReadings_semantics.value(), val.value(), counter);
                     }

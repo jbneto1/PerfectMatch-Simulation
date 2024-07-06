@@ -33,7 +33,7 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
         ", " + std::to_string(startPose.getTheta()) + "), " + ", stepScale: " +
         std::to_string(stepScale));
     meterToPixel = map.getWidth() / 1.68;
-    std::cout << T_FC_L << std::endl;
+    // std::cout << T_FC_L << std::endl;
     pmError = 0;
 }
 
