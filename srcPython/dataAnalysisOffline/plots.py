@@ -13,9 +13,9 @@
 # %%
 # Case STUDY CONTAINER REFACTOR
 
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-06_11-41-27.txt"
+file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-06_18-10-09.txt"
 file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-07-06_11-41-27.txt"
+    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-07-06_18-10-09.txt"
 )
 print(file_path)
 print(file_path_semantics)

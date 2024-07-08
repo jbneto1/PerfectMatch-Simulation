@@ -800,3 +800,137 @@ void Visualizer::DrawLidarPointWithAnnotation(const Vector2d &pImgPx, u_int inde
         logger.trace("Point outside of image bounds - Index: " + std::to_string(index));
     }
 }
+
+void Visualizer::renderMultiCamViews(const std::map<std::string, std::optional<std::vector<BoundingBox>>> &bboxesMap,
+                                     const std::vector<LaserPoint> &allLidarPoints)
+{
+
+    // std::cout << "Bounding Boxes Map:" << std::endl;
+    // for (const auto &pair : bboxesMap)
+    // {
+    //     std::cout << "Camera ID: " << pair.first << std::endl;
+    //     if (pair.second)
+    //     {
+    //         for (const auto &bbox : pair.second.value())
+    //         {
+    //             std::cout << bbox << std::endl;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         std::cout << "No bounding boxes" << std::endl;
+    //     }
+    // }
+
+    const int xOffsetStart = 100; // Starting X position for the first window
+    const int yOffsetStart = 100; // Starting Y position for the first window
+
+    // Names of cameras arranged as needed for a 2x2 grid
+    std::vector<std::string> cameraIDs = {"FrontCam", "RearCam", "LeftCam", "RightCam"};
+
+    // Initialize and position windows only once
+    static bool windowsInitialized = false;
+    if (!windowsInitialized)
+    {
+        for (int i = 0; i < cameraIDs.size(); ++i)
+        {
+            cv::namedWindow(cameraIDs[i], cv::WINDOW_NORMAL);
+            cv::resizeWindow(cameraIDs[i], IMAGE_WIDTH, IMAGE_HEIGHT);
+            int xPos = xOffsetStart + (i % 2) * (IMAGE_WIDTH + 10);  // 2 columns
+            int yPos = yOffsetStart + (i / 2) * (IMAGE_HEIGHT + 30); // 2 rows
+            cv::moveWindow(cameraIDs[i], xPos, yPos);
+        }
+        windowsInitialized = true;
+    }
+
+    // Organize LiDAR points by camera and draw
+    std::map<std::string, std::vector<LaserPoint>> organizedLidarPoints;
+    for (const auto &point : allLidarPoints)
+    {
+        if (point.getDraw())
+        {
+            for (const auto &label : point.getCameraLabels())
+            {
+                organizedLidarPoints[label].push_back(point);
+            }
+        }
+    }
+
+    for (const auto &camId : cameraIDs)
+    {
+        if (images.find(camId) == images.end())
+        {
+            images[camId] = cv::Mat::zeros(IMAGE_HEIGHT, IMAGE_WIDTH, CV_8UC3);
+        }
+
+        auto bboxes = bboxesMap.count(camId) && bboxesMap.at(camId) ? bboxesMap.at(camId).value() : std::vector<BoundingBox>();
+        auto lidarPoints = organizedLidarPoints.count(camId) ? organizedLidarPoints[camId] : std::vector<LaserPoint>();
+
+        // if (camId == "BackCam")
+        // {
+        //     std::cout << "BackCam Bounding Boxes: ";
+        //     for (const auto &bbox : bboxes)
+        //     {
+        //         std::cout << bbox << " "; // Assumes BoundingBox has an appropriate operator<< defined
+        //     }
+        //     std::cout << std::endl;
+        // }
+
+        drawCamVis(camId, images[camId], bboxes, lidarPoints);
+    }
+}
+
+void Visualizer::drawCamVis(const std::string &camId, cv::Mat &image, const std::vector<BoundingBox> &bboxes, const std::vector<LaserPoint> &lidarPoints)
+{
+    image.setTo(cv::Scalar(255, 255, 255)); // Clear the image to white
+
+    // Draw bounding boxes and LiDAR points
+    for (auto &box : bboxes)
+    {
+        DrawBoundingBox(image, box);
+    }
+    for (auto &point : lidarPoints)
+    {
+        DrawLidarPointWithAnnotation(image, point.getImgPts(), point.getBeamIndex(), 5, !point.getIsBeamValid());
+    }
+
+    cv::imshow(camId, image); // Use the camera ID for window title
+    cv::waitKey(1);
+}
+
+void Visualizer::DrawBoundingBox(cv::Mat &image, const BoundingBox &box)
+{
+    int x1 = std::clamp(static_cast<int>(box.x - box.width / 2), 0, image.cols - 1);
+    int y1 = std::clamp(static_cast<int>(box.y - box.height / 2), 0, image.rows - 1);
+    int x2 = std::clamp(static_cast<int>(box.x + box.width / 2), 0, image.cols - 1);
+    int y2 = std::clamp(static_cast<int>(box.y + box.height / 2), 0, image.rows - 1);
+
+    cv::rectangle(image, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(0, 0, 255), 2);
+
+    int safety_x1 = std::max(0, x1 - safety_threshold);
+    int safety_y1 = std::max(0, y1 - safety_threshold);
+    int safety_x2 = std::min(image.cols - 1, x2 + safety_threshold);
+    int safety_y2 = std::min(image.rows - 1, y2 + safety_threshold);
+
+    cv::rectangle(image, cv::Point(safety_x1, safety_y1), cv::Point(safety_x2, safety_y2), cv::Scalar(255, 0, 0), 1);
+}
+
+void Visualizer::DrawLidarPointWithAnnotation(cv::Mat &image, const Vector2d &pImgPx, u_int index, int annotateEveryN, bool isInsideBoundingBox)
+{
+    std::vector<int> yOffset = {-40, -20, 20, 40};
+    int offsetIndex = index / annotateEveryN % yOffset.size();
+    int yPosition = static_cast<int>(pImgPx(1)) + yOffset[offsetIndex];
+    yPosition = std::max(0, std::min(image.rows - 1, yPosition));
+
+    if (pImgPx(0) >= 0 && pImgPx(0) < image.cols && pImgPx(1) >= 0 && pImgPx(1) < image.rows)
+    {
+        cv::Scalar color = isInsideBoundingBox ? cv::Scalar(255, 0, 0) : cv::Scalar(0, 127, 255);
+        cv::circle(image, cv::Point(static_cast<int>(pImgPx(0)), static_cast<int>(pImgPx(1))), 3, color, -1);
+
+        if (index % annotateEveryN == 0)
+        {
+            cv::putText(image, std::to_string(index), cv::Point(static_cast<int>(pImgPx(0)), yPosition),
+                        cv::FONT_HERSHEY_SIMPLEX, 0.5, color, 2);
+        }
+    }
+}

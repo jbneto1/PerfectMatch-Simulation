@@ -40,6 +40,9 @@ public:
     void update(const Pose &groundTruth, const Pose &estimatedPose, const std::optional<std::vector<LaserPoint>> &laserPoint,
                 const Pose &ePoseOutliers, const std::optional<std::vector<LaserPoint>> &laserPointOutliers, const int &laserRejectI, std::vector<BoundingBox> &bboxes);
 
+    void renderMultiCamViews(const std::map<std::string, std::optional<std::vector<BoundingBox>>> &bboxesMap,
+                             const std::vector<LaserPoint> &allLidarPoints);
+
     void render();
 
     void stop();
@@ -108,6 +111,12 @@ private:
     bool setupGLLoaderAndImGui();
 
     // RObot Camera window
+    void drawCamVis(const std::string &camId, cv::Mat &image, const std::vector<BoundingBox> &bboxes, const std::vector<LaserPoint> &lidarPoints);
+
+    std::map<std::string, cv::Mat> images; // Separate images for each camera
+    void DrawLidarPointWithAnnotation(cv::Mat &image, const Vector2d &pImgPx, u_int index, int annotateEveryN, bool isInsideBoundingBox);
+    void DrawBoundingBox(cv::Mat &image, const BoundingBox &box);
+
     void DrawLidarPointWithAnnotation(const Vector2d &pImgPx, u_int index, int annotateEveryN, bool isInsideBoundingBox);
     void DrawBoundingBox(BoundingBox &box);
     void DrawCenterAndCorners();

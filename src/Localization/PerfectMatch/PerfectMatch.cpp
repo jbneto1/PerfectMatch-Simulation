@@ -271,15 +271,9 @@ void PerfectMatch::ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, 
         // Transform point from lidar to camera perspective
         Vector4d pointInLidar(point.getX(), point.getY(), 0, 1); // Homogeneous coordinates
         Vector4d pointInCamera = T_FC_L * pointInLidar;          // Still in homogeneous coordinates
-        /*FIXME: name wrong. It is actually T_CL where t_cl is the offset of the lidar frame from perspective of camera frame
-         and R_CL is lidar frame orientation relative from camera frame
-         R_cl was assembled using roll-pitch'-yaw'' alibi convention (RzRyRx)
-
-        */
 
         if (pointInCamera(2) <= 0)
         {
-            point.setDraw(false);
             continue;
         } // If it has a negative Z it is behind the camera.
 
@@ -290,6 +284,12 @@ void PerfectMatch::ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, 
         Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
         Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
         point.setImgPts(pImgPx);
+
+        if (pImgPx(0) >= 0 && pImgPx(0) < IMAGE_WIDTH && pImgPx(1) >= 0 && pImgPx(1) < IMAGE_HEIGHT)
+        {
+            point.setCameraLabel("FrontCam");
+            point.setDraw(true);
+        }
 
         // Check if the point falls inside any bounding box
         bool insideAnyBoundingBox = false;
@@ -308,11 +308,9 @@ void PerfectMatch::ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, 
             point.setIsBeamValid(false);
         }
     }
-
     logger.info("FrontCam: rejected " + std::to_string(counter) + " beams.");
 }
 
-// TODO: Rear, left, Right adjust transformations after fixating the cameras
 void PerfectMatch::ProcessBBOutliersBack(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
 {
     counter = 0;
@@ -328,7 +326,6 @@ void PerfectMatch::ProcessBBOutliersBack(std::vector<LaserPoint> &LaserPoints, s
 
         if (pointInCamera(2) <= 0)
         {
-            point.setDraw(false);
             continue;
         } // If it has a negative Z it is behind the camera.
 
@@ -339,6 +336,12 @@ void PerfectMatch::ProcessBBOutliersBack(std::vector<LaserPoint> &LaserPoints, s
         Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
         Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
         point.setImgPts(pImgPx);
+
+        if (pImgPx(0) >= 0 && pImgPx(0) < IMAGE_WIDTH && pImgPx(1) >= 0 && pImgPx(1) < IMAGE_HEIGHT)
+        {
+            point.setCameraLabel("RearCam");
+            point.setDraw(true);
+        }
 
         // Check if the point falls inside any bounding box
         bool insideAnyBoundingBox = false;
@@ -356,9 +359,10 @@ void PerfectMatch::ProcessBBOutliersBack(std::vector<LaserPoint> &LaserPoints, s
             counter++;
             point.setIsBeamValid(false);
         }
-        logger.info("BackCam: rejected " + std::to_string(counter) + " beams.");
     }
+    logger.info("BackCam: rejected " + std::to_string(counter) + " beams.");
 }
+
 void PerfectMatch::ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
 {
     counter = 0;
@@ -374,7 +378,6 @@ void PerfectMatch::ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, s
 
         if (pointInCamera(2) <= 0)
         {
-            point.setDraw(false);
             continue;
         } // If it has a negative Z it is behind the camera.
 
@@ -385,6 +388,12 @@ void PerfectMatch::ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, s
         Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
         Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
         point.setImgPts(pImgPx);
+
+        if (pImgPx(0) >= 0 && pImgPx(0) < IMAGE_WIDTH && pImgPx(1) >= 0 && pImgPx(1) < IMAGE_HEIGHT)
+        {
+            point.setCameraLabel("LeftCam");
+            point.setDraw(true);
+        }
 
         // Check if the point falls inside any bounding box
         bool insideAnyBoundingBox = false;
@@ -402,8 +411,8 @@ void PerfectMatch::ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, s
             counter++;
             point.setIsBeamValid(false);
         }
-        logger.info("LeftCam: rejected " + std::to_string(counter) + " beams.");
     }
+    logger.info("LeftCam: rejected " + std::to_string(counter) + " beams.");
 }
 void PerfectMatch::ProcessBBOutliersRight(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
 {
@@ -420,7 +429,6 @@ void PerfectMatch::ProcessBBOutliersRight(std::vector<LaserPoint> &LaserPoints, 
 
         if (pointInCamera(2) <= 0)
         {
-            point.setDraw(false);
             continue;
         } // If it has a negative Z it is behind the camera.
 
@@ -431,6 +439,12 @@ void PerfectMatch::ProcessBBOutliersRight(std::vector<LaserPoint> &LaserPoints, 
         Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
         Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
         point.setImgPts(pImgPx);
+
+        if (pImgPx(0) >= 0 && pImgPx(0) < IMAGE_WIDTH && pImgPx(1) >= 0 && pImgPx(1) < IMAGE_HEIGHT)
+        {
+            point.setCameraLabel("RightCam");
+            point.setDraw(true);
+        }
 
         // Check if the point falls inside any bounding box
         bool insideAnyBoundingBox = false;

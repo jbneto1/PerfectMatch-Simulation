@@ -4,7 +4,7 @@ from graphviz import Digraph
 dfd = Digraph(comment="System DFD")
 
 # Define graph properties for a larger layout
-dfd.attr(rankdir="LR", size="30,30")
+dfd.attr(rankdir="TB", size="30,30")
 dfd.graph_attr["dpi"] = "300"  # Setting DPI to 300 for high resolution
 
 # Increase the default font size for nodes and edges
@@ -53,21 +53,21 @@ dfd.node("PerfectMatch", "PM\nRoPM")
 dfd.node("EKF", "EKF")
 dfd.node("LoggerData", "Logger")
 
-dfd.edge("DataLog", "Manager", "Raw log data")
-dfd.edge("Manager", "Decoder", "Raw log data")
-dfd.edge("Decoder", "Manager", "Encoder, GT, Inference, LIDAR, Timestamp\nparsed data")
+dfd.edge("DataLog", "Manager", "Raw log\ndata")
+dfd.edge("Manager", "Decoder", "Raw log\ndata")
+dfd.edge("Decoder", "Manager", "Encoder, GT,\nInference, LIDAR,\nTimestamp")
 
 
 dfd.edge("Manager", "Localization", "(Encs, GT, LIDAR) 40 Hz\n(RGB) 15 Hz")
 dfd.edge(
     "Manager",
     "LoggerData",
-    "(GT, timestamp) 40Hz\n(Inference metadata) 15 Hz\n(Localization data) 40 Hz",
+    "(GT, timestamp) 40Hz\n(Inference) 15 Hz\n(Localization) 40 Hz",
 )
 dfd.edge(
     "Manager",
     "Visualizer",
-    "(Localization data) 40 Hz\n(LIDAR, LIDAR Out.) 7 Hz\n(Inference metadata) 15 Hz",
+    "(Localization) 40 Hz\n(LIDAR, LIDAR Out.) 7 Hz\n(Inference) 15 Hz",
 )
 
 dfd.edge("Localization", "PerfectMatch", "(LIDAR, LIDAR Out.) 15 Hz")
@@ -75,7 +75,7 @@ dfd.edge("Localization", "EKF", "(Odo) 40 Hz\n(PM Pose, PM Out. Pose) 15 Hz")
 dfd.edge(
     "Localization",
     "Manager",
-    "(Localization data) 40 Hz",
+    "(Localization) 40 Hz",
 )
 
 dfd.edge(

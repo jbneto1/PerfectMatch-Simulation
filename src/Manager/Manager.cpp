@@ -9,19 +9,18 @@ Manager::Manager(Logger &logger, OperationalMode mode)
       localization(logger),
       localization_w_semantics(logger),
       interface(logger, localization, controller),
-      visualizer(nullptr),
+      visualizer(std::make_unique<Visualizer>(localization, localization_w_semantics, PM_m, logger, SAFETY_THRESHOLD)),
       visThread(),
       signals_(interface.getIoContext()),
       CtrlCPromise(),
       logData(false),
-      offlineAnalysis(localization, localization_w_semantics, logger)
+      offlineAnalysis(localization, localization_w_semantics, logger, *visualizer)
 {
     logger.trace("SIGINT signal handler registered with asio.");
     // Start the visualization thread
     setupSignalHandler();
     if (mode == OperationalMode::Online)
     {
-        visualizer = std::make_unique<Visualizer>(localization, localization_w_semantics, PM_m, logger, SAFETY_THRESHOLD);
         setupVisualizationThread();
     }
 }

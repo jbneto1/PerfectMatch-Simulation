@@ -8,7 +8,7 @@
 int main(int argc, char *argv[])
 {
     OperationalMode mode = OperationalMode::Offline;
-    std::string logPath = "docs/logs/test_10_bonecos_4entrance_4machines_2exit_05_07.txt";
+    std::string logPath = "docs/logs/log_2024-07-08_10-58-16.txt";
 
     try
     {

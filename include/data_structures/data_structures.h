@@ -4,6 +4,7 @@
 #include <array>
 #include <stdexcept>
 #include <cmath>
+#include <set>
 
 #include "Eigen/Dense"
 
@@ -106,6 +107,7 @@ private:
     double std_dev;
     bool valid;
     bool draw;
+    std::set<std::string> cameraLabels; // Changed from std::string to std::set<std::string>
     u_int index;
 
     double dx, dy, dtheta;
@@ -114,10 +116,10 @@ private:
     Vector2d pImgPx;
 
 public:
-    LaserPoint() : d(0), angle(0), x(0), y(0), std_dev(1), valid(true), draw(true), index(-1), dx(0), dy(0), dtheta(0), pImgPx(Vector2d::Zero()) {}
+    LaserPoint() : d(0), angle(0), x(0), y(0), std_dev(1), valid(true), draw(false), index(-1), dx(0), dy(0), dtheta(0), pImgPx(Vector2d::Zero()) {}
 
     LaserPoint(double d, double angle, double x, double y, u_int idx, double std_dev = 1, bool beamValid = true) : d(d), angle(angle), x(x), y(y),
-                                                                                                                   std_dev(std_dev), valid(beamValid), draw(true), index(idx), dx(0), dy(0), dtheta(0), pImgPx(Vector2d::Zero()) {}
+                                                                                                                   std_dev(std_dev), valid(beamValid), draw(false), index(idx), dx(0), dy(0), dtheta(0), pImgPx(Vector2d::Zero()) {}
 
     double getD() const { return d; }
 
@@ -166,12 +168,33 @@ public:
     void setDraw(bool draw) { this->draw = draw; }
 
     bool getDraw() const { return draw; }
+
+    void setCameraLabel(const std::string &label)
+    {
+        cameraLabels.insert(label); // Change to insert into the set
+    }
+
+    const std::set<std::string> &getCameraLabels() const
+    {
+        return cameraLabels; // Getter for camera labels
+    }
 };
 
 struct BoundingBox
 {
     int class_id;
     double conf, x, y, width, height;
+
+    friend std::ostream &operator<<(std::ostream &os, const BoundingBox &bbox)
+    {
+        os << "BoundingBox(class_id: " << bbox.class_id
+           << ", conf: " << bbox.conf
+           << ", x: " << bbox.x
+           << ", y: " << bbox.y
+           << ", width: " << bbox.width
+           << ", height: " << bbox.height << ")";
+        return os;
+    }
 };
 
 struct VisualizationData

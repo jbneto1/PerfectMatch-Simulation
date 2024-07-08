@@ -4,7 +4,7 @@ from graphviz import Digraph
 dfd = Digraph(comment="System DFD")
 
 # Define graph properties for a larger layout
-dfd.attr(rankdir="LR", size="30,30")
+dfd.attr(rankdir="TB", size="30,30")
 dfd.graph_attr["dpi"] = "300"  # Setting DPI to 300 for high resolution
 
 # Increase the default font size for nodes and edges
@@ -35,7 +35,7 @@ dfd.attr(
     margin="0.2,0.2",
 )
 
-dfd.node("YOLOv8", "YOLOv8.1\nDetection")
+dfd.node("YOLOv8", "YOLOv8.2\nDetection")
 
 # Data Stores with specific styling adjustments
 dfd.node(
@@ -70,56 +70,56 @@ dfd.node("LoggerData", "Logger")
 dfd.edge("Simtwo", "SimtwoInterface", "(Encs, GT) 40Hz\n(LIDAR) 7 Hz")
 dfd.edge("Simtwo", "YOLOv8", "(RGB)\n15 Hz")
 
-dfd.edge("SimtwoInterface", "Manager", "(Encs, GT, LIDAR) 40 Hz\n(RGB) 15 Hz")
+dfd.edge("SimtwoInterface", "Manager", "(Encs, GT) 40 Hz\n(LIDAR) 7 Hz\n(RGB) 15 Hz")
 
 dfd.edge(
     "Manager",
     "Localization",
-    "(Encs, LIDAR) 40 Hz\n(RGB) 15 Hz",
+    "(Encs) 40 Hz\n(LIDAR) 7 Hz\n(RGB) 15 Hz",
 )
 dfd.edge(
     "Manager",
     "LoggerData",
-    "(Encs, GT, timestamp) 40Hz\n(LIDAR) 7 Hz\n(Inference metadata) 15 Hz",
+    "(Encs, GT, timestamp) 40Hz\n(LIDAR) 7 Hz\n(Inference) 15 Hz",
 )
 dfd.edge(
     "Manager",
     "Visualizer",
-    "(Localization data) 40 Hz\n(LIDAR, LIDAR Out.) 7 Hz\n(Inference metadata) 15 Hz",
+    "(Localization) 40 Hz\n(LIDAR, LIDAR Out.) 7 Hz\n(Inference) 15 Hz",
 )
 # dfd.edge(
 #     "Manager",
 #     "Visualizer",
-#     "(EKF μ, EKF Out. μ, GT) 40 Hz\n(LIDAR, LIDAR Out.) 7 Hz\n(Inference metadata) 15 Hz\n(Localization metadata) 40 Hz",
+#     "(EKF μ, EKF Out. μ, GT) 40 Hz\n(LIDAR, LIDAR Out.) 7 Hz\n(Inference ) 15 Hz\n(Localization ) 40 Hz",
 # )
 
-dfd.edge("Localization", "PerfectMatch", "(LIDAR, LIDAR Out.) 15 Hz")
-dfd.edge("Localization", "EKF", "(Odo) 40 Hz\n(PM Pose, PM Out. Pose) 15 Hz")
+dfd.edge("Localization", "PerfectMatch", "(LIDAR,\nLIDAR Out.)\n7 Hz")
+dfd.edge("Localization", "EKF", "(Odo) 40 Hz\n(PM Pose,\nPM Out. Pose)\n7 Hz")
 # dfd.edge(
 #     "Localization",
 #     "Manager",
-#     "(EKF μ, EKF Out. μ) 40 Hz\n(Localization metadata) 40 Hz",
+#     "(EKF μ, EKF Out. μ) 40 Hz\n(Localization ) 40 Hz",
 # )
 dfd.edge(
     "Localization",
     "Manager",
-    "(Localization data) 40 Hz",
+    "(Localization) 40 Hz",
 )
 
 dfd.edge(
     "PerfectMatch",
     "Localization",
-    "(PM Pose, Pm Out. Pose) 15 Hz\n(PM Error, PM Out. Error) 15 Hz",
+    "(PM Pose,\nPm Out. Pose,\nPM Error,\nPM Out. Error)\n7 Hz",
 )
 
-dfd.edge("EKF", "Localization", "(EKF μ, EKF Out. μ) 40 Hz")
+dfd.edge("EKF", "Localization", "(EKF μ,\nEKF Out. μ) 40 Hz")
 
-dfd.edge("YOLOv8", "SimtwoInterface", "Inference metadata\n15 Hz")
+dfd.edge("YOLOv8", "SimtwoInterface", "Inference\n15 Hz")
 
 dfd.edge(
     "LoggerData",
     "Log",
-    "(Encs, GT, timestamp) 40Hz\n(LIDAR) 7 Hz\n(Inference metadata) 15 Hz",
+    "(Encs, GT, timestamp) 40Hz\n(LIDAR) 7 Hz\n(Inference) 15 Hz",
 )
 
 

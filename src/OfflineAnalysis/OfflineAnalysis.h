@@ -18,17 +18,19 @@
 #include "Localization/Localization.h"
 #include "Logger/logger.h"
 #include "data_structures/data_structures.h"
+#include "Visualizer/Visualizer.h"
 
 class OfflineAnalysis
 {
 public:
-    OfflineAnalysis(Localization &localization, Localization &localization_w_semantics, Logger &logger);
+    OfflineAnalysis(Localization &localization, Localization &localization_w_semantics, Logger &logger, Visualizer &visualizer);
     void processLogFile(const std::string &filePath);
     // static std::tuple<std::array<int, 4>, Pose, std::optional<std::vector<LaserPoint>>, std::optional<std::vector<BoundingBox>>, long long> extractDataFromLine(const std::string &line, Logger &logger);
 
 private:
     Localization &localization, &localization_w_semantics;
     Logger &logger;
+    Visualizer &vis;
 
     std::tuple<std::array<int, 4>, Pose, std::optional<std::vector<LaserPoint>>,
                std::map<std::string, std::optional<std::vector<BoundingBox>>>, long long>

@@ -1,7 +1,7 @@
 #include "OfflineAnalysis.h"
 
-OfflineAnalysis::OfflineAnalysis(Localization &localization, Localization &localization_w_semantics, Logger &logger)
-    : localization(localization), localization_w_semantics(localization_w_semantics), logger(logger) {}
+OfflineAnalysis::OfflineAnalysis(Localization &localization, Localization &localization_w_semantics, Logger &logger, Visualizer &visualizer)
+    : localization(localization), localization_w_semantics(localization_w_semantics), logger(logger), vis(visualizer) {}
 
 void OfflineAnalysis::processLogFile(const std::string &filePath)
 {
@@ -99,7 +99,7 @@ void OfflineAnalysis::parseLine(const std::string &line)
         catch (std::exception &e)
         {
             logger.warn("Exception caught processing outliers: " + std::string(e.what()));
-            exit;
+            exit(EXIT_FAILURE);
         }
 
         // With semantic interpretation
@@ -114,6 +114,8 @@ void OfflineAnalysis::parseLine(const std::string &line)
 
         // Log the data
         logger.fileLog_offlineAnalysis(offlineData, offlineData_semantics);
+
+        vis.renderMultiCamViews(yoloDataMap, optLaserReadings_semantics.value());
     }
     catch (std::exception &e)
     {

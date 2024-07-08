@@ -4,8 +4,8 @@ from graphviz import Digraph
 def create_uml():
     dot = Digraph(comment="Robot Main Script Communication Diagram")
 
-    # Define graph properties for a larger layout
-    dot.attr(rankdir="LR", size="30,30")
+    # Define graph properties for a vertical layout
+    dot.attr(rankdir="TB", size="30,30")
     dot.graph_attr["dpi"] = "300"  # Setting DPI to 300 for high resolution
 
     # Increase the default font size for nodes and edges
@@ -101,48 +101,48 @@ def create_uml():
     dot.edge(
         "Microcontroller",
         "RobotScript",
-        "Est. Wheels' Speeds & Switch Data @40Hz\nvia Serial",
+        "Est. Wheels' Speeds &\nSwitch Data @40Hz\nvia Serial",
         color="red",
     )
 
     dot.edge(
         "CamScript",
         "EdgeDevice",
-        "Raspicam V2 Stream@15Hz\nvia ZMQ",
+        "Raspicam V2\nStream@15Hz\nvia ZMQ",
         color="orange",
     )
 
     dot.edge(
         "RobotScript",
         "Microcontroller",
-        "Ref. Wheels' Speeds & Electromagnet Commands @40Hz\nvia Serial",
+        "Ref. Wheels' Speeds &\nCommands @40Hz\nvia Serial",
         color="red",
     )
     dot.edge(
         "RobotScript",
         "DataLog",
-        "Ground truth, encoders, yolo metadata, and timestamp sensor data;\nLocalization data @40Hz",
+        "Ground truth, encoders,\nYOLO metadata,\ntimestamp sensor data;\nLocalization data @40Hz",
         color="blue",
     )
     dot.edge(
         "EdgeDevice",
         "RobotScript",
-        "Inference @15Hz\nvia UDP (4 Ports)",
+        "Inference @15Hz\n(4 Ports)\nvia UDP",
         color="green",
     )
     dot.edge(
-        "PythonAruco", "RobotScript", "ArUco Metadata @10Hz\nvia UDP", color="green"
+        "PythonAruco", "RobotScript", "ArUco\nMetadata @10Hz\nvia UDP", color="green"
     )
-    dot.edge("ESP32Cams", "EdgeDevice", "Imagery Data @v15Hz\nvia UDP", color="green")
+    dot.edge("ESP32Cams", "EdgeDevice", "Imagery Data\n@v15Hz\nvia UDP", color="green")
 
-    dot.edge("CPPLidar", "RobotScript", "Lidar Data @7Hz\nvia UDP", color="green")
+    dot.edge("CPPLidar", "RobotScript", "LIDAR\nData @7Hz\nvia UDP", color="green")
     dot.edge(
-        "PythonGT", "RobotScript", "Ground Truth Data @30Hz\nvia UDP", color="green"
+        "PythonGT", "RobotScript", "Ground Truth\nData @30Hz\nvia UDP", color="green"
     )
     dot.edge(
         "RemoteControl",
         "RobotScript",
-        "Remote Control Metadata @40Hz\nvia UDP",
+        "Remote Control\nMetadata @40Hz\nvia UDP",
         color="green",
     )
 
@@ -185,7 +185,7 @@ def create_uml():
 
     with dot.subgraph() as s:
         s.attr(rank="sink")
-        s.attr(rankdir="RL")  # Direction from top to bottom within the subgraph
+        s.attr(rankdir="TB")  # Direction from top to bottom within the subgraph
         s.node(
             "protocol_legend",
             """<

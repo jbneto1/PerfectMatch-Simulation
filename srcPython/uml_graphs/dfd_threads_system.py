@@ -4,8 +4,7 @@ import graphviz
 dot = graphviz.Digraph(
     comment="Application Threads and Synchronization",
     graph_attr={
-        "splines": "polyline",
-        "rankdir": "LR",
+        "rankdir": "TB",
     },  # Setting direction left-to-right
     node_attr={"shape": "box", "style": "rounded,filled", "color": "lightblue2"},
     edge_attr={"fontsize": "12", "fontcolor": "black"},
@@ -27,11 +26,11 @@ dot.node("NetworkIO", "Network I/O Threads", shape="folder", color="lightsalmon"
 
 # Adding edges to represent interactions and dependencies
 dot.edge("Main", "Manager", label="Initializes")
-dot.edge("Manager", "VisT", label="Spawns\nControls & Updates Data")
-dot.edge("Manager", "SignalH", label="Manages Signals")
+dot.edge("Manager", "VisT", label="Spawns Controls\n& Updates Data")
+dot.edge("Manager", "SignalH", label="Manages\nSignals")
 dot.edge("Manager", "SimTwoInt", label="Communicates")
 dot.edge("SimTwoInt", "NetworkIO", label="Spawns", style="dashed")
-dot.edge("VisT", "Mutex", label="Mutex Lock/Unlock", color="blue")
+dot.edge("VisT", "Mutex", label="Mutex\nLock/Unlock", color="blue")
 dot.edge("VisT", "CondVar", label="Waits/Signals", color="blue")
 
 # Explicit data flow between components
