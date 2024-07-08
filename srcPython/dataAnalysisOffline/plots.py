@@ -13,9 +13,9 @@
 # %%
 # Case STUDY CONTAINER REFACTOR
 
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-06_18-10-09.txt"
+file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-08_20-17-16.txt"
 file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-07-06_18-10-09.txt"
+    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-07-08_20-17-16.txt"
 )
 print(file_path)
 print(file_path_semantics)
@@ -238,7 +238,7 @@ axs[1].legend()
 axs[1].set_title("Robust PM")
 
 plt.tight_layout()
-plt.savefig("PM_wo_outliers_trajectory.pdf", dpi=300)
+# plt.savefig("PM_wo_outliers_trajectory.pdf", dpi=300)
 plt.show()
 # %% Error comparison of both systems
 
@@ -323,7 +323,7 @@ for ax in axs[:, 0]:
     ax.set_ylabel("Error", fontsize=label_fontsize)
 
 plt.tight_layout()
-plt.savefig("PM_wo_outliers_metrics.pdf", dpi=300)
+# plt.savefig("PM_wo_outliers_metrics.pdf", dpi=300)
 plt.show()
 
 
@@ -355,7 +355,7 @@ plt.legend()
 plt.axis("equal")  # Ensure equal scaling for x and y axes
 plt.grid(True)
 plt.tight_layout()
-plt.savefig("PM_wo_outliers_trajectory_dashed.pdf", dpi=300)
+# plt.savefig("PM_wo_outliers_trajectory_dashed.pdf", dpi=300)
 plt.show()
 
 
