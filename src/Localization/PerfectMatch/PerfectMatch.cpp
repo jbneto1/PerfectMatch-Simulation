@@ -8,24 +8,13 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
                                                                                                startPose),
                                                                                            stepScale(
                                                                                                stepScale),
-                                                                                           t_FC_L(0, -5.05e-2, -13.4e-2),
-                                                                                           Rx(Eigen::AngleAxisd(roll, Vector3d::UnitX())),
-                                                                                           Ry(Eigen::AngleAxisd(pitch, Vector3d::UnitY())),
-                                                                                           Rz(Eigen::AngleAxisd(yaw, Vector3d::UnitZ())),
-                                                                                           T_FC_L((Matrix4d() << ((Rz.toRotationMatrix() * Ry.toRotationMatrix()) * Rx.toRotationMatrix()), t_FC_L,
-                                                                                                   0, 0, 0, 1)
-                                                                                                      .finished()),
                                                                                            K_FC((Matrix3d() << FX, 0, CX,
                                                                                                  0, FY, CY,
                                                                                                  0, 0, 1)
                                                                                                     .finished()),
-                                                                                           distCoeffs((VectorXd(5) << -4.24918902e-03,
-                                                                                                       3.99664887e-03,
-                                                                                                       2.37389148e-04,
-                                                                                                       -6.17424434e-05,
-                                                                                                       -1.10922867e-03)
+                                                                                           distCoeffs((VectorXd(5) << 0.1945432, -0.5502272, -0.00146438, 0.00119241, 0.43641559)
                                                                                                           .finished()),
-                                                                                           safety_threshold(SAFETY_THRESHOLD)
+                                                                                           safety_threshold(SAFETY_THRESHOLD_ONLINE)
 {
     // TH_LC rotation convention is z-y'-x'' therefore Rz*Ry*Rx.
     logger.info(
@@ -248,10 +237,27 @@ void PerfectMatch::ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints, cons
 
 bool PerfectMatch::isPointInsideBB(const Vector2d &point, const BoundingBox &box)
 {
+    // if (point(0) >= (box.x - box.width / 2 - safety_threshold) && // relaxed the condition to adjust for approximations in the lidar transformations
+    //     point(0) <= (box.x + box.width / 2 + safety_threshold))
+    // {
     if (point(0) >= (box.x - box.width / 2 - safety_threshold) &&
         point(0) <= (box.x + box.width / 2 + safety_threshold) &&
         point(1) >= (box.y - box.height / 2 - safety_threshold) &&
         point(1) <= (box.y + box.height / 2 + safety_threshold))
+    {
+        return true;
+    }
+    return false;
+}
+bool PerfectMatch::isPointInsideBB_real(const Vector2d &point, const BoundingBox &box)
+{
+    // if (point(0) >= (box.x - box.width / 2 - safety_threshold) && // relaxed the condition to adjust for approximations in the lidar transformations
+    //     point(0) <= (box.x + box.width / 2 + safety_threshold))
+    // {
+    if (point(0) >= (box.x - box.width / 2 - SAFETY_THRESHOLD_X) &&
+        point(0) <= (box.x + box.width / 2 + SAFETY_THRESHOLD_X) &&
+        point(1) >= (box.y - box.height / 2 - SAFETY_THRESHOLD_Y) &&
+        point(1) <= (box.y + box.height / 2 + SAFETY_THRESHOLD_Y))
     {
         return true;
     }
@@ -298,7 +304,7 @@ void PerfectMatch::ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, 
             insideAnyBoundingBox = std::any_of(outliers.begin(), outliers.end(),
                                                [&pImgPx, this](const BoundingBox &box)
                                                {
-                                                   return isPointInsideBB(pImgPx, box);
+                                                   return isPointInsideBB_real(pImgPx, box);
                                                });
         }
 
@@ -350,7 +356,7 @@ void PerfectMatch::ProcessBBOutliersBack(std::vector<LaserPoint> &LaserPoints, s
             insideAnyBoundingBox = std::any_of(outliers.begin(), outliers.end(),
                                                [&pImgPx, this](const BoundingBox &box)
                                                {
-                                                   return isPointInsideBB(pImgPx, box);
+                                                   return isPointInsideBB_real(pImgPx, box);
                                                });
         }
 
@@ -402,7 +408,7 @@ void PerfectMatch::ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, s
             insideAnyBoundingBox = std::any_of(outliers.begin(), outliers.end(),
                                                [&pImgPx, this](const BoundingBox &box)
                                                {
-                                                   return isPointInsideBB(pImgPx, box);
+                                                   return isPointInsideBB_real(pImgPx, box);
                                                });
         }
 
@@ -453,7 +459,7 @@ void PerfectMatch::ProcessBBOutliersRight(std::vector<LaserPoint> &LaserPoints, 
             insideAnyBoundingBox = std::any_of(outliers.begin(), outliers.end(),
                                                [&pImgPx, this](const BoundingBox &box)
                                                {
-                                                   return isPointInsideBB(pImgPx, box);
+                                                   return isPointInsideBB_real(pImgPx, box);
                                                });
         }
 

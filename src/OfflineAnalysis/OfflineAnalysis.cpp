@@ -72,28 +72,29 @@ void OfflineAnalysis::parseLine(const std::string &line)
             // Iterate through std::map
             for (auto &[key, val] : yoloDataMap)
             {
-                if (val.has_value())
-                {
-                    logger.debug("Key: " + key + ". Number of BBs: " + std::to_string(val.value().size()));
-                    if (key == FRONTCAM)
-                    {
-                        localization_w_semantics.getPM().ProcessBBOutliersFront(optLaserReadings_semantics.value(), val.value(), counter);
-                    }
-                    else if (key == BACKCAM)
-                    {
-                        localization_w_semantics.getPM().ProcessBBOutliersBack(optLaserReadings_semantics.value(), val.value(), counter);
-                    }
-                    else if (key == LEFTCAM)
-                    {
-                        localization_w_semantics.getPM().ProcessBBOutliersLeft(optLaserReadings_semantics.value(), val.value(), counter);
-                    }
-                    else if (key == RIGHTCAM)
-                    {
-                        localization_w_semantics.getPM().ProcessBBOutliersRight(optLaserReadings_semantics.value(), val.value(), counter);
-                    }
-                }
+                if (val)
+                    logger.debug("Key: " + key + ". Number of BBs: " + std::to_string(val->size()));
                 else
-                    continue;
+                    logger.debug("Key: " + key + ". No bounding boxes.");
+
+                std::vector<BoundingBox> bboxVector = val.value_or(std::vector<BoundingBox>());
+
+                if (key == FRONTCAM)
+                {
+                    localization_w_semantics.getPM().ProcessBBOutliersFront(optLaserReadings_semantics.value(), bboxVector, counter);
+                }
+                else if (key == BACKCAM)
+                {
+                    localization_w_semantics.getPM().ProcessBBOutliersBack(optLaserReadings_semantics.value(), bboxVector, counter);
+                }
+                else if (key == LEFTCAM)
+                {
+                    localization_w_semantics.getPM().ProcessBBOutliersLeft(optLaserReadings_semantics.value(), bboxVector, counter);
+                }
+                else if (key == RIGHTCAM)
+                {
+                    localization_w_semantics.getPM().ProcessBBOutliersRight(optLaserReadings_semantics.value(), bboxVector, counter);
+                }
             }
         }
         catch (std::exception &e)

@@ -19,6 +19,7 @@
 #include "Logger/logger.h"
 #include "data_structures/data_structures.h"
 #include "Visualizer/Visualizer.h"
+#include <chrono>
 
 class OfflineAnalysis
 {

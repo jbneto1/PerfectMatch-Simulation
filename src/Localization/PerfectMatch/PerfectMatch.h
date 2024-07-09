@@ -64,6 +64,7 @@ private:
    void IterLaser(std::vector<LaserPoint> &LaserPoints);
 
    bool isPointInsideBB(const Vector2d &point, const BoundingBox &box);
+   bool isPointInsideBB_real(const Vector2d &point, const BoundingBox &box);
 
    void calibrate_lidar_points(double &rx, double &ry, double px, double py);
 
@@ -82,12 +83,17 @@ private:
 
    // ------------------------------------- Front Cam -------------------------------------------------------//
    // Constant members that represent the spatial-relationship between LiDAR Scanner and the Front Camera in the robot
-   const Vector3d t_FC_L;     // translation of Lidar frame in FrontCam's frame perspective
-   const double yaw = M_PI_2; // Ive reorganized the lidar container to have the positive x axis pointing to the front of the robot.
-   const double pitch = -M_PI_2;
-   const double roll = 0;
-   const Eigen::AngleAxisd Rx, Ry, Rz;
-   const Matrix4d T_FC_L; // Lidar to FrontCam homogeneous transformation matrix
+   const Vector3d t_FC_L = Vector3d(0, -6.2e-2, -13.9e-2); // translation of Lidar frame in FrontCam's frame perspective
+   const Matrix3d R_FC_L = (Matrix3d() << 0, -1, 0,
+                            -sin(ALPHA), 0, -cos(ALPHA),
+                            cos(ALPHA), 0, -sin(ALPHA))
+                               .finished();
+
+   const Matrix4d T_FC_L = (Matrix4d() << R_FC_L(0, 0), R_FC_L(0, 1), R_FC_L(0, 2), t_FC_L(0),
+                            R_FC_L(1, 0), R_FC_L(1, 1), R_FC_L(1, 2), t_FC_L(1),
+                            R_FC_L(2, 0), R_FC_L(2, 1), R_FC_L(2, 2), t_FC_L(2),
+                            0, 0, 0, 1)
+                               .finished(); // Lidar to FrontCam homogeneous transformation matrix
    /*K = [fx, skew, px
            0, fy, py,
            0, 0, 1]*/

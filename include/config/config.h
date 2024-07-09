@@ -22,6 +22,7 @@ constexpr double CONTROL_CYCLE = 0.025;
 constexpr double STEP_SCALE = 0.04;
 constexpr double LASER_RANGE = 360.0;
 constexpr int LASER_RAYS = 720;
+constexpr int SAFETY_THRESHOLD_ONLINE = 400; // 5
 
 // Real robot values
 constexpr double A = 0.0965;
@@ -41,8 +42,10 @@ constexpr std::string_view RIGHTCAM = "RightCam";
 // constexpr double B = 0.155 / 2 + 0.015;
 // constexpr double C = A + B;
 // constexpr double R = 0.065 / 2;
-
-constexpr int SAFETY_THRESHOLD = 400; // 5
+constexpr double ALPHA = 0.16; // tilt of the front cam 0.047
+constexpr int SLEEP_MS_AMOUNT = 100;
+constexpr int SAFETY_THRESHOLD_X = 30; // 5
+constexpr int SAFETY_THRESHOLD_Y = 0;  // 5
 constexpr int IMAGE_WIDTH = 640;
 constexpr int IMAGE_HEIGHT = 480;
 
@@ -51,10 +54,10 @@ enum class OperationalMode
     Online,
     Offline
 };
-
-constexpr double FX = 219.96470465;
-constexpr double FY = 219.94273694;
-constexpr double CX = 319.21197429;
-constexpr double CY = 241.81387698;
+/*Intrinsic parameters of rpicam*/
+constexpr double FX = 496.94881098;
+constexpr double FY = 497.09947114;
+constexpr double CX = 319.23313383;
+constexpr double CY = 237.58763244;
 
 #endif // AMR_PROJECT_CONFIG_H

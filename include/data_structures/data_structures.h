@@ -227,8 +227,8 @@ struct LocalizationUpdateData
     double Qk_covarianceSet = 0.0;
     double Qk_covarianceGet = 0.0;
 
-    int safetyThresholdSet = SAFETY_THRESHOLD;
-    int safetyThresholdGet = SAFETY_THRESHOLD;
+    int safetyThresholdSet = SAFETY_THRESHOLD_ONLINE;
+    int safetyThresholdGet = SAFETY_THRESHOLD_ONLINE;
 
     Pose newPose = {};
 

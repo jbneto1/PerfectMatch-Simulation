@@ -804,24 +804,6 @@ void Visualizer::DrawLidarPointWithAnnotation(const Vector2d &pImgPx, u_int inde
 void Visualizer::renderMultiCamViews(const std::map<std::string, std::optional<std::vector<BoundingBox>>> &bboxesMap,
                                      const std::vector<LaserPoint> &allLidarPoints)
 {
-
-    // std::cout << "Bounding Boxes Map:" << std::endl;
-    // for (const auto &pair : bboxesMap)
-    // {
-    //     std::cout << "Camera ID: " << pair.first << std::endl;
-    //     if (pair.second)
-    //     {
-    //         for (const auto &bbox : pair.second.value())
-    //         {
-    //             std::cout << bbox << std::endl;
-    //         }
-    //     }
-    //     else
-    //     {
-    //         std::cout << "No bounding boxes" << std::endl;
-    //     }
-    // }
-
     const int xOffsetStart = 100; // Starting X position for the first window
     const int yOffsetStart = 100; // Starting Y position for the first window
 
@@ -866,18 +848,32 @@ void Visualizer::renderMultiCamViews(const std::map<std::string, std::optional<s
         auto bboxes = bboxesMap.count(camId) && bboxesMap.at(camId) ? bboxesMap.at(camId).value() : std::vector<BoundingBox>();
         auto lidarPoints = organizedLidarPoints.count(camId) ? organizedLidarPoints[camId] : std::vector<LaserPoint>();
 
-        // if (camId == "BackCam")
-        // {
-        //     std::cout << "BackCam Bounding Boxes: ";
-        //     for (const auto &bbox : bboxes)
-        //     {
-        //         std::cout << bbox << " "; // Assumes BoundingBox has an appropriate operator<< defined
-        //     }
-        //     std::cout << std::endl;
-        // }
-
         drawCamVis(camId, images[camId], bboxes, lidarPoints);
     }
+
+    int key = cv::waitKey(1);
+    if (key == 'q' || key == 'Q')
+    {
+        exit(EXIT_FAILURE);
+        logger.info("Exit requested. Shutting down gracefully.");
+    }
+    else if (key == 'f' || key == 'F')
+    {
+        sleepDuration = std::max(5, sleepDuration - 20); // Decrease sleep duration, min 10 ms
+        logger.info("Increased operation frequency. Current freq: " + std::to_string(1.0 / (static_cast<double>(sleepDuration) * 1e-3)));
+    }
+    else if (key == 'g' || key == 'G')
+    {
+        sleepDuration = sleepDuration + 20; // Increase sleep duration
+        logger.info("Decreased operation frequency. Current freq: " + std::to_string(1.0 / (static_cast<double>(sleepDuration) * 1e-3)));
+    }
+    else if (key == 'r' || key == 'R')
+    {
+        sleepDuration = SLEEP_MS_AMOUNT;
+        logger.info("Operation frequency reset. Current freq: " + std::to_string(1.0 / (static_cast<double>(sleepDuration) * 1e-3)));
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleepDuration));
 }
 
 void Visualizer::drawCamVis(const std::string &camId, cv::Mat &image, const std::vector<BoundingBox> &bboxes, const std::vector<LaserPoint> &lidarPoints)
@@ -895,7 +891,6 @@ void Visualizer::drawCamVis(const std::string &camId, cv::Mat &image, const std:
     }
 
     cv::imshow(camId, image); // Use the camera ID for window title
-    cv::waitKey(1);
 }
 
 void Visualizer::DrawBoundingBox(cv::Mat &image, const BoundingBox &box)
@@ -907,10 +902,10 @@ void Visualizer::DrawBoundingBox(cv::Mat &image, const BoundingBox &box)
 
     cv::rectangle(image, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(0, 0, 255), 2);
 
-    int safety_x1 = std::max(0, x1 - safety_threshold);
-    int safety_y1 = std::max(0, y1 - safety_threshold);
-    int safety_x2 = std::min(image.cols - 1, x2 + safety_threshold);
-    int safety_y2 = std::min(image.rows - 1, y2 + safety_threshold);
+    int safety_x1 = std::max(0, x1 - SAFETY_THRESHOLD_X);
+    int safety_y1 = std::max(0, y1 - SAFETY_THRESHOLD_Y);
+    int safety_x2 = std::min(image.cols - 1, x2 + SAFETY_THRESHOLD_X);
+    int safety_y2 = std::min(image.rows - 1, y2 + SAFETY_THRESHOLD_Y);
 
     cv::rectangle(image, cv::Point(safety_x1, safety_y1), cv::Point(safety_x2, safety_y2), cv::Scalar(255, 0, 0), 1);
 }

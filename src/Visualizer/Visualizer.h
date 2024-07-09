@@ -113,13 +113,15 @@ private:
     // RObot Camera window
     void drawCamVis(const std::string &camId, cv::Mat &image, const std::vector<BoundingBox> &bboxes, const std::vector<LaserPoint> &lidarPoints);
 
-    std::map<std::string, cv::Mat> images; // Separate images for each camera
     void DrawLidarPointWithAnnotation(cv::Mat &image, const Vector2d &pImgPx, u_int index, int annotateEveryN, bool isInsideBoundingBox);
     void DrawBoundingBox(cv::Mat &image, const BoundingBox &box);
 
     void DrawLidarPointWithAnnotation(const Vector2d &pImgPx, u_int index, int annotateEveryN, bool isInsideBoundingBox);
     void DrawBoundingBox(BoundingBox &box);
     void DrawCenterAndCorners();
+
+    std::map<std::string, cv::Mat> images;            // Separate images for each camera
+    std::atomic<int> sleepDuration = SLEEP_MS_AMOUNT; // Initial sleep duration in milliseconds    // Flag to indicate exit request
 };
 
 #endif // PM_PROJECT_VISUALIZER_H

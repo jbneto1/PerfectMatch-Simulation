@@ -9,7 +9,7 @@ Manager::Manager(Logger &logger, OperationalMode mode)
       localization(logger),
       localization_w_semantics(logger),
       interface(logger, localization, controller),
-      visualizer(std::make_unique<Visualizer>(localization, localization_w_semantics, PM_m, logger, SAFETY_THRESHOLD)),
+      visualizer(std::make_unique<Visualizer>(localization, localization_w_semantics, PM_m, logger, SAFETY_THRESHOLD_ONLINE)),
       visThread(),
       signals_(interface.getIoContext()),
       CtrlCPromise(),
