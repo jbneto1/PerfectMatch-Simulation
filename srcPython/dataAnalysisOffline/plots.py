@@ -1,3 +1,5 @@
+# # IROS
+
 # # %%
 # # CASE STUDY I
 # file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-02-27_16-08-05.txt"
@@ -10,12 +12,12 @@
 # file_path_semantics = (
 #     "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-02-29_12-19-56.txt"
 # )
-# %%
-# Case STUDY CONTAINER REFACTOR
 
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-09_20-55-47.txt"
+# %%
+
+file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-10_18-10-58.txt"
 file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-07-09_20-55-47.txt"
+    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-07-10_18-10-58.txt"
 )
 print(file_path)
 print(file_path_semantics)
@@ -36,7 +38,7 @@ def draw_cov_ellipse(cov, pos, nstd=1, ax=None, **kwargs):
     """
     Draw a covariance ellipse based on a covariance matrix (cov) and a position (pos),
     and include the ellipse in the legend with its number of standard deviations and color.
-
+    #TODO: estou aqui revisando
     Parameters:
     - cov: 2x2 covariance matrix.
     - pos: The (x, y) position of the ellipse center.
@@ -44,8 +46,6 @@ def draw_cov_ellipse(cov, pos, nstd=1, ax=None, **kwargs):
     - ax: Matplotlib axis where to draw the ellipse.
     - **kwargs: Additional keyword arguments passed to the Ellipse patch.
     """
-    from matplotlib.patches import Ellipse
-    import numpy as np
 
     if ax is None:
         ax = plt.gca()
