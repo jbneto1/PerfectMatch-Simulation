@@ -38,7 +38,6 @@ def draw_cov_ellipse(cov, pos, nstd=1, ax=None, **kwargs):
     """
     Draw a covariance ellipse based on a covariance matrix (cov) and a position (pos),
     and include the ellipse in the legend with its number of standard deviations and color.
-    #TODO: estou aqui revisando
     Parameters:
     - cov: 2x2 covariance matrix.
     - pos: The (x, y) position of the ellipse center.
@@ -77,6 +76,7 @@ df_semantics = pd.read_csv(file_path_semantics)
 # %%
 
 
+# TODO: show this meeting
 def transform_dataframe_to_mm(df):
     # Columns to be converted from meters to millimeters (excluding angles and errorPM which is already in mm)
     columns_to_convert = ["EKF_x", "EKF_y", "PM_x", "PM_y", "errorEKF_x", "errorEKF_y"]
@@ -105,14 +105,13 @@ def transform_dataframe_to_mm(df):
     return df
 
 
-# Apply the transformation to your dataframes
 # df_transformed = transform_dataframe_to_mm(df.copy())  # Use .copy() to avoid modifying the original dataframe
-# df_semantics_transformed = transform_dataframe_to_mm(df_semantics.copy())  # Assuming df_semantics is your second dataframe
+# df_semantics_transformed = transform_dataframe_to_mm(df_semantics.copy())
 df_mm = transform_dataframe_to_mm(df.copy())
 df_semantics_mm = transform_dataframe_to_mm(df_semantics.copy())
-# %%
 
 
+# %% --------------------------------------- SCATTER PLOTS WITH ARROWS AND CONFIDENCE ELLIPSES ----------------------------------------
 def draw_orientation_arrow(ax, x, y, theta, length=80, color="r"):
     """
     Draws an arrow representing the robot's orientation.
@@ -136,10 +135,14 @@ def draw_orientation_arrow(ax, x, y, theta, length=80, color="r"):
         end_y - y,
         head_width=length * 0.15,
         head_length=length * 0.15,
+        length_includes_head=True,
         fc=color,
         ec=color,
     )
 
+
+df_original = df.copy()
+df_original_semantics = df_semantics.copy()
 
 df = df_mm
 df_semantics = df_semantics_mm
@@ -149,15 +152,14 @@ fig, axs = plt.subplots(1, 2, figsize=(14, 7))
 decimation_factor = 5
 decimation_factor_arrows = 15
 alpha = 0.3
-# Plotting for df without semantics
+
+# ----------------------------------------------- Plotting for df without semantics ----------------------------------------------#
 
 for i in range(0, len(df), decimation_factor):
     cov_matrix = [
         [df.iloc[i]["EKFCovXX"], df.iloc[i]["EKFCovXY"]],
         [df.iloc[i]["EKFCovYX"], df.iloc[i]["EKFCovYY"]],
     ]
-    gt_pose_x = df.iloc[i]["EKF_x"] - df.iloc[i]["errorEKF_x"]
-    gt_pose_y = df.iloc[i]["EKF_y"] - df.iloc[i]["errorEKF_y"]
     ellipse = draw_cov_ellipse(
         cov_matrix,
         (df.iloc[i]["EKF_x"], df.iloc[i]["EKF_y"]),
@@ -166,13 +168,6 @@ for i in range(0, len(df), decimation_factor):
         alpha=alpha,
         color="purple",
         label="1 STD confidence ellipse" if i == 0 else "",
-    )
-    axs[0].scatter(
-        gt_pose_x,
-        gt_pose_y,
-        color="black",
-        marker="x",
-        label="Ground truth trajectory" if i == 0 else "",
     )
 
 for i in range(0, len(df), decimation_factor_arrows):
@@ -187,19 +182,27 @@ for i in range(0, len(df), decimation_factor_arrows):
 axs[0].plot(
     df["EKF_x"], df["EKF_y"], label="EKF pose trajectory", color=color_df_wo_semantics
 )
+
+gt_pose_x = df.iloc[:]["EKF_x"] - df.iloc[:]["errorEKF_x"]
+gt_pose_y = df.iloc[:]["EKF_y"] - df.iloc[:]["errorEKF_y"]
+axs[0].scatter(
+    gt_pose_x, gt_pose_y, color="black", marker="x", label="Ground truth trajectory"
+)
+
 axs[0].set_xlabel("X [mm]")
 axs[0].set_ylabel("Y [mm]")
 axs[0].legend()
 axs[0].set_title("Original system")
 
-# Plotting for df with semantics
+
+# ------------------------------------------ Plotting for df with semantics ----------------------------------------------#
+
+
 for i in range(0, len(df_semantics), decimation_factor):
     cov_matrix = [
         [df_semantics.iloc[i]["EKFCovXX"], df_semantics.iloc[i]["EKFCovXY"]],
         [df_semantics.iloc[i]["EKFCovYX"], df_semantics.iloc[i]["EKFCovYY"]],
     ]
-    gt_pose_x = df_semantics.iloc[i]["EKF_x"] - df_semantics.iloc[i]["errorEKF_x"]
-    gt_pose_y = df_semantics.iloc[i]["EKF_y"] - df_semantics.iloc[i]["errorEKF_y"]
     ellipse = draw_cov_ellipse(
         cov_matrix,
         (df_semantics.iloc[i]["EKF_x"], df_semantics.iloc[i]["EKF_y"]),
@@ -209,13 +212,7 @@ for i in range(0, len(df_semantics), decimation_factor):
         color="blue",
         label="1 STD confidence ellipse" if i == 0 else "",
     )
-    axs[1].scatter(
-        gt_pose_x,
-        gt_pose_y,
-        color="black",
-        marker="x",
-        label="Ground truth trajectory" if i == 0 else "",
-    )
+
 
 for i in range(0, len(df_semantics), decimation_factor_arrows):
     draw_orientation_arrow(
@@ -232,6 +229,14 @@ axs[1].plot(
     label="EKF pose trajectory",
     color=color_df_w_semantics,
 )
+
+gt_pose_x = df_semantics["EKF_x"] - df_semantics["errorEKF_x"]
+gt_pose_y = df_semantics["EKF_y"] - df_semantics["errorEKF_y"]
+
+axs[1].scatter(
+    gt_pose_x, gt_pose_y, color="black", marker="x", label="Ground truth trajectory"
+)
+
 axs[1].set_xlabel("X [mm]")
 axs[1].set_ylabel("Y [mm]")
 axs[1].legend()
@@ -240,24 +245,22 @@ axs[1].set_title("Robust PM")
 plt.tight_layout()
 # plt.savefig("PM_wo_outliers_trajectory.pdf", dpi=300)
 plt.show()
-# %% Error comparison of both systems
+
+
+# %% -------------------------------------------- Error metrics comparison of both systems ---------------------------------------------------
 
 fig, axs = plt.subplots(2, 2, figsize=(15, 10))
 
 # Calculate absolute errors without altering the original dataframes
 abs_errorEKF_x_original = df["errorEKF_x"].abs()
-abs_errorEKF_x_semantics = df_semantics["errorEKF_x"].abs()
-
 abs_errorEKF_y_original = df["errorEKF_y"].abs()
-abs_errorEKF_y_semantics = df_semantics["errorEKF_y"].abs()
-
 abs_errorEKF_theta_original = df["errorEKF_theta"].abs()
-abs_errorEKF_theta_semantics = df_semantics["errorEKF_theta"].abs()
+abs_errorPM_original = df["errorPM"].abs()
 
-abs_errorPM_original = df["errorPM"].abs() if "errorPM" in df else pd.Series()
-abs_errorPM_semantics = (
-    df_semantics["errorPM"].abs() if "errorPM" in df_semantics else pd.Series()
-)
+abs_errorEKF_x_semantics = df_semantics["errorEKF_x"].abs()
+abs_errorEKF_y_semantics = df_semantics["errorEKF_y"].abs()
+abs_errorEKF_theta_semantics = df_semantics["errorEKF_theta"].abs()
+abs_errorPM_semantics = df_semantics["errorPM"].abs()
 
 # Set font sizes
 tick_fontsize = 12
@@ -303,18 +306,14 @@ plot_with_y_zero(
     "Absolute Error in θ [rad]",
 )
 
-if not abs_errorPM_original.empty and not abs_errorPM_semantics.empty:
-    plot_with_y_zero(
-        axs[1, 1],
-        abs_errorPM_original,
-        abs_errorPM_semantics,
-        "Original system",
-        "Robust PM",
-        "Absolute Error in PM [mm]",
-    )
-else:
-    axs[1, 1].clear()
-    axs[1, 1].set_visible(False)
+plot_with_y_zero(
+    axs[1, 1],
+    abs_errorPM_original,
+    abs_errorPM_semantics,
+    "Original system",
+    "Robust PM",
+    "Absolute Error in PM [mm]",
+)
 
 # Set common x-axis and y-axis labels with specified font sizes
 for ax in axs[-1, :]:
@@ -327,14 +326,14 @@ plt.tight_layout()
 plt.show()
 
 
-# %% EKF POSE comparison
+# %% ------------------------------------------ EKF POSE comparison without clutter ---------------------------------------------
 plt.figure(figsize=(10, 8))
 
-# Calculate ground truth poses for both systems
+
 gt_x = df["EKF_x"] - df["errorEKF_x"]
 gt_y = df["EKF_y"] - df["errorEKF_y"]
 
-# Plot EKF paths for both systems
+
 plt.plot(df["EKF_x"], df["EKF_y"], label="Original system", linestyle="-", color="blue")
 plt.plot(
     df_semantics["EKF_x"],
@@ -347,7 +346,6 @@ plt.plot(
 # Plot ground truth paths for comparison
 plt.plot(gt_x, gt_y, label="Ground Truth", linestyle="--", color="darkorange")
 
-
 plt.xlabel("X [mm]")
 plt.ylabel("Y [mm]")
 plt.title("EKF trajectory comparison")
@@ -359,7 +357,7 @@ plt.tight_layout()
 plt.show()
 
 
-# %%
+# %% ------------------------------------------------ ERROR METRICS FOR TABLE ---------------------------------------------------
 
 
 def compute_metrics(df):
@@ -368,7 +366,6 @@ def compute_metrics(df):
     metrics = {error: {} for error in error_types}
     for error_type in error_types:
         tmp = np.absolute(df[error_type])
-        # metrics[error_type]['MEAN'] = tmp.mean()
         metrics[error_type]["MAE"] = tmp.mean()
         metrics[error_type]["STD"] = tmp.std()
         metrics[error_type]["MAX"] = tmp.max()
@@ -378,9 +375,18 @@ def compute_metrics(df):
     return pd.DataFrame(metrics).T
 
 
-def compute_error_percentage(df1_metrics, df2_metrics):
-    error_percentage = (df2_metrics - df1_metrics) / df1_metrics * 100
-    return error_percentage
+def compute_percentage_difference(df1_metrics, df2_metrics):
+    epsilon = 1e-8  # A small number close to zero
+    adjusted_df1_metrics = np.where(
+        df1_metrics == 0, epsilon, df1_metrics
+    )  # Use epsilon in case an attribute is 0
+
+    # Compute the percentage difference
+    diff_percentage = abs(
+        ((df2_metrics - adjusted_df1_metrics) / adjusted_df1_metrics) * 100
+    )
+
+    return diff_percentage
 
 
 # Compute metrics for df1 and df2
@@ -388,33 +394,12 @@ df1_metrics = compute_metrics(df)
 df2_metrics = compute_metrics(df_semantics)
 
 # Compute error percentage between df1 and df2
-error_percentage = compute_error_percentage(df1_metrics, df2_metrics)
+percentage_difference = compute_percentage_difference(df1_metrics, df2_metrics)
 
-# Print tables for inspection
-# print("DF1 Metrics:")
-# print(df1_metrics)
-# print("\nDF2 Metrics:")
-# print(df2_metrics)
-# print("\nError Percentage (DF2 relative to DF1):")
-# print(error_percentage)
-
-# # Export to LaTeX
-# print("DF1 Metrics LaTeX:")
-# print(df1_metrics.to_latex(index=True))
-
-# print("DF2 Metrics LaTeX:")
-# print(df2_metrics.to_latex(index=True))
-
-# print("Error Percentage LaTeX:")
-# print(error_percentage.to_latex(index=True))
+# %% -------------------------------------------------------- FORMAT TABLE FOR LATEX ------------------------------------------------
 
 
-# %%
-
-
-def to_latex_custom(
-    df, decimals, num_format_dec, caption, label, per=False, filename=None
-):
+def to_latex_custom(df, decimals, num_format_dec, caption, label, per=False):
     """
     Generates a LaTeX table from a DataFrame with values rounded and formatted to a given number of decimal places,
     and renames the row labels according to specific mappings for better readability in the LaTeX output.
@@ -455,25 +440,23 @@ def to_latex_custom(
         lambda x: x.round(decimals).apply(lambda y: num_format.format(y))
     )
 
-    # Generate the LaTeX code for the table
     latex_str = formatted_df.to_latex(
-        index=True, column_format="l" + "r" * (len(df.columns)), escape=False
+        index=True,
+        column_format="l" + "r" * (len(df.columns)),
+        escape=False,
+        header=True,
+        longtable=False,
+        booktabs=True,
     )
 
-    # Wrap the generated LaTeX code with the table* environment, including caption and label
     latex_table = f"""
-\\begin{{table}}[htb!]
+\\begin{{table}}[h!]
     \\centering
     {latex_str}
     \\caption{{{caption}}}
     \\label{{{label}}}
 \\end{{table}}
 """
-
-    # if filename:
-    #     with open(filename, "w") as file:
-    #         file.write(latex_table)
-
     return latex_table
 
 
@@ -482,40 +465,18 @@ num_format = 2
 # Example usage of the function
 caption1 = "Original."
 label1 = "tab:original"
-latex_table1 = to_latex_custom(
-    df1_metrics,
-    decimals,
-    num_format,
-    caption1,
-    label1,
-    filename="original_system_table.txt",
-)
+latex_table1 = to_latex_custom(df1_metrics, decimals, num_format, caption1, label1)
 
-caption2 = "Localization system with object rejection."
+caption2 = "Robust PM."
 label2 = "tab:with_detection"
-latex_table2 = to_latex_custom(
-    df2_metrics,
-    decimals,
-    num_format,
-    caption2,
-    label2,
-    filename="robust_system_table.txt",
-)
+latex_table2 = to_latex_custom(df2_metrics, decimals, num_format, caption2, label2)
 
 # Assuming error_percentage_df is the DataFrame containing error percentages
-caption3 = "Error percentage of the localization system with outlier rejection relative to the original."
+caption3 = "Percentage difference of the localization system with outlier rejection relative to the original."
 label3 = "tab:error_percentage"
 latex_table3 = to_latex_custom(
-    error_percentage,
-    decimals,
-    num_format,
-    caption3,
-    label3,
-    True,
-    filename="percent_diff_table.txt",
+    percentage_difference, decimals, num_format, caption3, label3, True
 )
 print(latex_table1)
 print(latex_table2)
 print(latex_table3)
-
-# %%
