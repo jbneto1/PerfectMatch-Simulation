@@ -175,10 +175,12 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
                 currentIndex++;                                    // Move to the start of bounding box data
                 for (int i = 0; i < bboxCount; ++i)
                 {
-                    if (currentIndex + 5 > tokens.size())
+                    // Ensure there are enough tokens left for bounding box data without including the last token (timestamp)
+                    if (currentIndex + 5 >= (tokens.size() - 1))
                     {
                         throw std::runtime_error("Insufficient tokens for bounding box data.");
                     }
+
                     int class_id = std::stoi(tokens[currentIndex++].substr(1));
                     double conf = std::stod(tokens[currentIndex++]);
                     double x = std::stod(tokens[currentIndex++]);
@@ -197,7 +199,7 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
             }
             else
             {
-                throw std::runtime_error("Unexpected token while parsing camera metadata.");
+                throw std::runtime_error("extractDataFromLine: Unexpected token while parsing camera metadata.");
             }
         }
 
@@ -213,6 +215,6 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
     }
     catch (const std::exception &e)
     {
-        throw std::runtime_error("Datagram corrupted. Parsing failed: " + std::string(e.what()));
+        throw std::runtime_error("extractDataFromLine: Datagram corrupted. Parsing failed: " + std::string(e.what()));
     }
 }

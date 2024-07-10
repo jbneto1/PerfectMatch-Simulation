@@ -845,7 +845,7 @@ void Visualizer::renderMultiCamViews(const std::map<std::string, std::optional<s
             images[camId] = cv::Mat::zeros(IMAGE_HEIGHT, IMAGE_WIDTH, CV_8UC3);
         }
 
-        auto bboxes = bboxesMap.count(camId) && bboxesMap.at(camId) ? bboxesMap.at(camId).value() : std::vector<BoundingBox>();
+        auto bboxes = (bboxesMap.count(camId) && bboxesMap.at(camId).has_value()) ? bboxesMap.at(camId).value() : std::vector<BoundingBox>();
         auto lidarPoints = organizedLidarPoints.count(camId) ? organizedLidarPoints[camId] : std::vector<LaserPoint>();
 
         drawCamVis(camId, images[camId], bboxes, lidarPoints);
