@@ -269,62 +269,132 @@ title_fontsize = 14
 label_fontsize = 12
 
 
-# Function to plot and set y-limits
-def plot_with_y_zero(ax, data1, data2, label1, label2, title):
-    ax.plot(data1, label=label1)
-    ax.plot(data2, label=label2)
+def plot_with_y_zero_and_counter(
+    ax,
+    data1,
+    data2,
+    counter_data,
+    label1,
+    label2,
+    title,
+    plot_counter=False,
+    ylabel_primary=None,
+):
+    """
+    Plot function with customized y-axis labels for both primary and secondary axes.
+
+    Parameters:
+    - ax: The matplotlib axis object.
+    - data1: Data series for the first plot.
+    - data2: Data series for the second plot.
+    - counter_data: Data series for the counter data.
+    - label1: Label for the first data series.
+    - label2: Label for the second data series.
+    - title: Title of the plot.
+    - plot_counter: Boolean flag to plot the counter data.
+    - ylabel_primary: Label for the primary y-axis.
+    """
+    # Plot the primary data directly without assigning to variables
+    (line1,) = ax.plot(data1, label=label1)
+    (line2,) = ax.plot(data2, label=label2)
     ax.set_title(title, fontsize=title_fontsize)
-    ax.legend(fontsize=legend_fontsize)
+    ax.set_ylabel(ylabel_primary, fontsize=label_fontsize)  # Set primary y-axis label
     ax.set_ylim(bottom=0)  # Set the minimum y value to 0
+
+    handles, labels = [line1, line2], [
+        label1,
+        label2,
+    ]  # Collect primary axis labels and handles
+
+    if plot_counter:
+        # Create a secondary y-axis if flag is True
+        ax_counter = ax.twinx()
+        (line3,) = ax_counter.plot(
+            counter_data, color="gray", linestyle="--", label="Rejected beams"
+        )
+        ax_counter.set_ylabel("Rejected beams [samples]", fontsize=label_fontsize)
+        ax_counter.tick_params(axis="y", labelsize=tick_fontsize)
+
+        handles.append(line3)
+        labels.append("Rejected beams")
+
+    ax.legend(
+        handles,
+        labels,
+        loc="upper right",
+        fontsize=legend_fontsize,
+        bbox_to_anchor=(0.98, 0.98),
+        borderaxespad=0.0,
+    )
+
+    # Set font size for the primary axis labels
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(tick_fontsize)
 
 
-# Plot each graph with specified font sizes
-plot_with_y_zero(
-    axs[0, 0],
-    abs_errorEKF_x_original,
-    abs_errorEKF_x_semantics,
-    "Original system",
-    "Robust PM",
-    "Absolute Error in X [mm]",
-)
-plot_with_y_zero(
-    axs[0, 1],
-    abs_errorEKF_y_original,
-    abs_errorEKF_y_semantics,
-    "Original system",
-    "Robust PM",
-    "Absolute Error in Y [mm]",
-)
-plot_with_y_zero(
+# Call this function for your subplots
+
+# Plotting each graph with specified font sizes and optional counter data
+
+plot_with_y_zero_and_counter(
     axs[1, 0],
     abs_errorEKF_theta_original,
     abs_errorEKF_theta_semantics,
+    df_semantics["counter"],
     "Original system",
     "Robust PM",
-    "Absolute Error in θ [rad]",
+    "Absolute Error in θ State",
+    plot_counter=True,
+    ylabel_primary="Error [rad]",
 )
 
-plot_with_y_zero(
+plot_with_y_zero_and_counter(
+    axs[0, 0],
+    abs_errorEKF_x_original,
+    abs_errorEKF_x_semantics,
+    df_semantics["counter"],
+    "Original system",
+    "Robust PM",
+    "Absolute Error in X State",
+    plot_counter=True,  # Change to False if you do not want to plot the counter
+    ylabel_primary="Error [mm]",
+)
+
+plot_with_y_zero_and_counter(
+    axs[0, 1],
+    abs_errorEKF_y_original,
+    abs_errorEKF_y_semantics,
+    df_semantics["counter"],
+    "Original system",
+    "Robust PM",
+    "Absolute Error in Y State",
+    plot_counter=True,
+    ylabel_primary="Error [mm]",
+)
+
+
+plot_with_y_zero_and_counter(
     axs[1, 1],
     abs_errorPM_original,
     abs_errorPM_semantics,
+    df_semantics["counter"],
     "Original system",
     "Robust PM",
-    "Absolute Error in PM [mm]",
+    "Error of Perfect Match",
+    plot_counter=True,
+    ylabel_primary="Error [mm]",
 )
+
 
 # Set common x-axis and y-axis labels with specified font sizes
 for ax in axs[-1, :]:
     ax.set_xlabel("Samples", fontsize=label_fontsize)
-for ax in axs[:, 0]:
-    ax.set_ylabel("Error", fontsize=label_fontsize)
+# for ax in axs[:, 0]:
+#     ax.set_ylabel("Error", fontsize=label_fontsize)
 
 plt.tight_layout()
 # plt.savefig("PM_wo_outliers_metrics.pdf", dpi=300)
 plt.show()
-
 
 # %% ------------------------------------------ EKF POSE comparison without clutter ---------------------------------------------
 plt.figure(figsize=(10, 8))
@@ -399,7 +469,15 @@ percentage_difference = compute_percentage_difference(df1_metrics, df2_metrics)
 # %% -------------------------------------------------------- FORMAT TABLE FOR LATEX ------------------------------------------------
 
 
-def to_latex_custom(df, decimals, num_format_dec, caption, label, per=False):
+def to_latex_custom(
+    df,
+    decimals,
+    num_format_dec,
+    caption,
+    label,
+    per=False,
+    file_name=None,
+):
     """
     Generates a LaTeX table from a DataFrame with values rounded and formatted to a given number of decimal places,
     and renames the row labels according to specific mappings for better readability in the LaTeX output.
@@ -446,7 +524,6 @@ def to_latex_custom(df, decimals, num_format_dec, caption, label, per=False):
         escape=False,
         header=True,
         longtable=False,
-        booktabs=True,
     )
 
     latex_table = f"""
@@ -457,6 +534,11 @@ def to_latex_custom(df, decimals, num_format_dec, caption, label, per=False):
     \\label{{{label}}}
 \\end{{table}}
 """
+
+    if file_name:
+        with open(file_name, "w") as file:
+            file.write(latex_table)
+
     return latex_table
 
 
