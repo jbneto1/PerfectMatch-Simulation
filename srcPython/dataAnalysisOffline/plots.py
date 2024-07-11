@@ -17,13 +17,8 @@
 
 
 def modify_path(original_path, insert_text):
-    # Find the index where "Analysis_" is followed by "2024"
     index = original_path.find("Analysis_2024")
-
-    # Compute the position to insert the new text (right after "Analysis_")
     insert_position = index + len("Analysis_")
-
-    # Insert the new text at the computed position
     modified_path = (
         original_path[:insert_position] + insert_text + original_path[insert_position:]
     )
@@ -32,11 +27,19 @@ def modify_path(original_path, insert_text):
 
 
 # Example usage
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-11_15-55-29.txt"
+file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-12_00-19-40.txt"
 file_path_semantics = modify_path(file_path, "w_semantics")
 
 print(file_path)
 print(file_path_semantics)
+
+# %%
+
+# file_path = "docs/logs/logs_offlineAnalysis/thesis/pm_without_outliers_thesis.txt"
+# file_path_semantics = (
+#     "docs/logs/logs_offlineAnalysis/thesis/pm_without_outliers_thesis_semantics.txt"
+# )
+
 
 # %%
 import pandas as pd
@@ -127,6 +130,9 @@ df_semantics_mm = transform_dataframe_to_mm(df_semantics.copy())
 
 
 # %% --------------------------------------- SCATTER PLOTS WITH ARROWS AND CONFIDENCE ELLIPSES ----------------------------------------
+plot_both_systems = True
+
+
 def draw_orientation_arrow(ax, x, y, theta, length=80, color="r"):
     """
     Draws an arrow representing the robot's orientation.
@@ -162,8 +168,14 @@ df_original_semantics = df_semantics.copy()
 df = df_mm
 df_semantics = df_semantics_mm
 
-# Create a figure with two subplots (1 row, 2 columns)
-fig, axs = plt.subplots(1, 2, figsize=(14, 7))
+
+# Decide the subplot configuration based on the number of systems to plot
+if plot_both_systems:
+    fig, axs = plt.subplots(1, 2, figsize=(14, 7))  # Two subplots
+else:
+    fig, axs = plt.subplots(figsize=(7, 7))  # Only one subplot
+    axs = [axs]  # Wrap it in a list to use the same indexing approach
+
 decimation_factor = 5
 decimation_factor_arrows = 15
 alpha = 0.3
@@ -212,59 +224,62 @@ axs[0].set_title("Original system")
 
 # ------------------------------------------ Plotting for df with semantics ----------------------------------------------#
 
+if plot_both_systems:
 
-for i in range(0, len(df_semantics), decimation_factor):
-    cov_matrix = [
-        [df_semantics.iloc[i]["EKFCovXX"], df_semantics.iloc[i]["EKFCovXY"]],
-        [df_semantics.iloc[i]["EKFCovYX"], df_semantics.iloc[i]["EKFCovYY"]],
-    ]
-    ellipse = draw_cov_ellipse(
-        cov_matrix,
-        (df_semantics.iloc[i]["EKF_x"], df_semantics.iloc[i]["EKF_y"]),
-        nstd=1,
-        ax=axs[1],
-        alpha=alpha,
-        color="blue",
-        label="1 STD confidence ellipse" if i == 0 else "",
-    )
+    for i in range(0, len(df_semantics), decimation_factor):
+        cov_matrix = [
+            [df_semantics.iloc[i]["EKFCovXX"], df_semantics.iloc[i]["EKFCovXY"]],
+            [df_semantics.iloc[i]["EKFCovYX"], df_semantics.iloc[i]["EKFCovYY"]],
+        ]
+        ellipse = draw_cov_ellipse(
+            cov_matrix,
+            (df_semantics.iloc[i]["EKF_x"], df_semantics.iloc[i]["EKF_y"]),
+            nstd=1,
+            ax=axs[1],
+            alpha=alpha,
+            color="blue",
+            label="1 STD confidence ellipse" if i == 0 else "",
+        )
 
+    for i in range(0, len(df_semantics), decimation_factor_arrows):
+        draw_orientation_arrow(
+            axs[1],
+            df_semantics.iloc[i]["EKF_x"],
+            df_semantics.iloc[i]["EKF_y"],
+            df_semantics.iloc[i]["EKF_theta"],
+            color=color_df_w_semantics,
+        )
 
-for i in range(0, len(df_semantics), decimation_factor_arrows):
-    draw_orientation_arrow(
-        axs[1],
-        df_semantics.iloc[i]["EKF_x"],
-        df_semantics.iloc[i]["EKF_y"],
-        df_semantics.iloc[i]["EKF_theta"],
+    axs[1].plot(
+        df_semantics["EKF_x"],
+        df_semantics["EKF_y"],
+        label="EKF pose trajectory",
         color=color_df_w_semantics,
     )
 
-axs[1].plot(
-    df_semantics["EKF_x"],
-    df_semantics["EKF_y"],
-    label="EKF pose trajectory",
-    color=color_df_w_semantics,
-)
+    gt_pose_x = df_semantics["EKF_x"] - df_semantics["errorEKF_x"]
+    gt_pose_y = df_semantics["EKF_y"] - df_semantics["errorEKF_y"]
 
-gt_pose_x = df_semantics["EKF_x"] - df_semantics["errorEKF_x"]
-gt_pose_y = df_semantics["EKF_y"] - df_semantics["errorEKF_y"]
+    axs[1].scatter(
+        gt_pose_x, gt_pose_y, color="black", marker="x", label="Ground truth trajectory"
+    )
 
-axs[1].scatter(
-    gt_pose_x, gt_pose_y, color="black", marker="x", label="Ground truth trajectory"
-)
-
-axs[1].set_xlabel("X [mm]")
-axs[1].set_ylabel("Y [mm]")
-axs[1].legend()
-axs[1].set_title("Robust PM")
+    axs[1].set_xlabel("X [mm]")
+    axs[1].set_ylabel("Y [mm]")
+    axs[1].legend()
+    axs[1].set_title("Robust PM")
 
 plt.tight_layout()
-# plt.savefig("PM_wo_outliers_trajectory.pdf", dpi=300)
+plt.savefig("test_ppl_entrance_ycorr_thesis_arrow_scatter.pdf", dpi=300)
 plt.show()
 
 
 # %% -------------------------------------------- Error metrics comparison of both systems ---------------------------------------------------
 
-fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+
+# Create the first figure with three subplots
+fig1, axs1 = plt.subplots(1, 3, figsize=(18, 6))  # 1 row, 3 columns
+
 
 # Calculate absolute errors without altering the original dataframes
 abs_errorEKF_x_original = df["errorEKF_x"].abs()
@@ -294,6 +309,7 @@ def plot_with_y_zero_and_counter(
     title,
     plot_counter=False,
     ylabel_primary=None,
+    plot_two_approaches=True,
 ):
     """
     Plot function with customized y-axis labels for both primary and secondary axes.
@@ -311,15 +327,19 @@ def plot_with_y_zero_and_counter(
     """
     # Plot the primary data directly without assigning to variables
     (line1,) = ax.plot(data1, label=label1)
-    (line2,) = ax.plot(data2, label=label2)
+    if plot_two_approaches:
+        (line2,) = ax.plot(data2, label=label2)
     ax.set_title(title, fontsize=title_fontsize)
     ax.set_ylabel(ylabel_primary, fontsize=label_fontsize)  # Set primary y-axis label
     ax.set_ylim(bottom=0)  # Set the minimum y value to 0
 
-    handles, labels = [line1, line2], [
-        label1,
-        label2,
-    ]  # Collect primary axis labels and handles
+    if plot_two_approaches:
+        handles, labels = [line1, line2], [
+            label1,
+            label2,
+        ]  # Collect primary axis labels and handles
+    else:
+        handles, labels = [line1], [label1]
 
     if plot_counter:
         # Create a secondary y-axis if flag is True
@@ -351,7 +371,7 @@ def plot_with_y_zero_and_counter(
 
 # Plotting each graph with specified font sizes and optional counter data
 plot_with_y_zero_and_counter(
-    axs[0, 0],
+    axs1[0],
     abs_errorEKF_x_original,
     abs_errorEKF_x_semantics,
     df_semantics["counter"],
@@ -360,10 +380,11 @@ plot_with_y_zero_and_counter(
     "Absolute Error in X State",
     plot_counter=True,  # Change to False if you do not want to plot the counter
     ylabel_primary="Error [mm]",
+    plot_two_approaches=True,
 )
 
 plot_with_y_zero_and_counter(
-    axs[0, 1],
+    axs1[1],
     abs_errorEKF_y_original,
     abs_errorEKF_y_semantics,
     df_semantics["counter"],
@@ -372,10 +393,11 @@ plot_with_y_zero_and_counter(
     "Absolute Error in Y State",
     plot_counter=True,
     ylabel_primary="Error [mm]",
+    plot_two_approaches=True,
 )
 
 plot_with_y_zero_and_counter(
-    axs[1, 0],
+    axs1[2],
     abs_errorEKF_theta_original,
     abs_errorEKF_theta_semantics,
     df_semantics["counter"],
@@ -384,10 +406,24 @@ plot_with_y_zero_and_counter(
     "Absolute Error in θ State",
     plot_counter=True,
     ylabel_primary="Error [rad]",
+    plot_two_approaches=True,
 )
 
+# Set common x-axis and y-axis labels with specified font sizes
+for ax in axs1[:]:
+    ax.set_xlabel("Samples", fontsize=label_fontsize)
+
+    # Display the first figure
+fig1.tight_layout()
+fig1.savefig("test_ppl_entrance_ycorr_thesis_error_metrics_xytheta.pdf", dpi=300)
+plt.show()
+
+# Create the second figure with one plot
+fig2, axs2 = plt.subplots(figsize=(6, 6))
+
+
 plot_with_y_zero_and_counter(
-    axs[1, 1],
+    axs2,
     abs_errorPM_original,
     abs_errorPM_semantics,
     df_semantics["counter"],
@@ -396,14 +432,12 @@ plot_with_y_zero_and_counter(
     "Error of Perfect Match",
     plot_counter=True,
     ylabel_primary="Error [mm]",
+    plot_two_approaches=True,
 )
 
-# Set common x-axis and y-axis labels with specified font sizes
-for ax in axs[-1, :]:
-    ax.set_xlabel("Samples", fontsize=label_fontsize)
-
-plt.tight_layout()
-# plt.savefig("PM_wo_outliers_metrics.pdf", dpi=300)
+# Display the second figure
+fig2.tight_layout()
+fig2.savefig("test_ppl_entrance_ycorr_thesis_error_metrics_PM.pdf", dpi=300)
 plt.show()
 
 # %% ------------------------------------------ EKF POSE comparison without clutter ---------------------------------------------
@@ -415,13 +449,16 @@ gt_y = df["EKF_y"] - df["errorEKF_y"]
 
 
 plt.plot(df["EKF_x"], df["EKF_y"], label="Original system", linestyle="-", color="blue")
-plt.plot(
-    df_semantics["EKF_x"],
-    df_semantics["EKF_y"],
-    label="Robust PM",
-    linestyle="-",
-    color="green",
-)
+
+
+if plot_both_systems:
+    plt.plot(
+        df_semantics["EKF_x"],
+        df_semantics["EKF_y"],
+        label="Robust PM",
+        linestyle="-",
+        color="green",
+    )
 
 # Plot ground truth paths for comparison
 plt.plot(gt_x, gt_y, label="Ground Truth", linestyle="--", color="darkorange")
@@ -433,14 +470,22 @@ plt.legend()
 plt.axis("equal")  # Ensure equal scaling for x and y axes
 plt.grid(True)
 plt.tight_layout()
-# plt.savefig("PM_wo_outliers_trajectory_dashed.pdf", dpi=300)
+plt.savefig("pm_without_outliers_thesis_pose_comparison.pdf", dpi=300)
 plt.show()
 
 
 # %% ------------------------------------------------ ERROR METRICS FOR TABLE ---------------------------------------------------
 
 
-def compute_metrics(df):
+# TODO: add a method that selects the important part for the metrics computations to avoid the metrics being
+# driven by unimportant data
+
+
+def compute_metrics(df, start_idx=None, end_idx=None):
+
+    if start_idx != None and end_idx != None:
+        df = df.loc[start_idx:end_idx].copy()
+
     error_types = ["errorEKF_x", "errorEKF_y", "errorEKF_theta", "errorPM"]
 
     metrics = {error: {} for error in error_types}
@@ -470,11 +515,14 @@ def compute_percentage_difference(df1_metrics, df2_metrics):
 
 
 # Compute metrics for df1 and df2
-df1_metrics = compute_metrics(df)
-df2_metrics = compute_metrics(df_semantics)
+df1_metrics = compute_metrics(df, 0, 225)
 
-# Compute error percentage between df1 and df2
-percentage_difference = compute_percentage_difference(df1_metrics, df2_metrics)
+if plot_both_systems:
+
+    df2_metrics = compute_metrics(df_semantics, 0, 225)
+
+    # Compute error percentage between df1 and df2
+    percentage_difference = compute_percentage_difference(df1_metrics, df2_metrics)
 
 # %% -------------------------------------------------------- FORMAT TABLE FOR LATEX ------------------------------------------------
 
@@ -557,18 +605,45 @@ num_format = 2
 # Example usage of the function
 caption1 = "Original."
 label1 = "tab:original"
-latex_table1 = to_latex_custom(df1_metrics, decimals, num_format, caption1, label1)
-
-caption2 = "Robust PM."
-label2 = "tab:with_detection"
-latex_table2 = to_latex_custom(df2_metrics, decimals, num_format, caption2, label2)
-
-# Assuming error_percentage_df is the DataFrame containing error percentages
-caption3 = "Percentage difference of the localization system with outlier rejection relative to the original."
-label3 = "tab:error_percentage"
-latex_table3 = to_latex_custom(
-    percentage_difference, decimals, num_format, caption3, label3, True
+latex_table1 = to_latex_custom(
+    df1_metrics,
+    decimals,
+    num_format,
+    caption1,
+    label1,
+    per=False,
+    file_name="test_ppl_entrance_ycorr_thesis_table_original.txt",
 )
+
 print(latex_table1)
-print(latex_table2)
-print(latex_table3)
+
+if plot_both_systems:
+    caption2 = "Robust PM."
+    label2 = "tab:with_detection"
+    latex_table2 = to_latex_custom(
+        df2_metrics,
+        decimals,
+        num_format,
+        caption2,
+        label2,
+        per=False,
+        file_name="test_ppl_entrance_ycorr_thesis_table_ropm.txt",
+    )
+
+    # Assuming error_percentage_df is the DataFrame containing error percentages
+    caption3 = "Percentage difference of the localization system with outlier rejection relative to the original."
+    label3 = "tab:error_percentage"
+    latex_table3 = to_latex_custom(
+        percentage_difference,
+        decimals,
+        num_format,
+        caption3,
+        label3,
+        True,
+        file_name="test_ppl_entrance_ycorr_thesis_table_percentage_comparison.txt",
+    )
+
+    print(latex_table2)
+    print(latex_table3)
+
+# %%

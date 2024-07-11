@@ -1,0 +1,17 @@
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{lrrrrr}
+\toprule
+ & MAE & STD & MAX & MIN & RMSE \\
+\midrule
+X [\%] & 71.95 & 66.67 & 53.37 & 98.00 & 71.14 \\
+Y [\%] & 79.80 & 87.43 & 78.38 & 69.50 & 80.63 \\
+$\theta$ [\%] & 90.23 & 82.32 & 64.39 & 95.25 & 88.00 \\
+PM [\%] & 77.57 & 45.50 & 5.35 & 90.98 & 72.31 \\
+\bottomrule
+\end{tabular}
+
+    \caption{Percentage difference of the localization system with outlier rejection relative to the original.}
+    \label{tab:error_percentage}
+\end{table}
