@@ -335,19 +335,6 @@ def plot_with_y_zero_and_counter(
 # Call this function for your subplots
 
 # Plotting each graph with specified font sizes and optional counter data
-
-plot_with_y_zero_and_counter(
-    axs[1, 0],
-    abs_errorEKF_theta_original,
-    abs_errorEKF_theta_semantics,
-    df_semantics["counter"],
-    "Original system",
-    "Robust PM",
-    "Absolute Error in θ State",
-    plot_counter=True,
-    ylabel_primary="Error [rad]",
-)
-
 plot_with_y_zero_and_counter(
     axs[0, 0],
     abs_errorEKF_x_original,
@@ -372,6 +359,17 @@ plot_with_y_zero_and_counter(
     ylabel_primary="Error [mm]",
 )
 
+plot_with_y_zero_and_counter(
+    axs[1, 0],
+    abs_errorEKF_theta_original,
+    abs_errorEKF_theta_semantics,
+    df_semantics["counter"],
+    "Original system",
+    "Robust PM",
+    "Absolute Error in θ State",
+    plot_counter=True,
+    ylabel_primary="Error [rad]",
+)
 
 plot_with_y_zero_and_counter(
     axs[1, 1],
@@ -385,12 +383,9 @@ plot_with_y_zero_and_counter(
     ylabel_primary="Error [mm]",
 )
 
-
 # Set common x-axis and y-axis labels with specified font sizes
 for ax in axs[-1, :]:
     ax.set_xlabel("Samples", fontsize=label_fontsize)
-# for ax in axs[:, 0]:
-#     ax.set_ylabel("Error", fontsize=label_fontsize)
 
 plt.tight_layout()
 # plt.savefig("PM_wo_outliers_metrics.pdf", dpi=300)
