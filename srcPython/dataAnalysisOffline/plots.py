@@ -15,13 +15,28 @@
 
 # %%
 
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-10_18-10-58.txt"
-file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/offlineAnalysis_w_semantics2024-07-10_18-10-58.txt"
-)
+
+def modify_path(original_path, insert_text):
+    # Find the index where "Analysis_" is followed by "2024"
+    index = original_path.find("Analysis_2024")
+
+    # Compute the position to insert the new text (right after "Analysis_")
+    insert_position = index + len("Analysis_")
+
+    # Insert the new text at the computed position
+    modified_path = (
+        original_path[:insert_position] + insert_text + original_path[insert_position:]
+    )
+
+    return modified_path
+
+
+# Example usage
+file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-11_15-55-29.txt"
+file_path_semantics = modify_path(file_path, "w_semantics")
+
 print(file_path)
 print(file_path_semantics)
-
 
 # %%
 import pandas as pd
