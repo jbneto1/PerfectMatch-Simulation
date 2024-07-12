@@ -95,6 +95,10 @@ void OfflineAnalysis::parseLine(const std::string &line)
                 {
                     localization_w_semantics.getPM().ProcessBBOutliersRight(optLaserReadings_semantics.value(), bboxVector, counter);
                 }
+                else if (key == SIMULATEDCAM)
+                {
+                    localization_w_semantics.getPM().ProcessBBOutliers(optLaserReadings_semantics.value(), bboxVector, counter);
+                }
             }
         }
         catch (std::exception &e)
@@ -152,7 +156,7 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
         int currentIndex = 7; // Start of lidar data
         unsigned int count = 0;
         // Parse lidar points until a camera label or the last token (timestamp)
-        std::set<std::string> cameraLabels = {"FrontCam", "RearCam", "RightCam", "LeftCam"};
+        std::set<std::string> cameraLabels = {"SimulatedCam", "FrontCam", "RearCam", "RightCam", "LeftCam"};
         while (currentIndex < tokens.size() - 1 && cameraLabels.find(tokens[currentIndex]) == cameraLabels.end())
         {
             count++;

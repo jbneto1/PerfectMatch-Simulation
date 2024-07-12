@@ -1,0 +1,17 @@
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{lrrrrr}
+\toprule
+ & MAE & STD & MAX & MIN & RMSE \\
+\midrule
+X [mm] & 10.37 & 6.74 & 25.46 & 0.68 & 12.33 \\
+Y [mm] & 9.37 & 3.14 & 12.96 & 0.94 & 9.87 \\
+$\theta$ [rad] & 0.02 & 0.00 & 0.02 & 0.01 & 0.02 \\
+PM [mm] & 1.96 & 4.61 & 18.45 & 0.09 & 4.97 \\
+\bottomrule
+\end{tabular}
+
+    \caption{Robust PM.}
+    \label{tab:with_detection}
+\end{table}

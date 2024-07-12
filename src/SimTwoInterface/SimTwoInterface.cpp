@@ -102,6 +102,8 @@ void SimTwoInterface::startYoloReceive()
 std::vector<BoundingBox> SimTwoInterface::getOutliers(const std::string &yoloBuffer)
 {
 
+    // FIXME: it is expecting a camera label
+
     if (yoloBuffer == "NoDetections")
     {
         logger.trace("No detections from YOLO");

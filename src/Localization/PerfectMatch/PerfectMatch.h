@@ -39,6 +39,8 @@ public:
    void ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints);
    void ProcessLaserPoints(std::vector<LaserPoint> &LaserPoints, const Pose &previousPose, const Pose &currentPose);
 
+   void ProcessBBOutliers(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
+
    void ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
    void ProcessBBOutliersBack(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
    void ProcessBBOutliersLeft(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter);
@@ -80,6 +82,18 @@ private:
    Logger &logger;
 
    int safety_threshold;
+
+   // ------------------------------------- Simulation Cam --------------------------------------------------//
+   const Vector3d t_LC;
+   const double yaw = M_PI_2;
+   const double pitch = -M_PI_2;
+   const double roll = 0;
+   const Eigen::AngleAxisd Rx, Ry, Rz;
+   const Matrix4d TH_LC;
+   /*K = [fx, skew, px
+           0, fy, py,
+           0, 0, 1]*/
+   const Matrix3d K;
 
    // ------------------------------------- Front Cam -------------------------------------------------------//
    // Constant members that represent the spatial-relationship between LiDAR Scanner and the Front Camera in the robot

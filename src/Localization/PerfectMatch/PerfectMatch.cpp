@@ -8,6 +8,17 @@ PerfectMatch::PerfectMatch(Logger &logger, const Pose startPose, const double st
                                                                                                startPose),
                                                                                            stepScale(
                                                                                                stepScale),
+                                                                                           t_LC(0, -0.055, -0.155 / 2),
+                                                                                           Rx(Eigen::AngleAxisd(roll, Vector3d::UnitX())),
+                                                                                           Ry(Eigen::AngleAxisd(pitch, Vector3d::UnitY())),
+                                                                                           Rz(Eigen::AngleAxisd(yaw, Vector3d::UnitZ())),
+                                                                                           TH_LC((Matrix4d() << ((Rz.toRotationMatrix() * Ry.toRotationMatrix()) * Rx.toRotationMatrix()), t_LC,
+                                                                                                  0, 0, 0, 1)
+                                                                                                     .finished()),
+                                                                                           K((Matrix3d() << 219.96470465, 0, 319.21197429,
+                                                                                              0, 219.94273694, 241.81387698,
+                                                                                              0, 0, 1)
+                                                                                                 .finished()),
                                                                                            K_FC((Matrix3d() << FX, 0, CX,
                                                                                                  0, FY, CY,
                                                                                                  0, 0, 1)
@@ -262,6 +273,59 @@ bool PerfectMatch::isPointInsideBB_real(const Vector2d &point, const BoundingBox
         return true;
     }
     return false;
+}
+
+void PerfectMatch::ProcessBBOutliers(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)
+
+{
+    counter = 0;
+
+    for (auto &point : LaserPoints)
+    {
+        if (!point.getIsBeamValid()) // skip invalid beams
+            continue;
+
+        // Transform point from lidar to camera perspective
+        Vector4d pointInLidar(point.getX(), point.getY(), 0, 1); // Homogeneous coordinates
+        Vector4d pointInCamera = TH_LC * pointInLidar;           // Still in homogeneous coordinates
+
+        if (pointInCamera(2) <= 0)
+        {
+            continue;
+        } // If it has a negative Z it is behind the camera.
+
+        // Project point onto image plane
+        Vector3d nullVector = Vector3d::Zero();
+        MatrixXd homogeneousK(3, 4);
+        homogeneousK << K, nullVector;
+        Vector3d pointInImage = homogeneousK * pointInCamera; // Still in homogeneous coordinate. For euclidean, consider only u and v
+        Vector2d pImgPx = (pointInImage / pointInImage(2)).head<2>();
+        point.setImgPts(pImgPx);
+
+        if (pImgPx(0) >= 0 && pImgPx(0) < IMAGE_WIDTH && pImgPx(1) >= 0 && pImgPx(1) < IMAGE_HEIGHT)
+        {
+            point.setCameraLabel("SimulatedCam");
+            point.setDraw(true);
+        }
+
+        // Check if the point falls inside any bounding box
+        bool insideAnyBoundingBox = false;
+        if (!outliers.empty())
+        {
+            insideAnyBoundingBox = std::any_of(outliers.begin(), outliers.end(),
+                                               [&pImgPx, this](const BoundingBox &box)
+                                               {
+                                                   return isPointInsideBB(pImgPx, box);
+                                               });
+        }
+
+        if (insideAnyBoundingBox)
+        {
+            counter++;
+            point.setIsBeamValid(false);
+        }
+    }
+    logger.info("SimulatedCam: rejected " + std::to_string(counter) + " beams.");
 }
 
 void PerfectMatch::ProcessBBOutliersFront(std::vector<LaserPoint> &LaserPoints, std::vector<BoundingBox> &outliers, u_int &counter)

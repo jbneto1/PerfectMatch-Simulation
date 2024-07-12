@@ -22,7 +22,7 @@ constexpr double CONTROL_CYCLE = 0.025;
 constexpr double STEP_SCALE = 0.04;
 constexpr double LASER_RANGE = 360.0;
 constexpr int LASER_RAYS = 720;
-constexpr int SAFETY_THRESHOLD_ONLINE = 400; // 5
+constexpr int SAFETY_THRESHOLD_ONLINE = 5; // 5
 
 // Real robot values
 constexpr double A = 0.0965;
@@ -32,6 +32,7 @@ constexpr double R = 0.065;
 constexpr double OFFSET_X = 0.85e-2 - 1.45e-2; // LIDAR BODY FRAME OFFSET MEASURED FROM ROBOTS FRAME CM
 constexpr double OFFSET_Y = 0.2e-2 - 0.65e-2;  // LIDAR BODY FRAME OFFSET MEASURE FROM ROBOTS FRAME CM
 
+constexpr std::string_view SIMULATEDCAM = "SimulatedCam";
 constexpr std::string_view FRONTCAM = "FrontCam";
 constexpr std::string_view BACKCAM = "RearCam";
 constexpr std::string_view LEFTCAM = "LeftCam";
@@ -44,8 +45,8 @@ constexpr std::string_view RIGHTCAM = "RightCam";
 // constexpr double R = 0.065 / 2;
 constexpr double ALPHA = 0.16; // tilt of the front cam 0.047
 constexpr int SLEEP_MS_AMOUNT = 100;
-constexpr int SAFETY_THRESHOLD_X = 30; // 5
-constexpr int SAFETY_THRESHOLD_Y = 0;  // 5
+constexpr int SAFETY_THRESHOLD_X = 0; // 5
+constexpr int SAFETY_THRESHOLD_Y = 0; // 5
 constexpr int IMAGE_WIDTH = 640;
 constexpr int IMAGE_HEIGHT = 480;
 

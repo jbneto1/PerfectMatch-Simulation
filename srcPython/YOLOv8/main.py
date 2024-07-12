@@ -132,7 +132,7 @@ try:
                 )  # Assuming this is a tensor of shape [N,]
 
                 if len(classes) != 0:
-                    log_str = "N," + str(len(classes)) + ","
+                    log_str = "SimulatedCam,N," + str(len(classes)) + ","
                     for i in range(len(classes)):
                         x1, y1, w, h = boxes[
                             i
@@ -154,7 +154,7 @@ try:
                     log_str = "NoDetections"
                     send_yolo_data(log_str)
 
-            cv2.imshow("YOLOv8.1 Videostream", annotated_frame)
+            cv2.imshow("YOLOv8.2 Videostream", annotated_frame)
 
             if cv2.waitKey(1) == ord("q"):
                 break

@@ -27,7 +27,7 @@ def modify_path(original_path, insert_text):
 
 
 # Example usage
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-12_00-19-40.txt"
+file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-12_22-05-19.txt"
 file_path_semantics = modify_path(file_path, "w_semantics")
 
 print(file_path)
@@ -270,7 +270,7 @@ if plot_both_systems:
     axs[1].set_title("Robust PM")
 
 plt.tight_layout()
-plt.savefig("test_ppl_entrance_ycorr_thesis_arrow_scatter.pdf", dpi=300)
+plt.savefig("simulation_entrance_test_arrow_scatter.pdf", dpi=300)
 plt.show()
 
 
@@ -415,7 +415,7 @@ for ax in axs1[:]:
 
     # Display the first figure
 fig1.tight_layout()
-fig1.savefig("test_ppl_entrance_ycorr_thesis_error_metrics_xytheta.pdf", dpi=300)
+fig1.savefig("simulation_entrance_test_error_metrics_xytheta.pdf", dpi=300)
 plt.show()
 
 # Create the second figure with one plot
@@ -437,7 +437,7 @@ plot_with_y_zero_and_counter(
 
 # Display the second figure
 fig2.tight_layout()
-fig2.savefig("test_ppl_entrance_ycorr_thesis_error_metrics_PM.pdf", dpi=300)
+fig2.savefig("simulation_entrance_test_error_PM.pdf", dpi=300)
 plt.show()
 
 # %% ------------------------------------------ EKF POSE comparison without clutter ---------------------------------------------
@@ -470,7 +470,7 @@ plt.legend()
 plt.axis("equal")  # Ensure equal scaling for x and y axes
 plt.grid(True)
 plt.tight_layout()
-plt.savefig("pm_without_outliers_thesis_pose_comparison.pdf", dpi=300)
+plt.savefig("simulation_entrance_test_pose_comparison.pdf", dpi=300)
 plt.show()
 
 

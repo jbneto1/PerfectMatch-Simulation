@@ -808,7 +808,7 @@ void Visualizer::renderMultiCamViews(const std::map<std::string, std::optional<s
     const int yOffsetStart = 100; // Starting Y position for the first window
 
     // Names of cameras arranged as needed for a 2x2 grid
-    std::vector<std::string> cameraIDs = {"FrontCam", "RearCam", "LeftCam", "RightCam"};
+    std::vector<std::string> cameraIDs = {"SimulatedCam", "FrontCam", "RearCam", "LeftCam", "RightCam"};
 
     // Initialize and position windows only once
     static bool windowsInitialized = false;
