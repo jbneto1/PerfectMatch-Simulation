@@ -101,9 +101,6 @@ void SimTwoInterface::startYoloReceive()
 
 std::vector<BoundingBox> SimTwoInterface::getOutliers(const std::string &yoloBuffer)
 {
-
-    // FIXME: it is expecting a camera label
-
     if (yoloBuffer == "NoDetections")
     {
         logger.trace("No detections from YOLO");
@@ -125,7 +122,12 @@ std::vector<BoundingBox> SimTwoInterface::getOutliers(const std::string &yoloBuf
     {
         size_t currentIndex = 0; // Start from the beginning of the tokens
 
-        // Check if there is an 'N' token indicating the start of bounding box data
+        // Find and discard the camera label before the 'N' token
+        while ((currentIndex < tokens.size()) && (tokens[currentIndex] != "N"))
+        {
+            ++currentIndex;
+        }
+
         if ((currentIndex < tokens.size()) && (tokens[currentIndex] == "N"))
         {
             size_t bboxCount = std::stoi(tokens[++currentIndex]);

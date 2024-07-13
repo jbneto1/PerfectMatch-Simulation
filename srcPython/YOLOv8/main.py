@@ -31,7 +31,7 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-print("YOLOV8.1 script starting...")
+print("YOLOV8.2 script starting...")
 
 # YOLO setup
 torch.cuda.set_device(0)
@@ -49,8 +49,8 @@ socket.setsockopt(zmq.RCVTIMEO, 500)  # Set to non-blocking with a timeout of ms
 yolo_sock = pysocket.socket(pysocket.AF_INET, pysocket.SOCK_DGRAM)
 
 # Create a named window and set its size
-cv2.namedWindow("YOLOv8.1 Videostream", cv2.WINDOW_AUTOSIZE)
-cv2.resizeWindow("YOLOv8.1 Videostream", 800, 600)
+cv2.namedWindow("YOLOv8.2 Videostream", cv2.WINDOW_AUTOSIZE)
+cv2.resizeWindow("YOLOv8.2 Videostream", 800, 600)
 
 
 def send_ready_message():
