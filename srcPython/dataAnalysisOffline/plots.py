@@ -16,29 +16,38 @@
 # %%
 
 
-def modify_path(original_path, insert_text):
-    index = original_path.find("Analysis_2024")
-    insert_position = index + len("Analysis_")
-    modified_path = (
-        original_path[:insert_position] + insert_text + original_path[insert_position:]
-    )
+# def modify_path(original_path, insert_text):
+#     index = original_path.find("Analysis_2024")
+#     insert_position = index + len("Analysis_")
+#     modified_path = (
+#         original_path[:insert_position] + insert_text + original_path[insert_position:]
+#     )
 
-    return modified_path
+#     return modified_path
 
 
-# Example usage
-file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-07-12_22-05-19.txt"
-file_path_semantics = modify_path(file_path, "w_semantics")
+# # Example usage
+# file_path = "docs/logs/logs_offlineAnalysis/offlineAnalysis_2024-02-27_16-08-05.txt"
+# file_path_semantics = modify_path(file_path, "w_semantics")
 
-print(file_path)
-print(file_path_semantics)
+# print(file_path)
+# print(file_path_semantics)
 
 # %%
 
-# file_path = "docs/logs/logs_offlineAnalysis/thesis/pm_without_outliers_thesis.txt"
-# file_path_semantics = (
-#     "docs/logs/logs_offlineAnalysis/thesis/pm_without_outliers_thesis_semantics.txt"
-# )
+file_path = "docs/logs/logs_offlineAnalysis/thesis/case_I_simulation_thesis.txt"
+file_path_semantics = (
+    "docs/logs/logs_offlineAnalysis/thesis/case_I_simulation_thesis_semantics.txt"
+)
+
+str = "case_I"
+
+plot_both_systems = True
+with_outliers = True
+
+
+start_index = None
+end_index = None
 
 
 # %%
@@ -130,7 +139,6 @@ df_semantics_mm = transform_dataframe_to_mm(df_semantics.copy())
 
 
 # %% --------------------------------------- SCATTER PLOTS WITH ARROWS AND CONFIDENCE ELLIPSES ----------------------------------------
-plot_both_systems = True
 
 
 def draw_orientation_arrow(ax, x, y, theta, length=80, color="r"):
@@ -218,7 +226,10 @@ axs[0].scatter(
 
 axs[0].set_xlabel("X [mm]")
 axs[0].set_ylabel("Y [mm]")
-axs[0].legend()
+axs[0].legend(
+    loc="upper right",
+    bbox_to_anchor=(1, -0.1),
+)
 axs[0].set_title("Original system")
 
 
@@ -266,11 +277,14 @@ if plot_both_systems:
 
     axs[1].set_xlabel("X [mm]")
     axs[1].set_ylabel("Y [mm]")
-    axs[1].legend()
+    axs[1].legend(
+        loc="upper right",
+        bbox_to_anchor=(1, -0.1),
+    )
     axs[1].set_title("Robust PM")
 
 plt.tight_layout()
-plt.savefig("simulation_entrance_test_arrow_scatter.pdf", dpi=300)
+plt.savefig(str + "_test_arrow_scatter.pdf", dpi=300)
 plt.show()
 
 
@@ -358,8 +372,8 @@ def plot_with_y_zero_and_counter(
         labels,
         loc="upper right",
         fontsize=legend_fontsize,
-        bbox_to_anchor=(0.98, 0.98),
-        borderaxespad=0.0,
+        bbox_to_anchor=(1, -0.1),
+        # borderaxespad=0.0,
     )
 
     # Set font size for the primary axis labels
@@ -378,9 +392,9 @@ plot_with_y_zero_and_counter(
     "Original system",
     "Robust PM",
     "Absolute Error in X State",
-    plot_counter=True,  # Change to False if you do not want to plot the counter
+    plot_counter=with_outliers,  # Change to False if you do not want to plot the counter
     ylabel_primary="Error [mm]",
-    plot_two_approaches=True,
+    plot_two_approaches=with_outliers,
 )
 
 plot_with_y_zero_and_counter(
@@ -391,9 +405,9 @@ plot_with_y_zero_and_counter(
     "Original system",
     "Robust PM",
     "Absolute Error in Y State",
-    plot_counter=True,
+    plot_counter=with_outliers,
     ylabel_primary="Error [mm]",
-    plot_two_approaches=True,
+    plot_two_approaches=with_outliers,
 )
 
 plot_with_y_zero_and_counter(
@@ -404,9 +418,9 @@ plot_with_y_zero_and_counter(
     "Original system",
     "Robust PM",
     "Absolute Error in θ State",
-    plot_counter=True,
+    plot_counter=with_outliers,
     ylabel_primary="Error [rad]",
-    plot_two_approaches=True,
+    plot_two_approaches=with_outliers,
 )
 
 # Set common x-axis and y-axis labels with specified font sizes
@@ -415,7 +429,7 @@ for ax in axs1[:]:
 
     # Display the first figure
 fig1.tight_layout()
-fig1.savefig("simulation_entrance_test_error_metrics_xytheta.pdf", dpi=300)
+fig1.savefig(str + "_test_error_metrics_xytheta.pdf", dpi=300)
 plt.show()
 
 # Create the second figure with one plot
@@ -430,14 +444,16 @@ plot_with_y_zero_and_counter(
     "Original system",
     "Robust PM",
     "Error of Perfect Match",
-    plot_counter=True,
+    plot_counter=with_outliers,
     ylabel_primary="Error [mm]",
-    plot_two_approaches=True,
+    plot_two_approaches=with_outliers,
 )
+
+axs2.set_xlabel("Samples", fontsize=label_fontsize)
 
 # Display the second figure
 fig2.tight_layout()
-fig2.savefig("simulation_entrance_test_error_PM.pdf", dpi=300)
+fig2.savefig(str + "_test_error_PM.pdf", dpi=300)
 plt.show()
 
 # %% ------------------------------------------ EKF POSE comparison without clutter ---------------------------------------------
@@ -470,7 +486,7 @@ plt.legend()
 plt.axis("equal")  # Ensure equal scaling for x and y axes
 plt.grid(True)
 plt.tight_layout()
-plt.savefig("simulation_entrance_test_pose_comparison.pdf", dpi=300)
+plt.savefig(str + "_test_pose_comparison.pdf", dpi=300)
 plt.show()
 
 
@@ -515,11 +531,11 @@ def compute_percentage_difference(df1_metrics, df2_metrics):
 
 
 # Compute metrics for df1 and df2
-df1_metrics = compute_metrics(df, 0, 225)
+df1_metrics = compute_metrics(df, start_index, end_index)
 
 if plot_both_systems:
 
-    df2_metrics = compute_metrics(df_semantics, 0, 225)
+    df2_metrics = compute_metrics(df_semantics, start_index, end_index)
 
     # Compute error percentage between df1 and df2
     percentage_difference = compute_percentage_difference(df1_metrics, df2_metrics)
@@ -612,7 +628,7 @@ latex_table1 = to_latex_custom(
     caption1,
     label1,
     per=False,
-    file_name="test_ppl_entrance_ycorr_thesis_table_original.txt",
+    file_name=str + "_ycorr_thesis_table_original.txt",
 )
 
 print(latex_table1)
@@ -627,7 +643,7 @@ if plot_both_systems:
         caption2,
         label2,
         per=False,
-        file_name="test_ppl_entrance_ycorr_thesis_table_ropm.txt",
+        file_name=str + "_ycorr_thesis_table_ropm.txt",
     )
 
     # Assuming error_percentage_df is the DataFrame containing error percentages
@@ -640,7 +656,7 @@ if plot_both_systems:
         caption3,
         label3,
         True,
-        file_name="test_ppl_entrance_ycorr_thesis_table_percentage_comparison.txt",
+        file_name=str + "_ycorr_thesis_table_percentage_comparison.txt",
     )
 
     print(latex_table2)
