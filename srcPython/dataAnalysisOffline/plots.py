@@ -35,12 +35,10 @@
 
 # %%
 
-file_path = "docs/logs/logs_offlineAnalysis/thesis/case_I_simulation_thesis.txt"
-file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/thesis/case_I_simulation_thesis_semantics.txt"
-)
+file_path = "docs/logs/logs_offlineAnalysis/thesis/test_ppl_entrance_y_corr_thesis.txt"
+file_path_semantics = "docs/logs/logs_offlineAnalysis/thesis/test_ppl_entrance_y_corr_thesis_semantics.txt"
 
-str = "case_I"
+str = "test_ppl_entrance"
 
 plot_both_systems = True
 with_outliers = True
@@ -50,14 +48,34 @@ start_index = None
 end_index = None
 
 
+# Set font sizes
+tick_fontsize = 12
+legend_fontsize = 12
+title_fontsize = 14
+label_fontsize = 12
+
+color_df_wo_semantics = "blue"
+color_df_w_semantics = "darkorange"
+
+
 # %%
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Ellipse
 
-color_df_wo_semantics = "blue"
-color_df_w_semantics = "darkorange"
+
+plt.rcParams["axes.titlesize"] = 14  # Title font size
+plt.rcParams["axes.labelsize"] = 12  # Label font size
+plt.rcParams["xtick.labelsize"] = 12  # Tick font size for x-axis
+plt.rcParams["ytick.labelsize"] = 12  # Tick font size for y-axis
+plt.rcParams["legend.fontsize"] = 12  # Legend font size
+
+
+df = pd.read_csv(file_path)
+df_semantics = pd.read_csv(file_path_semantics)
+
+# %%
 
 
 # Function to draw an ellipse based on the covariance matrix
@@ -89,21 +107,7 @@ def draw_cov_ellipse(cov, pos, nstd=1, ax=None, **kwargs):
 
 # %%
 
-df = pd.read_csv(file_path)
-df_semantics = pd.read_csv(file_path_semantics)
 
-# print("DF w/o semantics")
-# print(df.head())
-# print(df.shape, df.ndim)
-
-# print("DF with semantics")
-# print(df_semantics.head())
-# print(df_semantics.shape, df_semantics.ndim)
-
-# %%
-
-
-# TODO: show this meeting
 def transform_dataframe_to_mm(df):
     # Columns to be converted from meters to millimeters (excluding angles and errorPM which is already in mm)
     columns_to_convert = ["EKF_x", "EKF_y", "PM_x", "PM_y", "errorEKF_x", "errorEKF_y"]
@@ -132,8 +136,6 @@ def transform_dataframe_to_mm(df):
     return df
 
 
-# df_transformed = transform_dataframe_to_mm(df.copy())  # Use .copy() to avoid modifying the original dataframe
-# df_semantics_transformed = transform_dataframe_to_mm(df_semantics.copy())
 df_mm = transform_dataframe_to_mm(df.copy())
 df_semantics_mm = transform_dataframe_to_mm(df_semantics.copy())
 
@@ -305,12 +307,6 @@ abs_errorEKF_x_semantics = df_semantics["errorEKF_x"].abs()
 abs_errorEKF_y_semantics = df_semantics["errorEKF_y"].abs()
 abs_errorEKF_theta_semantics = df_semantics["errorEKF_theta"].abs()
 abs_errorPM_semantics = df_semantics["errorPM"].abs()
-
-# Set font sizes
-tick_fontsize = 12
-legend_fontsize = 12
-title_fontsize = 14
-label_fontsize = 12
 
 
 def plot_with_y_zero_and_counter(
