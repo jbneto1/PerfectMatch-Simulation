@@ -58,7 +58,7 @@ dfd.edge("Manager", "Decoder", "Raw log\ndata")
 dfd.edge("Decoder", "Manager", "Encoder, GT,\nInference, LIDAR,\nTimestamp")
 
 
-dfd.edge("Manager", "Localization", "(Encs, GT, LIDAR) 40 Hz\n(RGB) 15 Hz")
+dfd.edge("Manager", "Localization", "(Encs, GT) 40 Hz\n(LIDAR) 6 Hz\n(RGB) 15 Hz")
 dfd.edge(
     "Manager",
     "LoggerData",
@@ -67,11 +67,11 @@ dfd.edge(
 dfd.edge(
     "Manager",
     "Visualizer",
-    "(Localization) 40 Hz\n(LIDAR, LIDAR Out.) 7 Hz\n(Inference) 15 Hz",
+    "(Localization) 40 Hz\n(LIDAR, LIDAR Out.) 6 Hz\n(Inference) 15 Hz",
 )
 
-dfd.edge("Localization", "PerfectMatch", "(LIDAR, LIDAR Out.) 15 Hz")
-dfd.edge("Localization", "EKF", "(Odo) 40 Hz\n(PM Pose, PM Out. Pose) 15 Hz")
+dfd.edge("Localization", "PerfectMatch", "(LIDAR, LIDAR Out.) 6 Hz")
+dfd.edge("Localization", "EKF", "(Odo) 40 Hz\n(PM Pose, PM Out. Pose) 6 Hz")
 dfd.edge(
     "Localization",
     "Manager",
@@ -81,7 +81,7 @@ dfd.edge(
 dfd.edge(
     "PerfectMatch",
     "Localization",
-    "(PM Pose, Pm Out. Pose) 15 Hz\n(PM Error, PM Out. Error) 15 Hz",
+    "(PM Pose, PM Out. Pose) 6 Hz\n(PM Error, PM Out. Error) 6 Hz",
 )
 
 dfd.edge("EKF", "Localization", "(EKF μ, EKF Out. μ) 40 Hz")

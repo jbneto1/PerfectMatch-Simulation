@@ -109,7 +109,7 @@ dfd.edge(
 dfd.edge(
     "PerfectMatch",
     "Localization",
-    "(PM Pose,\nPm Out. Pose,\nPM Error,\nPM Out. Error)\n7 Hz",
+    "(PM Pose,\nPM Out. Pose,\nPM Error,\nPM Out. Error)\n7 Hz",
 )
 
 dfd.edge("EKF", "Localization", "(EKF μ,\nEKF Out. μ) 40 Hz")

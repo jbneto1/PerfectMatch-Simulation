@@ -28,7 +28,7 @@ dot.node("NetworkIO", "Network I/O Threads", shape="folder", color="lightsalmon"
 dot.edge("Main", "Manager", label="Initializes")
 dot.edge("Manager", "VisT", label="Spawns Controls\n& Updates Data")
 dot.edge("Manager", "SignalH", label="Manages\nSignals")
-dot.edge("Manager", "SimTwoInt", label="Communicates")
+dot.edge("Manager", "SimTwoInt", label="Instantiates")
 dot.edge("SimTwoInt", "NetworkIO", label="Spawns", style="dashed")
 dot.edge("VisT", "Mutex", label="Mutex\nLock/Unlock", color="blue")
 dot.edge("VisT", "CondVar", label="Waits/Signals", color="blue")

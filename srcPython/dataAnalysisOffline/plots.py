@@ -35,17 +35,21 @@
 
 # %%
 
-file_path = "docs/logs/logs_offlineAnalysis/thesis/test_ppl_entrance_y_corr_thesis.txt"
-file_path_semantics = "docs/logs/logs_offlineAnalysis/thesis/test_ppl_entrance_y_corr_thesis_semantics.txt"
+file_path = "docs/logs/logs_offlineAnalysis/thesis/dynamic_ppl_moving_ST_30.txt"
+file_path_semantics = (
+    "docs/logs/logs_offlineAnalysis/thesis/dynamic_ppl_moving_ST_30_semantics.txt"
+)
 
-str = "test_ppl_entrance"
-
+# name of the files
+str = "dynamic_ppl"
+# plot original and ropm?
 plot_both_systems = True
+# plot rejected beams?
 with_outliers = True
 
-
-start_index = None
-end_index = None
+# range to consider in the tables metrics
+start_index = 993
+end_index = 1550
 
 
 # Set font sizes
@@ -64,6 +68,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Ellipse
 
+
+plt.rcParams["pdf.fonttype"] = 42
+plt.rcParams["ps.fonttype"] = 42
 
 plt.rcParams["axes.titlesize"] = 14  # Title font size
 plt.rcParams["axes.labelsize"] = 12  # Label font size
