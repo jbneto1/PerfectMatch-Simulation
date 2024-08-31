@@ -625,10 +625,15 @@ if not plot_with_zoom_trajectory:
 if plot_with_zoom_trajectory:
 
     import matplotlib.pyplot as plt
-    from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
+    from matplotlib import gridspec
 
-    # Create the main figure
-    fig, ax = plt.subplots(figsize=(10, 8))
+    # Create the main figure with a custom layout
+    fig = plt.figure(figsize=(15, 8))
+    gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1])
+
+    # Create the main axes and the inset axes
+    ax = fig.add_subplot(gs[0])
+    axins = fig.add_subplot(gs[1])
 
     # Calculate ground truth
     gt_x = df["EKF_x"] - df["errorEKF_x"]
@@ -653,7 +658,6 @@ if plot_with_zoom_trajectory:
     ax.plot(gt_x, gt_y, label="Ground Truth", linestyle="--", color="black")
 
     if start_end_marker and plot_both_systems:
-
         # Add start and end markers
         ax.scatter(
             df["EKF_x"].iloc[0],
@@ -704,42 +708,47 @@ if plot_with_zoom_trajectory:
             zorder=5,
         )
 
-    # Set labels and title
+    # Set labels and title for main plot
     ax.set_xlabel("X [mm]")
     ax.set_ylabel("Y [mm]")
     ax.set_title("EKF trajectory comparison")
 
-    # Limit y-range
-    # ax.set_ylim(top=400)
+    # Plot zoomed-in data in the inset axes
+    axins.plot(gt_x, gt_y, linestyle="--", color="black", label="Ground Truth")
+    axins.plot(
+        df_semantics["EKF_x"],
+        df_semantics["EKF_y"],
+        linestyle="-",
+        color="C1",
+        label="Robust PM",
+    )
 
-    # Create the inset axes
-    axins = inset_axes(ax, width="45%", height="45%", loc="lower right")
-
-    # Plot zoomed-in data
-    axins.plot(gt_x, gt_y, linestyle="--", color="black")
-    axins.plot(df_semantics["EKF_x"], df_semantics["EKF_y"], linestyle="-", color="C1")
-
-    # Set the limits for the zoomed area (increased zoom)
+    # Set the limits for the zoomed area
     x1, x2 = 495, 510  # X-axis limits for zoom
     y1, y2 = -430, -425  # Y-axis limits for zoom
     axins.set_xlim(x1, x2)
     axins.set_ylim(y1, y2)
 
-    # Remove tick labels from the inset plot
-    axins.set_xticklabels([])
-    axins.set_yticklabels([])
+    # Add labels and title to the inset plot
+    axins.set_xlabel("X [mm]")
+    axins.set_ylabel("Y [mm]")
+    axins.set_title("Zoomed View")
+    axins.grid(True)
 
-    # Draw connecting lines between the inset and the main plot
-    mark_inset(ax, axins, loc1=2, loc2=1, fc="none", ec="0", ls="--", lw=1.5)
+    # Add legend to the inset plot
+    axins.legend(loc="upper left", fontsize="small")
 
     # Finalize the main plot
-    ax.legend(loc="upper left", bbox_to_anchor=(0, 1))  # Moved legend to top center
-    ax.axis("equal")  # Ensure equal scaling for x and y axes
+    ax.legend(loc="upper left", bbox_to_anchor=(0, 1))
+    ax.axis("equal")
     ax.grid(True)
 
+    # Adjust layout and save
     plt.tight_layout()
     plt.savefig(
-        str + "_test_pose_comparison_with_zoom.pdf", dpi=300, bbox_inches="tight"
+        str + "_test_pose_comparison_with_external_zoom.pdf",
+        dpi=300,
+        bbox_inches="tight",
     )
     plt.show()
 
