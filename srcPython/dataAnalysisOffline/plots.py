@@ -35,28 +35,38 @@
 
 # %%
 
-file_path = "docs/logs/logs_offlineAnalysis/thesis/dynamic_ppl_moving_ST_30.txt"
+file_path = "docs/logs/logs_offlineAnalysis/thesis/case_I_simulation_thesis.txt"
 file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/thesis/dynamic_ppl_moving_ST_30_semantics.txt"
+    "docs/logs/logs_offlineAnalysis/thesis/case_I_simulation_thesis_semantics.txt"
 )
 
 # name of the files
-str = "dynamic_ppl"
+str = "case_I"
 # plot original and ropm?
 plot_both_systems = True
 # plot rejected beams?
 with_outliers = True
 
-# range to consider in the tables metrics
-start_index = 993
-end_index = 1550
+# range to consider in the tables metrics or None to include all
+start_index = None
+end_index = None
+
+# plot trajectory comparison with zoom
+plot_with_zoom_trajectory = True
+# plot trajectory comparison with start and end marker
+start_end_marker = False
+
+
+# region_params = {"start": 980, "end": 1610, "color": "C3", "style": "dashed"}
+# or none
+region_params = None
 
 
 # Set font sizes
-tick_fontsize = 12
-legend_fontsize = 12
-title_fontsize = 14
-label_fontsize = 12
+tick_fontsize = 14
+legend_fontsize = 14
+title_fontsize = 16
+label_fontsize = 14
 
 color_df_wo_semantics = "blue"
 color_df_w_semantics = "darkorange"
@@ -67,16 +77,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Ellipse
+from matplotlib.ticker import MaxNLocator
 
 
 plt.rcParams["pdf.fonttype"] = 42
 plt.rcParams["ps.fonttype"] = 42
 
-plt.rcParams["axes.titlesize"] = 14  # Title font size
-plt.rcParams["axes.labelsize"] = 12  # Label font size
-plt.rcParams["xtick.labelsize"] = 12  # Tick font size for x-axis
-plt.rcParams["ytick.labelsize"] = 12  # Tick font size for y-axis
-plt.rcParams["legend.fontsize"] = 12  # Legend font size
+plt.rcParams["axes.titlesize"] = 16  # Title font size
+plt.rcParams["axes.labelsize"] = 14  # Label font size
+plt.rcParams["xtick.labelsize"] = 14  # Tick font size for x-axis
+plt.rcParams["ytick.labelsize"] = 14  # Tick font size for y-axis
+plt.rcParams["legend.fontsize"] = 14  # Legend font size
 
 
 df = pd.read_csv(file_path)
@@ -210,7 +221,7 @@ for i in range(0, len(df), decimation_factor):
         nstd=1,
         ax=axs[0],
         alpha=alpha,
-        color="purple",
+        color="gray",
         label="1 STD confidence ellipse" if i == 0 else "",
     )
 
@@ -220,12 +231,10 @@ for i in range(0, len(df), decimation_factor_arrows):
         df.iloc[i]["EKF_x"],
         df.iloc[i]["EKF_y"],
         df.iloc[i]["EKF_theta"],
-        color="green",
+        color="C0",
     )
 
-axs[0].plot(
-    df["EKF_x"], df["EKF_y"], label="EKF pose trajectory", color=color_df_wo_semantics
-)
+axs[0].plot(df["EKF_x"], df["EKF_y"], label="EKF pose trajectory", color="C0")
 
 gt_pose_x = df.iloc[:]["EKF_x"] - df.iloc[:]["errorEKF_x"]
 gt_pose_y = df.iloc[:]["EKF_y"] - df.iloc[:]["errorEKF_y"]
@@ -257,7 +266,7 @@ if plot_both_systems:
             nstd=1,
             ax=axs[1],
             alpha=alpha,
-            color="blue",
+            color="gray",
             label="1 STD confidence ellipse" if i == 0 else "",
         )
 
@@ -267,14 +276,14 @@ if plot_both_systems:
             df_semantics.iloc[i]["EKF_x"],
             df_semantics.iloc[i]["EKF_y"],
             df_semantics.iloc[i]["EKF_theta"],
-            color=color_df_w_semantics,
+            color="C1",
         )
 
     axs[1].plot(
         df_semantics["EKF_x"],
         df_semantics["EKF_y"],
         label="EKF pose trajectory",
-        color=color_df_w_semantics,
+        color="C1",
     )
 
     gt_pose_x = df_semantics["EKF_x"] - df_semantics["errorEKF_x"]
@@ -292,8 +301,52 @@ if plot_both_systems:
     )
     axs[1].set_title("Robust PM")
 
+## Setting plot scale and range
+
+# Calculate the overall x and y ranges
+x_min = min(ax.get_xlim()[0] for ax in axs if ax is not None)
+x_max = max(ax.get_xlim()[1] for ax in axs if ax is not None)
+y_min = min(ax.get_ylim()[0] for ax in axs if ax is not None)
+y_max = max(ax.get_ylim()[1] for ax in axs if ax is not None)
+
+# Add some padding to the ranges (optional)
+x_range = x_max - x_min
+y_range = y_max - y_min
+padding = 0.05  # 5% padding
+x_min -= padding * x_range
+x_max += padding * x_range
+y_min -= padding * y_range
+y_max += padding * y_range
+
+# Ensure the aspect ratio is maintained by making both ranges equal
+total_range = max(x_max - x_min, y_max - y_min)
+x_center = (x_min + x_max) / 2
+y_center = (y_min + y_max) / 2
+x_min = x_center - total_range / 2
+x_max = x_center + total_range / 2
+y_min = y_center - total_range / 2
+y_max = y_center + total_range / 2
+
+# Apply the same limits to both subplots
+for ax in axs:
+    if ax is not None:
+        ax.set_xlim(x_min, x_max)
+        ax.set_ylim(y_min, y_max)
+        ax.set_aspect("equal", adjustable="box")
+
+# Adjust the figure size to maintain the aspect ratio
+fig_width, fig_height = fig.get_size_inches()
+subplot_ratio = (x_max - x_min) / (y_max - y_min)
+if plot_both_systems:
+    fig.set_size_inches(fig_width, fig_width / (2 * subplot_ratio))
+else:
+    fig.set_size_inches(fig_width, fig_width / subplot_ratio)
+
+# ----------------------------------------------------
+
+
 plt.tight_layout()
-plt.savefig(str + "_test_arrow_scatter.pdf", dpi=300)
+plt.savefig(str + "_test_arrow_scatter.pdf", dpi=300, bbox_inches="tight")
 plt.show()
 
 
@@ -327,9 +380,10 @@ def plot_with_y_zero_and_counter(
     plot_counter=False,
     ylabel_primary=None,
     plot_two_approaches=True,
+    region_of_interest=None,  # New parameter for indicating region of interest
 ):
     """
-    Plot function with customized y-axis labels for both primary and secondary axes.
+    Plot function with customized y-axis labels and optional region of interest indicator.
 
     Parameters:
     - ax: The matplotlib axis object.
@@ -341,45 +395,64 @@ def plot_with_y_zero_and_counter(
     - title: Title of the plot.
     - plot_counter: Boolean flag to plot the counter data.
     - ylabel_primary: Label for the primary y-axis.
+    - plot_two_approaches: Boolean flag to plot both approaches.
+    - region_of_interest: Dictionary with keys 'start', 'end', 'color', and 'style' for indicating region.
     """
-    # Plot the primary data directly without assigning to variables
+    # Existing plotting code...
     (line1,) = ax.plot(data1, label=label1)
     if plot_two_approaches:
         (line2,) = ax.plot(data2, label=label2)
     ax.set_title(title, fontsize=title_fontsize)
-    ax.set_ylabel(ylabel_primary, fontsize=label_fontsize)  # Set primary y-axis label
-    ax.set_ylim(bottom=0)  # Set the minimum y value to 0
+    ax.set_ylabel(ylabel_primary, fontsize=label_fontsize)
+    ax.set_ylim(bottom=0)
 
     if plot_two_approaches:
-        handles, labels = [line1, line2], [
-            label1,
-            label2,
-        ]  # Collect primary axis labels and handles
+        handles, labels = [line1, line2], [label1, label2]
     else:
         handles, labels = [line1], [label1]
 
     if plot_counter:
-        # Create a secondary y-axis if flag is True
         ax_counter = ax.twinx()
         (line3,) = ax_counter.plot(
             counter_data, color="gray", linestyle="--", label="Rejected beams"
         )
         ax_counter.set_ylabel("Rejected beams [samples]", fontsize=label_fontsize)
         ax_counter.tick_params(axis="y", labelsize=tick_fontsize)
-
+        ax_counter.yaxis.set_major_locator(MaxNLocator(integer=True))
         handles.append(line3)
         labels.append("Rejected beams")
+
+    # New code for indicating region of interest
+    if region_of_interest:
+        start = region_of_interest["start"]
+        end = region_of_interest["end"]
+        color = region_of_interest.get("color", "red")
+        style = region_of_interest.get("style", "dashed")
+
+        # Add vertical lines at start and end of region
+        ax.axvline(x=start, color=color, linestyle=style, alpha=0.5)
+        ax.axvline(x=end, color=color, linestyle=style, alpha=0.5)
+
+        # Add text annotation
+        mid_point = (start + end) / 2
+        ax.text(
+            mid_point,
+            ax.get_ylim()[1] * 0.95,
+            "Region of Interest",
+            horizontalalignment="center",
+            verticalalignment="bottom",
+            color=color,
+            fontweight="bold",
+        )
 
     ax.legend(
         handles,
         labels,
         loc="upper right",
         fontsize=legend_fontsize,
-        bbox_to_anchor=(1, -0.1),
-        # borderaxespad=0.0,
+        bbox_to_anchor=(1, -0.11),
     )
 
-    # Set font size for the primary axis labels
     for label in ax.get_xticklabels() + ax.get_yticklabels():
         label.set_fontsize(tick_fontsize)
 
@@ -398,6 +471,7 @@ plot_with_y_zero_and_counter(
     plot_counter=with_outliers,  # Change to False if you do not want to plot the counter
     ylabel_primary="Error [mm]",
     plot_two_approaches=with_outliers,
+    region_of_interest=region_params,
 )
 
 plot_with_y_zero_and_counter(
@@ -411,6 +485,7 @@ plot_with_y_zero_and_counter(
     plot_counter=with_outliers,
     ylabel_primary="Error [mm]",
     plot_two_approaches=with_outliers,
+    region_of_interest=region_params,
 )
 
 plot_with_y_zero_and_counter(
@@ -424,15 +499,16 @@ plot_with_y_zero_and_counter(
     plot_counter=with_outliers,
     ylabel_primary="Error [rad]",
     plot_two_approaches=with_outliers,
+    region_of_interest=region_params,
 )
 
 # Set common x-axis and y-axis labels with specified font sizes
 for ax in axs1[:]:
-    ax.set_xlabel("Samples", fontsize=label_fontsize)
+    ax.set_xlabel("Control cycle (25 ms)", fontsize=label_fontsize)
 
     # Display the first figure
 fig1.tight_layout()
-fig1.savefig(str + "_test_error_metrics_xytheta.pdf", dpi=300)
+fig1.savefig(str + "_test_error_metrics_xytheta.pdf", dpi=300, bbox_inches="tight")
 plt.show()
 
 # Create the second figure with one plot
@@ -446,52 +522,226 @@ plot_with_y_zero_and_counter(
     df_semantics["counter"],
     "Original system",
     "Robust PM",
-    "Error of Perfect Match",
+    "Loss of Perfect Match",
     plot_counter=with_outliers,
-    ylabel_primary="Error [mm]",
+    ylabel_primary="Loss [mm]",
     plot_two_approaches=with_outliers,
+    region_of_interest=region_params,
 )
 
-axs2.set_xlabel("Samples", fontsize=label_fontsize)
+axs2.set_xlabel("Control cycle (25 ms)", fontsize=label_fontsize)
 
 # Display the second figure
 fig2.tight_layout()
-fig2.savefig(str + "_test_error_PM.pdf", dpi=300)
+fig2.savefig(str + "_test_error_PM.pdf", dpi=300, bbox_inches="tight")
 plt.show()
 
 # %% ------------------------------------------ EKF POSE comparison without clutter ---------------------------------------------
-plt.figure(figsize=(10, 8))
+if not plot_with_zoom_trajectory:
 
+    plt.figure(figsize=(10, 8))
 
-gt_x = df["EKF_x"] - df["errorEKF_x"]
-gt_y = df["EKF_y"] - df["errorEKF_y"]
+    gt_x = df["EKF_x"] - df["errorEKF_x"]
+    gt_y = df["EKF_y"] - df["errorEKF_y"]
 
-
-plt.plot(df["EKF_x"], df["EKF_y"], label="Original system", linestyle="-", color="blue")
-
-
-if plot_both_systems:
     plt.plot(
-        df_semantics["EKF_x"],
-        df_semantics["EKF_y"],
-        label="Robust PM",
-        linestyle="-",
-        color="green",
+        df["EKF_x"], df["EKF_y"], label="Original system", linestyle="-", color="C0"
     )
 
-# Plot ground truth paths for comparison
-plt.plot(gt_x, gt_y, label="Ground Truth", linestyle="--", color="darkorange")
+    if plot_both_systems:
+        plt.plot(
+            df_semantics["EKF_x"],
+            df_semantics["EKF_y"],
+            label="Robust PM",
+            linestyle="-",
+            color="C1",
+        )
 
-plt.xlabel("X [mm]")
-plt.ylabel("Y [mm]")
-plt.title("EKF trajectory comparison")
-plt.legend()
-plt.axis("equal")  # Ensure equal scaling for x and y axes
-plt.grid(True)
-plt.tight_layout()
-plt.savefig(str + "_test_pose_comparison.pdf", dpi=300)
-plt.show()
+    # Plot ground truth paths for comparison
+    plt.plot(gt_x, gt_y, label="Ground Truth", linestyle="--", color="black")
 
+    if start_end_marker and plot_both_systems:
+        # Add start and end markers
+        plt.scatter(
+            df["EKF_x"].iloc[0],
+            df["EKF_y"].iloc[0],
+            color="green",
+            s=100,
+            label="Start",
+            zorder=5,
+        )
+        plt.scatter(
+            df["EKF_x"].iloc[-1],
+            df["EKF_y"].iloc[-1],
+            color="red",
+            s=100,
+            label="End",
+            zorder=5,
+        )
+
+        plt.scatter(
+            df_semantics["EKF_x"].iloc[0],
+            df_semantics["EKF_y"].iloc[0],
+            color="green",
+            s=100,
+            zorder=5,
+        )
+        plt.scatter(
+            df_semantics["EKF_x"].iloc[-1],
+            df_semantics["EKF_y"].iloc[-1],
+            color="red",
+            s=100,
+            zorder=5,
+        )
+    elif start_end_marker:
+        plt.scatter(
+            df["EKF_x"].iloc[0],
+            df["EKF_y"].iloc[0],
+            color="green",
+            s=100,
+            label="Start",
+            zorder=5,
+        )
+        plt.scatter(
+            df["EKF_x"].iloc[-1],
+            df["EKF_y"].iloc[-1],
+            color="red",
+            s=100,
+            label="End",
+            zorder=5,
+        )
+
+    plt.xlabel("X [mm]")
+    plt.ylabel("Y [mm]")
+    plt.title("EKF trajectory comparison")
+    plt.legend()
+    plt.axis("equal")  # Ensure equal scaling for x and y axes
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(str + "_test_pose_comparison.pdf", dpi=300, bbox_inches="tight")
+    plt.show()
+
+
+if plot_with_zoom_trajectory:
+
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
+
+    # Create the main figure
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    # Calculate ground truth
+    gt_x = df["EKF_x"] - df["errorEKF_x"]
+    gt_y = df["EKF_y"] - df["errorEKF_y"]
+
+    # Plot original system
+    ax.plot(
+        df["EKF_x"], df["EKF_y"], label="Original system", linestyle="-", color="C0"
+    )
+
+    # Plot Robust PM
+    if plot_both_systems:
+        ax.plot(
+            df_semantics["EKF_x"],
+            df_semantics["EKF_y"],
+            label="Robust PM",
+            linestyle="-",
+            color="C1",
+        )
+
+    # Plot ground truth
+    ax.plot(gt_x, gt_y, label="Ground Truth", linestyle="--", color="black")
+
+    if start_end_marker and plot_both_systems:
+
+        # Add start and end markers
+        ax.scatter(
+            df["EKF_x"].iloc[0],
+            df["EKF_y"].iloc[0],
+            color="green",
+            s=100,
+            label="Start",
+            zorder=5,
+        )
+        ax.scatter(
+            df["EKF_x"].iloc[-1],
+            df["EKF_y"].iloc[-1],
+            color="red",
+            s=100,
+            label="End",
+            zorder=5,
+        )
+        ax.scatter(
+            df_semantics["EKF_x"].iloc[0],
+            df_semantics["EKF_y"].iloc[0],
+            color="green",
+            s=100,
+            zorder=5,
+        )
+        ax.scatter(
+            df_semantics["EKF_x"].iloc[-1],
+            df_semantics["EKF_y"].iloc[-1],
+            color="red",
+            s=100,
+            zorder=5,
+        )
+    elif start_end_marker:
+        # Add start and end markers
+        ax.scatter(
+            df["EKF_x"].iloc[0],
+            df["EKF_y"].iloc[0],
+            color="green",
+            s=100,
+            label="Start",
+            zorder=5,
+        )
+        ax.scatter(
+            df["EKF_x"].iloc[-1],
+            df["EKF_y"].iloc[-1],
+            color="red",
+            s=100,
+            label="End",
+            zorder=5,
+        )
+
+    # Set labels and title
+    ax.set_xlabel("X [mm]")
+    ax.set_ylabel("Y [mm]")
+    ax.set_title("EKF trajectory comparison")
+
+    # Limit y-range
+    # ax.set_ylim(top=400)
+
+    # Create the inset axes
+    axins = inset_axes(ax, width="45%", height="45%", loc="lower right")
+
+    # Plot zoomed-in data
+    axins.plot(gt_x, gt_y, linestyle="--", color="black")
+    axins.plot(df_semantics["EKF_x"], df_semantics["EKF_y"], linestyle="-", color="C1")
+
+    # Set the limits for the zoomed area (increased zoom)
+    x1, x2 = 495, 510  # X-axis limits for zoom
+    y1, y2 = -430, -425  # Y-axis limits for zoom
+    axins.set_xlim(x1, x2)
+    axins.set_ylim(y1, y2)
+
+    # Remove tick labels from the inset plot
+    axins.set_xticklabels([])
+    axins.set_yticklabels([])
+
+    # Draw connecting lines between the inset and the main plot
+    mark_inset(ax, axins, loc1=2, loc2=1, fc="none", ec="0", ls="--", lw=1.5)
+
+    # Finalize the main plot
+    ax.legend(loc="upper left", bbox_to_anchor=(0, 1))  # Moved legend to top center
+    ax.axis("equal")  # Ensure equal scaling for x and y axes
+    ax.grid(True)
+
+    plt.tight_layout()
+    plt.savefig(
+        str + "_test_pose_comparison_with_zoom.pdf", dpi=300, bbox_inches="tight"
+    )
+    plt.show()
 
 # %% ------------------------------------------------ ERROR METRICS FOR TABLE ---------------------------------------------------
 
