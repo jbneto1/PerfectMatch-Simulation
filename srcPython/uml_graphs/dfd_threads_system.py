@@ -26,15 +26,15 @@ dot.node("NetworkIO", "Network I/O Threads", shape="folder", color="lightsalmon"
 
 # Adding edges to represent interactions and dependencies
 dot.edge("Main", "Manager", label="Initializes")
-dot.edge("Manager", "VisT", label="Spawns Controls\n& Updates Data")
+dot.edge("Manager", "VisT", label="Spawns & Updates\nData")
 dot.edge("Manager", "SignalH", label="Manages\nSignals")
 dot.edge("Manager", "SimTwoInt", label="Instantiates")
-dot.edge("SimTwoInt", "NetworkIO", label="Spawns", style="dashed")
-dot.edge("VisT", "Mutex", label="Mutex\nLock/Unlock", color="blue")
-dot.edge("VisT", "CondVar", label="Waits/Signals", color="blue")
+dot.edge("SimTwoInt", "NetworkIO", label="Spawns")
+dot.edge("VisT", "Mutex", label="Mutex\nLock/Unlock")
+dot.edge("VisT", "CondVar", label="Waits/Signals")
 
 # Explicit data flow between components
-dot.edge("SimTwoInt", "Manager", label="Sends sensor data", style="dotted")
+dot.edge("SimTwoInt", "Manager", label="Sends sensor data")
 
 # Save and render the graph to a file
 dot.render("thread_interaction_diagram_refined", cleanup=True, format="pdf")

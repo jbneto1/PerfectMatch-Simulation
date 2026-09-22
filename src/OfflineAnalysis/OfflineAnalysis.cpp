@@ -149,6 +149,7 @@ OfflineAnalysis::extractDataFromLine(const std::string &line)
 
     try
     {
+        // ground truth pose extraction
         Pose pose(std::stod(tokens[0]), std::stod(tokens[1]), std::stod(tokens[2]));
         std::array<int, 4> encoders = {std::stoi(tokens[3]), std::stoi(tokens[4]), std::stoi(tokens[5]), std::stoi(tokens[6])};
         std::vector<LaserPoint> lidarPoints;

@@ -35,31 +35,40 @@
 
 # %%
 
-file_path = "docs/logs/logs_offlineAnalysis/thesis/case_I_simulation_thesis.txt"
+file_path = "docs/logs/logs_offlineAnalysis/thesis/pm_without_outliers_thesis.txt"
+
+
 file_path_semantics = (
-    "docs/logs/logs_offlineAnalysis/thesis/case_I_simulation_thesis_semantics.txt"
+    "docs/logs/logs_offlineAnalysis/thesis/pm_without_outliers_thesis.txt"
 )
 
 # name of the files
-str = "case_I"
+str = "case_baseline_test"
 # plot original and ropm?
-plot_both_systems = True
+plot_both_systems = False
 # plot rejected beams?
-with_outliers = True
+with_outliers = False
 
 # range to consider in the tables metrics or None to include all
 start_index = None
 end_index = None
+# start_index = 18
+# end_index = 30
 
 # plot trajectory comparison with zoom
-plot_with_zoom_trajectory = True
+plot_with_zoom_trajectory = False
 # plot trajectory comparison with start and end marker
-start_end_marker = False
+start_end_marker = True
 
 
-# region_params = {"start": 980, "end": 1610, "color": "C3", "style": "dashed"}
+region_params = {
+    "start": start_index,
+    "end": end_index,
+    "color": "C3",
+    "style": "dashed",
+}
 # or none
-region_params = None
+# region_params = None
 
 
 # Set font sizes
@@ -736,7 +745,7 @@ if plot_with_zoom_trajectory:
     axins.grid(True)
 
     # Add legend to the inset plot
-    axins.legend(loc="upper left", fontsize="small")
+    axins.legend(loc="upper left")
 
     # Finalize the main plot
     ax.legend(loc="upper left", bbox_to_anchor=(0, 1))

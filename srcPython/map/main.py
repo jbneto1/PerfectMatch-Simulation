@@ -4,6 +4,12 @@ from PIL import Image
 from scipy import ndimage
 import matplotlib.patches as mpatches
 
+plt.rcParams["axes.titlesize"] = 16  # Title font size
+plt.rcParams["axes.labelsize"] = 14  # Label font size
+plt.rcParams["xtick.labelsize"] = 14  # Tick font size for x-axis
+plt.rcParams["ytick.labelsize"] = 14  # Tick font size for y-axis
+plt.rcParams["legend.fontsize"] = 14  # Legend font size
+
 # Map dimensions in meters
 map_width = 1.68
 map_height = 1.18
@@ -137,7 +143,7 @@ legend_handles = [
 legend = plt.legend(handles=legend_handles, loc="upper right")
 legend.get_frame().set_facecolor("lightgray")  # Optional: set legend background color
 plt.tight_layout()
-plt.savefig("2d_matrix_map.pdf", dpi=300)
+plt.savefig("srcPython/map/2d_matrix_map.pdf", dpi=300)
 
 
 # Convert matrix to a format suitable for visualization [0-255]
@@ -154,13 +160,25 @@ new_width = int(new_height * aspect_ratio)
 resized_image = image.resize((new_width, new_height), Image.LANCZOS)
 
 # Save the resized image as PNG
-resized_image.save("matrix.png")
+resized_image.save("srcPython/map/matrix.pdf")
 
 
 # Add this part to the end of your code:
 
 # Compute distance map
 dist_map = compute_dist_map(matrix)
+
+# apply m estimator to dist map to plot only
+m_estimator_dist_map = d_err(dist_map)
+
+plt.figure(figsize=(8, 6))
+plt.imshow(m_estimator_dist_map, cmap="gray", interpolation="none")
+plt.colorbar(label="M-Estimator Euclidean Dist Map from nearest obstacle")
+plt.title("M-Estimator Distance Map")
+plt.xlabel("Cells (1 cell = 1 mm)")
+plt.ylabel("Cells (1 cell = 1 mm)")
+plt.tight_layout()
+plt.savefig("srcPython/map/m_estimator_dist_map.pdf", dpi=300)
 
 # Compute the gradients on the distance map
 grad_x, grad_y = calc_grad_maps(dist_map)
@@ -176,7 +194,7 @@ plt.title("Distance Map")
 plt.xlabel("Cells (1 cell = 1 mm)")
 plt.ylabel("Cells (1 cell = 1 mm)")
 plt.tight_layout()
-plt.savefig("dist_map.pdf", dpi=300)
+plt.savefig("srcPython/map/dist_map.pdf", dpi=300)
 
 print((np.max(dist_map), np.min(dist_map)))
 
@@ -188,7 +206,7 @@ plt.title("Gradient-X")
 plt.xlabel("Cells (1 cell = 1 mm)")
 plt.ylabel("Cells (1 cell = 1 mm)")
 plt.tight_layout()
-plt.savefig("grad_x_map.pdf", dpi=300)
+plt.savefig("srcPython/map/grad_x_map.pdf", dpi=300)
 
 # Visualization of M-estimator Gradient-X
 plt.figure(figsize=(8, 6))
@@ -198,7 +216,7 @@ plt.title("M-estimator Gradient-X")
 plt.xlabel("Cells (1 cell = 1 mm)")
 plt.ylabel("Cells (1 cell = 1 mm)")
 plt.tight_layout()
-plt.savefig("m_estimator_grad_x_map.pdf", dpi=300)
+plt.savefig("srcPython/map/m_estimator_grad_x_map.pdf", dpi=300)
 
 # Visualization of Gradient-Y
 plt.figure(figsize=(8, 6))
@@ -208,7 +226,7 @@ plt.title("Gradient-Y")
 plt.xlabel("Cells (1 cell = 1 mm)")
 plt.ylabel("Cells (1 cell = 1 mm)")
 plt.tight_layout()
-plt.savefig("grad_y_map.pdf", dpi=300)
+plt.savefig("srcPython/map/grad_y_map.pdf", dpi=300)
 
 # Visualization of M-estimator Gradient-Y
 plt.figure(figsize=(8, 6))
@@ -218,8 +236,8 @@ plt.title("M-estimator Gradient-Y")
 plt.xlabel("Cells (1 cell = 1 mm)")
 plt.ylabel("Cells (1 cell = 1 mm)")
 plt.tight_layout()
-plt.savefig("m_estimator_grad_y_map.pdf", dpi=300)
+plt.savefig("srcPython/map/m_estimator_grad_y_map.pdf", dpi=300)
 
-np.savetxt("distance_map.csv", dist_map, delimiter=",")
-np.savetxt("m_estimator_gradient_x.csv", m_grad_x, delimiter=",")
-np.savetxt("m_estimator_gradient_y.csv", m_grad_y, delimiter=",")
+np.savetxt("srcPython/map/distance_map.csv", dist_map, delimiter=",")
+np.savetxt("srcPython/map/m_estimator_gradient_x.csv", m_grad_x, delimiter=",")
+np.savetxt("srcPython/map/m_estimator_gradient_y.csv", m_grad_y, delimiter=",")

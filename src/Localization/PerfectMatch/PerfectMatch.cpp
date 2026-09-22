@@ -86,10 +86,9 @@ void PerfectMatch::IterLaser(std::vector<LaserPoint> &LaserPoints)
 
     for (auto &laserPoint : LaserPoints)
     {
-        if ((laserPoint.getD() < 0.1) || (!laserPoint.getIsBeamValid()))
+        if ((laserPoint.getD() < 0.1) || (!laserPoint.getIsBeamValid())) // YDLIDAR X4 minimum range is 12 cm, need to verify. 0.1 is working
             continue;
 
-        // NOT WORKING
         double rx, ry;
         calibrate_lidar_points(rx, ry, laserPoint.getX(), laserPoint.getY());
         double r_cx, r_cy; // calibrated lidar world points (robots center)
@@ -97,12 +96,6 @@ void PerfectMatch::IterLaser(std::vector<LaserPoint> &LaserPoints)
 
         int u = XTopixel(r_cx);
         int v = YTopixel(r_cy);
-
-        // WORKING
-        // double rx, ry;
-        // RotateAndTranslate(rx, ry, laserPoint.getX(), laserPoint.getY(), RobotPose.getX(), RobotPose.getY(), st, ct);
-        // int u = XTopixel(rx);
-        // int v = YTopixel(ry);
 
         if (u >= 0 && u < map.getWidth() && v >= 0 && v < map.getHeight())
         {

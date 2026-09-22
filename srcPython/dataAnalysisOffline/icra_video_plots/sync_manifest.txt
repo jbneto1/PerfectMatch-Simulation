@@ -1,0 +1,36 @@
+ICRA 2027 VIDEO SYNCHRONIZATION NOTES
+======================================
+
+BASELINE
+  Camera file: real_baseline_study.mp4
+  Source trim for OpenShot:
+      2.781 s
+      ->
+      20.000 s
+  Generated plot duration: 17.219 s
+  Plotted rows: 0 -> 742 (complete saved baseline trajectory)
+  The initial part of this trim is stationary, matching the initial
+  stationary samples in the saved log; the subsequent interval contains
+  the full robot traversal.
+
+CASE STUDY I
+  Camera file: case_study_I_edited.mp4
+  Source trim: 0.000 s -> 15.000 s
+  Plotted rows: 0 -> 375 (complete sequence)
+  Paper metric interval: rows 0 -> 194 inclusive.
+  The metric interval is NOT drawn on the video plot.
+
+CASE STUDY II
+  Camera file: real_case_study_II.mp4
+  Source trim: 45.000 s -> 80.000 s
+  Approximate plotted rows: 881 -> 1740
+  Rejected-beam activity: rows 989 -> 1597, clip time 4.39 -> 29.18 s.
+  Paper metric interval: rows 993 -> 1550 inclusive.
+  IMPORTANT: the metric interval is shorter than the full rejected-beam
+  activity. The animation shades ONLY the quantitative paper-comparison
+  interval; the dashed rejected-beam curve shows actual semantic-gating
+  activity directly.
+
+OPENSHOT
+  Place each camera segment and matching generated plot at exactly the
+  same timeline start. Do not independently stretch either clip.

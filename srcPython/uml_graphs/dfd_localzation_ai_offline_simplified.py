@@ -5,12 +5,17 @@ dfd = Digraph(comment="System DFD")
 
 # Define graph properties for a larger layout
 dfd.attr(rankdir="TB", size="30,30")
-dfd.graph_attr["dpi"] = "300"  # Setting DPI to 300 for high resolution
-
+dfd.graph_attr.update(
+    {
+        "dpi": "300",  # High resolution
+        "nodesep": "1.0",  # Minimum space between nodes (horizontal)
+        "ranksep": "1.5",  # Minimum space between ranks (vertical)
+        "overlap": "true",  # Prevent node overlap
+    }
+)
 # Increase the default font size for nodes and edges
 dfd.attr("node", fontsize="24")
 dfd.attr("edge", fontsize="22")
-
 
 dfd.attr(
     "node",
@@ -111,4 +116,4 @@ dfd.node("legend", legend_label)
 
 # Save the DFD to a file with increased visibility settings
 file_path = "system_dfd_v2_offline"
-dfd.render(file_path, format="png", cleanup=True)
+dfd.render(file_path, format="pdf", cleanup=True)

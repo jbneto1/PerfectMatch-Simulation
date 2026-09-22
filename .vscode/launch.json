@@ -30,7 +30,9 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/PM_project",
-            "args": ["false"],
+            "args": [
+                "false"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/",
             "environment": [],
@@ -45,6 +47,231 @@
             ],
             "preLaunchTask": "",
             "miDebuggerPath": "/usr/bin/gdb"
-        }        
+        },
+        {
+            "name": "Debug Animation Script (WSL2 + X11)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "env": {
+                "DISPLAY": "${env:DISPLAY}",
+                "LIBGL_ALWAYS_INDIRECT": "1",
+                "PYTHONPATH": "${workspaceFolder}",
+                "MPLBACKEND": "TkAgg",
+                "CASE_NAME": "case_baseline_test",
+                "PLOT_BOTH_SYSTEMS": "False",
+                "ENABLE_ZOOM": "False"
+            },
+            "args": [],
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "python": "${command:python.interpreterPath}"
+        },
+        {
+            "name": "Debug Animation Script (No GUI - Save Only)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "MPLBACKEND": "Agg",
+                "CASE_NAME": "case_baseline_test",
+                "PLOT_BOTH_SYSTEMS": "False",
+                "ENABLE_ZOOM": "False"
+            },
+            "args": [],
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "cwd": "${workspaceFolder}",
+            "python": "${command:python.interpreterPath}"
+        },
+        {
+            "name": "Debug Animation Script (Baseline Case)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "env": {
+                "DISPLAY": "${env:DISPLAY}",
+                "LIBGL_ALWAYS_INDIRECT": "1",
+                "PYTHONPATH": "${workspaceFolder}",
+                "MPLBACKEND": "TkAgg",
+                "CASE_NAME": "case_baseline_test",
+                "PLOT_BOTH_SYSTEMS": "False",
+                "ENABLE_ZOOM": "False"
+            },
+            "args": [],
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "cwd": "${workspaceFolder}",
+            "python": "${command:python.interpreterPath}"
+        },
+        {
+            "name": "Debug Animation Script (Case Study I)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "env": {
+                "DISPLAY": "${env:DISPLAY}",
+                "LIBGL_ALWAYS_INDIRECT": "1",
+                "PYTHONPATH": "${workspaceFolder}",
+                "MPLBACKEND": "TkAgg",
+                "CASE_NAME": "case_study_1",
+                "PLOT_BOTH_SYSTEMS": "True",
+                "ENABLE_ZOOM": "False"
+            },
+            "args": [],
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "cwd": "${workspaceFolder}",
+            "python": "${command:python.interpreterPath}"
+        },
+        {
+            "name": "Debug Animation Script (Case Study II)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "env": {
+                "DISPLAY": "${env:DISPLAY}",
+                "LIBGL_ALWAYS_INDIRECT": "1",
+                "PYTHONPATH": "${workspaceFolder}",
+                "MPLBACKEND": "TkAgg",
+                "CASE_NAME": "case_study_2",
+                "PLOT_BOTH_SYSTEMS": "True",
+                "ENABLE_ZOOM": "True"
+            },
+            "args": [],
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "cwd": "${workspaceFolder}",
+            "python": "${command:python.interpreterPath}"
+        },
+        {
+            "name": "Run Animation - Baseline Test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/srcPython/dataAnalysisOffline/generate_animation_plots.py",
+            "console": "integratedTerminal",
+            "env": {
+                "DISPLAY": "${env:DISPLAY}",
+                "LIBGL_ALWAYS_INDIRECT": "1",
+                "PYTHONPATH": "${workspaceFolder}",
+                "MPLBACKEND": "TkAgg",
+                "PLOT_BOTH_SYSTEMS": "False",
+                "ENABLE_ZOOM": "False",
+                "CASE_NAME": "case_baseline_test"
+            },
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Run Animation - Case Study I",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/srcPython/dataAnalysisOffline/generate_animation_plots.py",
+            "console": "integratedTerminal",
+            "env": {
+                "DISPLAY": "${env:DISPLAY}",
+                "LIBGL_ALWAYS_INDIRECT": "1",
+                "PYTHONPATH": "${workspaceFolder}",
+                "MPLBACKEND": "TkAgg",
+                "PLOT_BOTH_SYSTEMS": "True",
+                "ENABLE_ZOOM": "False",
+                "CASE_NAME": "case_study_1"
+            },
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Run Animation - Case Study II (Zoomed)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/srcPython/dataAnalysisOffline/generate_animation_plots.py",
+            "console": "integratedTerminal",
+            "env": {
+                "DISPLAY": "${env:DISPLAY}",
+                "LIBGL_ALWAYS_INDIRECT": "1",
+                "PYTHONPATH": "${workspaceFolder}",
+                "MPLBACKEND": "TkAgg",
+                "PLOT_BOTH_SYSTEMS": "True",
+                "ENABLE_ZOOM": "True",
+                "CASE_NAME": "case_study_2"
+            },
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Run Animation - Save Only (No GUI)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/srcPython/dataAnalysisOffline/generate_animation_plots.py",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "MPLBACKEND": "Agg",
+                "PLOT_BOTH_SYSTEMS": "False",
+                "ENABLE_ZOOM": "False",
+                "CASE_NAME": "case_baseline_test"
+            },
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "name": "Quick Layout Test",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/srcPython/dataAnalysisOffline/generate_animation_plots.py",
+            "console": "integratedTerminal",
+            "env": {
+                "MPLBACKEND": "TkAgg",
+                "CASE_NAME": "case_baseline_test",
+                "PLOT_BOTH_SYSTEMS": "False",
+                "ENABLE_ZOOM": "False",
+                "QUICK_TEST": "True",
+                "ANIMATION_DURATION": "1",
+                "ANIMATION_FPS": "5"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Quick Layout Test 1",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/srcPython/dataAnalysisOffline/generate_animation_plots.py",
+            "console": "integratedTerminal",
+            "env": {
+                "MPLBACKEND": "TkAgg",
+                "CASE_NAME": "case_study_1",
+                "PLOT_BOTH_SYSTEMS": "True",
+                "ENABLE_ZOOM": "False",
+                "QUICK_TEST": "True",
+                "ANIMATION_DURATION": "1",
+                "ANIMATION_FPS": "5"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Quick Layout Test 2",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/srcPython/dataAnalysisOffline/generate_animation_plots.py",
+            "console": "integratedTerminal",
+            "env": {
+                "MPLBACKEND": "TkAgg",
+                "CASE_NAME": "case_study_2",
+                "PLOT_BOTH_SYSTEMS": "True",
+                "ENABLE_ZOOM": "True",
+                "QUICK_TEST": "True",
+                "ANIMATION_DURATION": "1",
+                "ANIMATION_FPS": "5"
+            },
+            "cwd": "${workspaceFolder}"
+        }
     ]
 }

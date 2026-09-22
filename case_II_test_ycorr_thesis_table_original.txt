@@ -1,0 +1,17 @@
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{lrrrrr}
+\toprule
+ & MAE & STD & MAX & MIN & RMSE \\
+\midrule
+X [mm] & 31.69 & 5.57 & 38.64 & 23.54 & 32.14 \\
+Y [mm] & 164.45 & 1.82 & 166.65 & 161.22 & 164.46 \\
+$\theta$ [rad] & 0.12 & 0.01 & 0.13 & 0.10 & 0.12 \\
+PM [mm] & 18.25 & 0.25 & 18.71 & 17.93 & 18.25 \\
+\bottomrule
+\end{tabular}
+
+    \caption{Original.}
+    \label{tab:original}
+\end{table}

@@ -55,7 +55,7 @@ def create_uml():
         height=height,
         margin="0.2, 0.2",
     )
-    dot.node("EdgeDevice", "Edge Device")
+    dot.node("EdgeDevice", "Object Detection Script")
     dot.node("RemoteControl", "Remote Control Program")
 
     dot.attr(
@@ -94,7 +94,7 @@ def create_uml():
     # Define nodes
     dot.node("RobotScript", "Robot Main Program")
     dot.node("PythonAruco", "ArUco Script")
-    dot.node("CPPLidar", "Lidar Program")
+    dot.node("CPPLidar", "LIDAR Program")
     dot.node("CamScript", "RpiCam Stream Script")
 
     # Define edges with styled attributes for clarity
